@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "lib",
+    "target": "esnext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "noImplicitAny": false,
+    "strictNullChecks": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": false,
+    "noImplicitReturns": true,
+    "baseUrl": "./",
+    "paths": {},
+    "typeRoots": [
+      "node_modules/assemblyscript/std"
+    ],
+    "types": [
+      "assembly",
+      "node",
+      "chai",
+      "mocha"
+    ],
+    "allowJs": false,
+    "checkJs": false,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "skipLibCheck": true
+  },
+  "exclude": [
+    "node_modules",
+    "util"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "name": "power.boid",
+  "version": "0.0.0",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build:clear": "rm -rf ./build",
+    "build": "yarn build:clear && npx proton-asc ./assembly/boid.contract.ts && mv ./assembly/target ./build ",
+    "build:debug": "yarn build:clear && npx proton-asc ./assembly/boid.contract.ts && mv ./assembly/target ./build  ",
+    "test:all": "yarn test:stake && yarn test:power && yarn test:account && yarn test:pwrmod && yarn test:team && yarn test:auth && yarn test:nft && yarn test:offer",
+    "test:debug": "LOG_LEVEL=debug mocha --no-warnings ./tests/*.spec.js",
+    "test:stake": "mocha -b ./tests/stake.spec.js",
+    "test:power": "mocha -b ./tests/power.spec.js",
+    "test:account": "mocha -b ./tests/account.spec.js",
+    "test:pwrmod": "mocha -b ./tests/pwrmods.spec.js",
+    "test:team": "mocha -b ./tests/team.spec.js",
+    "test:auth": "mocha -b ./tests/auth.spec.js",
+    "test:nft": "mocha -b ./tests/nft.spec.js",
+    "test:offer": "mocha -b ./tests/offers.spec.js",
+    "dev": "nodemon -w ./assembly/actions -w ./assembly/tables -w ./assembly/boid.contract.ts -i ./assembly/target -e .ts --exec yarn build:debug",
+    "pg": "ts-node-esm ./pg/playground.ts"
+  },
+  "dependencies": {
+    "atomicassets": "^1.4.2",
+    "dotenv": "^16.0.1",
+    "eosjs": "^22.1.0",
+    "proton-tsc": "^0.3.58",
+    "source-map-support": "^0.5.21"
+  },
+  "engines": {
+    "npm": ">=7.0.0",
+    "node": ">=16.0.0"
+  },
+  "engineStrict": true,
+  "devDependencies": {
+    "@greymass/abi2core": "^1.1.0",
+    "@greymass/eosio": "^0.5.5",
+    "@proton/cli": "latest",
+    "@proton/js": "^26.1.2",
+    "@proton/vert": "latest",
+    "@types/chai": "^4.3.0",
+    "@types/mocha": "^9.1.0",
+    "@types/node": "^17.0.22",
+    "@typescript-eslint/eslint-plugin": "^5.30.4",
+    "@typescript-eslint/parser": "^5.30.4",
+    "chai": "^4.3.6",
+    "cross-env": "^7.0.3",
+    "cross-fetch": "^3.1.5",
+    "crypto": "^1.0.1",
+    "eslint": "^8.19.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-n": "^15.2.3",
+    "eslint-plugin-promise": "^6.0.0",
+    "globby": "^10",
+    "mocha": "^9.2.2",
+    "npm-run-all": "^4.1.5",
+    "ts-morph": "^14.0.0",
+    "ts-node": "^10.7.0",
+    "typescript": "^4.6.2"
+  }
+}

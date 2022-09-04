@@ -1,0 +1,209 @@
+{
+  "version": "eosio::abi/1.2",
+  "structs": [
+    {
+      "name": "Global",
+      "base": "",
+      "fields": [
+        {
+          "name": "num_validators",
+          "type": "uint8"
+        },
+        {
+          "name": "total_weight",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "name": "Oracle",
+      "base": "",
+      "fields": [
+        {
+          "name": "account",
+          "type": "name"
+        },
+        {
+          "name": "weight",
+          "type": "uint8"
+        }
+      ]
+    },
+    {
+      "name": "Protocol",
+      "base": "",
+      "fields": [
+        {
+          "name": "protocol_id",
+          "type": "uint64"
+        },
+        {
+          "name": "protocol_name",
+          "type": "name"
+        },
+        {
+          "name": "unitPowerMult",
+          "type": "float32"
+        }
+      ]
+    },
+    {
+      "name": "PwrReport",
+      "base": "",
+      "fields": [
+        {
+          "name": "protocol_id",
+          "type": "uint8"
+        },
+        {
+          "name": "round",
+          "type": "uint16"
+        },
+        {
+          "name": "units",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
+      "name": "PwrReportRow",
+      "base": "",
+      "fields": [
+        {
+          "name": "report_id",
+          "type": "uint64"
+        },
+        {
+          "name": "report",
+          "type": "PwrReport"
+        },
+        {
+          "name": "approvals",
+          "type": "name[]"
+        },
+        {
+          "name": "approval_weight",
+          "type": "uint16"
+        },
+        {
+          "name": "reported",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "mergereports",
+      "base": "",
+      "fields": [
+        {
+          "name": "boid_id_scope",
+          "type": "name"
+        },
+        {
+          "name": "pwrreport_ids",
+          "type": "uint64[]"
+        }
+      ]
+    },
+    {
+      "name": "oracleset",
+      "base": "",
+      "fields": [
+        {
+          "name": "account",
+          "type": "name"
+        },
+        {
+          "name": "weight",
+          "type": "uint8"
+        }
+      ]
+    },
+    {
+      "name": "protoset",
+      "base": "",
+      "fields": [
+        {
+          "name": "protocol",
+          "type": "Protocol"
+        }
+      ]
+    },
+    {
+      "name": "pwrreport",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        },
+        {
+          "name": "boid_id_scope",
+          "type": "name"
+        },
+        {
+          "name": "report",
+          "type": "PwrReport"
+        }
+      ]
+    }
+  ],
+  "types": [],
+  "actions": [
+    {
+      "name": "mergereports",
+      "type": "mergereports",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "oracleset",
+      "type": "oracleset",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "protoset",
+      "type": "protoset",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "pwrreport",
+      "type": "pwrreport",
+      "ricardian_contract": ""
+    }
+  ],
+  "tables": [
+    {
+      "name": "global",
+      "type": "Global",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+    },
+    {
+      "name": "oracles",
+      "type": "Oracle",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+    },
+    {
+      "name": "protocols",
+      "type": "Protocol",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+    },
+    {
+      "name": "pwrreports",
+      "type": "PwrReportRow",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+    }
+  ],
+  "ricardian_clauses": [],
+  "variants": [],
+  "action_results": [],
+  "abi_extensions": [],
+  "error_messages": []
+}
