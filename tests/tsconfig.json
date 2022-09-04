@@ -13,7 +13,7 @@
     "resolveJsonModule": true,
     "paths": {},
     "types": [
-      "node",
+      "node"
     ],
     "outDir": "./build",
     "allowJs": true,
@@ -21,7 +21,7 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "skipLibCheck": true,
+    "skipLibCheck": true
   },
   "exclude": [
     "node_modules",
