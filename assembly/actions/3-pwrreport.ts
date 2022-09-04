@@ -70,9 +70,10 @@ export class PwrReportActions extends OracleActions {
     let targetProtocol:i16 = -1
     let targetRound:i32 = -1
     let aggregateWeight:u16 = 0
+    const pwrReportsT = this.pwrReportsT(boid_id_scope)
     for (let i = 0; i < pwrreport_ids.length; i++) {
       const id = pwrreport_ids[i]
-      const pwrReport = this.pwrReportsT(boid_id_scope).requireGet(id, "invalid id provided")
+      const pwrReport = pwrReportsT.requireGet(id, "invalid id provided")
 
       // make sure the target reports are compatible to be merged
       if (targetProtocol < 0) targetProtocol = i16(pwrReport.report.protocol_id)
@@ -80,16 +81,18 @@ export class PwrReportActions extends OracleActions {
       if (targetRound < 0) targetRound = i32(pwrReport.report.round)
       else check(pwrReport.report.round == targetRound, "rounds must match")
       check(!pwrReport.reported, "can't merge reports already reported")
+      check(!pwrReport.merged, "can't merge reports already merged")
       targetReports.push(pwrReport)
     }
 
+    // find the median
     targetReports.sort((a:PwrReportRow, b:PwrReportRow) => a.report.units - b.report.units)
     let half = i32(Math.floor(targetReports.length / 2))
     let medianUnits:u32 = 0
-
     if (targetReports.length % 2) medianUnits = targetReports[half].report.units
     else medianUnits = u32((targetReports[half - 1].report.units + targetReports[half].report.units) / 2)
 
+    //find and safe min/max values
     const safeAmount = medianUnits * 0.05
     const safeMax = u32(medianUnits + safeAmount)
     const safeMin = u32(medianUnits - safeAmount)
@@ -105,6 +108,24 @@ export class PwrReportActions extends OracleActions {
     aggregateWeight = targetReports.reduce((a:u16, b:PwrReportRow) => a + b.approval_weight, u16(0))
     check(aggregateWeight >= this.minWeightThreshold(), "aggregate approval_weight isn't high enough")
 
-    //
+    // create or update merged report
+    let mergedRow = targetReports[half]
+    if (targetReports.length % 2) {
+      mergedRow.reported = true
+      mergedRow.approvals.push(Name.fromString("merged.boid"))
+    } else {
+      const newReport:PwrReport = { protocol_id: u8(targetProtocol), round: u16(targetRound), units: medianUnits }
+      const report_id = this.getReportId(newReport)
+      mergedRow = new PwrReportRow(report_id, newReport, [Name.fromString("merged.boid")], aggregateWeight, true, true)
+      this.pwrReportsT(boid_id_scope).store(mergedRow, this.receiver)
+    }
+    this.sendReport(boid_id_scope, mergedRow.report)
+
+    // update all the rows
+    for (let i = 0; i < targetReports.length; i++) {
+      const pwrReport = targetReports[i]
+      pwrReport.merged = true
+      pwrReportsT.update(pwrReport, this.receiver)
+    }
   }
 }

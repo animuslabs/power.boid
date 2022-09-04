@@ -14,7 +14,8 @@ export class PwrReportRow extends Table {
     public report:PwrReport = new PwrReport(),
     public approvals:Name[] = [],
     public approval_weight:u16 = 0,
-    public reported:boolean = false
+    public reported:boolean = false,
+    public merged:boolean = false
   ) {
     super()
   }

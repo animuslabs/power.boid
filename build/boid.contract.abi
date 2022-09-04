@@ -88,6 +88,10 @@
         {
           "name": "reported",
           "type": "bool"
+        },
+        {
+          "name": "merged",
+          "type": "bool"
         }
       ]
     },

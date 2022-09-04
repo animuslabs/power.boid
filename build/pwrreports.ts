@@ -57,7 +57,8 @@ export class PwrReportRow implements _chain.MultiIndexValue {
     public report:PwrReport = new PwrReport(),
     public approvals:Name[] = [],
     public approval_weight:u16 = 0,
-    public reported:boolean = false
+    public reported:boolean = false,
+    public merged:boolean = false
   ) {
     
   }
@@ -83,6 +84,7 @@ export class PwrReportRow implements _chain.MultiIndexValue {
         enc.packObjectArray(this.approvals);
         enc.packNumber<u16>(this.approval_weight);
         enc.packNumber<boolean>(this.reported);
+        enc.packNumber<boolean>(this.merged);
         return enc.getBytes();
     }
     
@@ -108,6 +110,7 @@ export class PwrReportRow implements _chain.MultiIndexValue {
 
         this.approval_weight = dec.unpackNumber<u16>();
         this.reported = dec.unpackNumber<boolean>();
+        this.merged = dec.unpackNumber<boolean>();
         return dec.getPos();
     }
 
@@ -121,6 +124,7 @@ export class PwrReportRow implements _chain.MultiIndexValue {
         }
 
         size += sizeof<u16>();
+        size += sizeof<boolean>();
         size += sizeof<boolean>();
         return size;
     }
