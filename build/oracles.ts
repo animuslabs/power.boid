@@ -8,6 +8,78 @@ import { Asset, Table, Name, EMPTY_NAME } from "proton-tsc"
 // }
 
 
+@packer(nocodegen)
+export class OracleCollateral implements _chain.Packer {
+    
+  locked:u32 = 0
+  unlocking:u32 = 0
+  slashed:u32 = 0
+  unlock_finished_round:u16 = 0
+  min_unlock_start_round:u16 = 0
+    pack(): u8[] {
+        let enc = new _chain.Encoder(this.getSize());
+        enc.packNumber<u32>(this.locked);
+        enc.packNumber<u32>(this.unlocking);
+        enc.packNumber<u32>(this.slashed);
+        enc.packNumber<u16>(this.unlock_finished_round);
+        enc.packNumber<u16>(this.min_unlock_start_round);
+        return enc.getBytes();
+    }
+    
+    unpack(data: u8[]): usize {
+        let dec = new _chain.Decoder(data);
+        this.locked = dec.unpackNumber<u32>();
+        this.unlocking = dec.unpackNumber<u32>();
+        this.slashed = dec.unpackNumber<u32>();
+        this.unlock_finished_round = dec.unpackNumber<u16>();
+        this.min_unlock_start_round = dec.unpackNumber<u16>();
+        return dec.getPos();
+    }
+
+    getSize(): usize {
+        let size: usize = 0;
+        size += sizeof<u32>();
+        size += sizeof<u32>();
+        size += sizeof<u32>();
+        size += sizeof<u16>();
+        size += sizeof<u16>();
+        return size;
+    }
+}
+
+
+@packer(nocodegen)
+export class OracleFunds implements _chain.Packer {
+    
+  claimed:u32 = 0
+  unclaimed:u32 = 0
+  last_claim_round:u16 = 0
+    pack(): u8[] {
+        let enc = new _chain.Encoder(this.getSize());
+        enc.packNumber<u32>(this.claimed);
+        enc.packNumber<u32>(this.unclaimed);
+        enc.packNumber<u16>(this.last_claim_round);
+        return enc.getBytes();
+    }
+    
+    unpack(data: u8[]): usize {
+        let dec = new _chain.Decoder(data);
+        this.claimed = dec.unpackNumber<u32>();
+        this.unclaimed = dec.unpackNumber<u32>();
+        this.last_claim_round = dec.unpackNumber<u16>();
+        return dec.getPos();
+    }
+
+    getSize(): usize {
+        let size: usize = 0;
+        size += sizeof<u32>();
+        size += sizeof<u32>();
+        size += sizeof<u16>();
+        return size;
+    }
+}
+
+
 
 export class OracleDB extends _chain.MultiIndex<Oracle> {
 
@@ -20,8 +92,10 @@ export class Oracle implements _chain.MultiIndexValue {
   constructor(
     public account:Name = EMPTY_NAME,
     // public boid_id:Name = EMPTY_NAME,
-    public weight:u8 = 0
+    public weight:u8 = 0,
     // public stats:OracleStats = new OracleStats()
+    public collateral:OracleCollateral = new OracleCollateral(),
+    public funds:OracleFunds = new OracleFunds()
   ) {
     
   }
@@ -35,6 +109,8 @@ export class Oracle implements _chain.MultiIndexValue {
         let enc = new _chain.Encoder(this.getSize());
         enc.pack(this.account);
         enc.packNumber<u8>(this.weight);
+        enc.pack(this.collateral);
+        enc.pack(this.funds);
         return enc.getBytes();
     }
     
@@ -47,6 +123,18 @@ export class Oracle implements _chain.MultiIndexValue {
             this.account = obj;
         }
         this.weight = dec.unpackNumber<u8>();
+        
+        {
+            let obj = new OracleCollateral();
+            dec.unpack(obj);
+            this.collateral = obj;
+        }
+        
+        {
+            let obj = new OracleFunds();
+            dec.unpack(obj);
+            this.funds = obj;
+        }
         return dec.getPos();
     }
 
@@ -54,6 +142,8 @@ export class Oracle implements _chain.MultiIndexValue {
         let size: usize = 0;
         size += this.account.getSize();
         size += sizeof<u8>();
+        size += this.collateral.getSize();
+        size += this.funds.getSize();
         return size;
     }
 

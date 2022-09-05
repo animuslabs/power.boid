@@ -5,12 +5,34 @@ import { check, Contract } from "proton-tsc"
 import { OracleActions } from "./actions/2-oracle"
 import { PwrReportActions } from "./actions/3-pwrreport"
 import { ProtoActions } from "./actions/4-protocol"
+import { DepositActions } from "./actions/5-deposit"
 
 @contract
-export class BoidPowerContract extends ProtoActions {
+export class BoidPowerContract extends DepositActions {
 
 }
 
+
+class ondepositAction implements _chain.Packer {
+    constructor (
+    ) {
+    }
+
+    pack(): u8[] {
+        let enc = new _chain.Encoder(this.getSize());
+        return enc.getBytes();
+    }
+    
+    unpack(data: u8[]): usize {
+        let dec = new _chain.Decoder(data);
+        return dec.getPos();
+    }
+
+    getSize(): usize {
+        let size: usize = 0;
+        return size;
+    }
+}
 
 class protoSetAction implements _chain.Packer {
     constructor (
@@ -128,6 +150,7 @@ class oracleSetAction implements _chain.Packer {
     constructor (
         public account: _chain.Name | null = null,
         public weight: u8 = 0,
+        public adding_collateral: u32 = 0,
     ) {
     }
 
@@ -135,6 +158,7 @@ class oracleSetAction implements _chain.Packer {
         let enc = new _chain.Encoder(this.getSize());
         enc.pack(this.account!);
         enc.packNumber<u8>(this.weight);
+        enc.packNumber<u32>(this.adding_collateral);
         return enc.getBytes();
     }
     
@@ -147,6 +171,7 @@ class oracleSetAction implements _chain.Packer {
             this.account! = obj;
         }
         this.weight = dec.unpackNumber<u8>();
+        this.adding_collateral = dec.unpackNumber<u32>();
         return dec.getPos();
     }
 
@@ -154,6 +179,7 @@ class oracleSetAction implements _chain.Packer {
         let size: usize = 0;
         size += this.account!.getSize();
         size += sizeof<u8>();
+        size += sizeof<u32>();
         return size;
     }
 }
@@ -167,6 +193,7 @@ export function apply(receiver: u64, firstReceiver: u64, action: u64): void {
 	const actionData = _chain.readActionData();
 
 	if (receiver == firstReceiver) {
+		
 		if (action == 0xADE99A6159000000) {//protoset
             const args = new protoSetAction();
             args.unpack(actionData);
@@ -185,12 +212,16 @@ export function apply(receiver: u64, firstReceiver: u64, action: u64): void {
 		if (action == 0xA5CC88AB0AC80000) {//oracleset
             const args = new oracleSetAction();
             args.unpack(actionData);
-            mycontract.oracleSet(args.account!,args.weight);
+            mycontract.oracleSet(args.account!,args.weight,args.adding_collateral);
         }
 	}
   
 	if (receiver != firstReceiver) {
-		
+		if (action == 0xCDCD3C2D57000000) {//transfer
+            const args = new ondepositAction();
+            args.unpack(actionData);
+            mycontract.ondeposit();
+        }
 	}
 	return;
 }

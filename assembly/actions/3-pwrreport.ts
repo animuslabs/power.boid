@@ -1,4 +1,5 @@
 import { Action, ActionData, check, Contract, EMPTY_NAME, Encoder, isAccount, Name, PermissionLevel, requireAuth, TableStore } from "proton-tsc"
+import { OracleStat } from "../tables/oracleStats"
 import { PwrReport, PwrReportRow } from "../tables/pwrreports"
 // import { Account } from "../tables/external/accounts"
 // import { PwrReportRow } from "../tables/pwrreports"
@@ -36,6 +37,7 @@ export class PwrReportActions extends OracleActions {
   @action("pwrreport")
   pwrReport(oracle:Name, boid_id_scope:Name, report:PwrReport):void {
     requireAuth(oracle)
+    this.updateStats()
     const reportId = this.getReportId(report)
     // check(report.round > this.currentRound() - 5, "round is too far in the past")
     // check(report.round <= this.currentRound(), "report round must be current or in the past")
@@ -44,6 +46,8 @@ export class PwrReportActions extends OracleActions {
     // const coreContract = Name.fromString("boid")
     // const accountsT:TableStore<Account> = new TableStore<Account>(coreContract, coreContract)
     // accountsT.requireGet(boid_id_owner.value, "invalid boid_id_owner")
+    let reportSent = false
+    let reportCreated = false
     const pwrReportsT = this.pwrReportsT(boid_id_scope)
     const existing = pwrReportsT.get(reportId)
     const global = this.globalT.get()
@@ -54,25 +58,43 @@ export class PwrReportActions extends OracleActions {
       existing.approvals.push(oracle)
       if (existing.approval_weight >= this.minWeightThreshold()) {
         this.sendReport(boid_id_scope, report)
+        reportSent = true
         existing.reported = true
         global.reports.reported++
         global.reports.unreported_and_unmerged--
       }
       pwrReportsT.update(existing, this.receiver)
     } else {
+      reportCreated = true
       const reported = oracleRow.weight >= u16(this.minWeightThreshold())
       const row = new PwrReportRow(reportId, report, [oracle], oracleRow.weight, reported)
       pwrReportsT.store(row, this.receiver)
       if (reported) {
+        reportSent = true
         this.sendReport(boid_id_scope, report)
         global.reports.reported++
       } else global.reports.unreported_and_unmerged++
     }
     this.globalT.set(global, this.receiver)
+
+    // TODO update oracle stats
+    // const oStatsT = this.oracleStatsT(oracle)
+    // const existingOStats = oStatsT.get(u64(this.currentRound()))
+    // if (existingOStats) {
+    //   if (reportSent) {
+    //     existingOStats.reports.reported_merged++
+    //     if (!reportCreated) existingOStats.reports.unreported_unmerged--
+    //   } else existingOStats.reports.unreported_unmerged++
+    //   oStatsT.update(existingOStats, this.receiver)
+    // } else {
+    //   const oracleStatsRow = new OracleStat(this.currentRound(), oracleRow.weight, { reported_merged: reportSent ? 1 : 0, unreported_unmerged: reportSent ? 0 : 1 })
+    //   oStatsT.store(oracleStatsRow, this.receiver)
+    // }
   }
 
   @action("mergereports")
   mergeReports(boid_id_scope:Name, pwrreport_ids:u64[]):void {
+    this.updateStats()
     const targetReports:PwrReportRow[] = []
     let targetProtocol:i16 = -1
     let targetRound:i32 = -1
@@ -128,12 +150,41 @@ export class PwrReportActions extends OracleActions {
     }
     this.sendReport(boid_id_scope, mergedRow.report)
 
-    // update all the rows
+    let allOracles:Name[] = []
+    // update all the rows and save all oracles
     for (let i = 0; i < targetReports.length; i++) {
       const pwrReport = targetReports[i]
       pwrReport.merged = true
       pwrReportsT.update(pwrReport, this.receiver)
+      for (let i = 0; i < pwrReport.approvals.length; i++) {
+        const oracle = pwrReport.approvals[i]
+        const exists = allOracles.indexOf(oracle)
+        if (exists == -1) allOracles.push(oracle)
+        else {
+          // TODO found an account with multiple reports, need to slash here
+          allOracles.splice(exists, 1)
+        }
+      }
     }
+
+    // update oracle stats for each oracle
+    for (let i = 0; i < allOracles.length; i++) {
+      const oracle = allOracles[i]
+      const oStatsT = this.oracleStatsT(oracle)
+      const existing = oStatsT.get(u64(this.currentRound()))
+      if (existing) {
+        existing.reports.reported_merged++
+        existing.reports.unreported_unmerged--
+        oStatsT.update(existing, this.receiver)
+      } else {
+        const oracleData = this.oraclesT.get(oracle.value)
+        if (!oracleData) continue
+        const oracleStatsRow = new OracleStat(this.currentRound(), oracleData.weight, { reported_merged: 1, unreported_unmerged: 0 })
+        oStatsT.store(oracleStatsRow, this.receiver)
+      }
+    }
+
+    // update global data
     const global = this.globalT.get()
     global.reports.reported++
     global.reports.merged += u64(targetReports.length)

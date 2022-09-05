@@ -59,6 +59,14 @@ boid.setPermissions([
     })
   })
 ])
+export async function initTokens() {
+  // const tkn = token.actions
+  // chain.createAccount("token.boid")
+  const issuer = Name.from("token.boid")
+  const maximum_supply = "25000000000.0000 BOID"
+  await tkn("create", { issuer, maximum_supply })
+  await tkn("issue", { to: issuer, quantity: maximum_supply, memo: "" })
+}
 
 const roundLengthSec = 900
 const defaultConfig = {
@@ -106,6 +114,9 @@ export function global() {
 export function act(name, params = {}, permission = "power.boid@active") {
   return contract.actions[name](params).send(permission)
 }
+export function tkn(name, params = {}, permission = "token.boid@active") {
+  return token.actions[name](params).send(permission)
+}
 export const owners = ["boid"]
 export const sponsors = ["sponsoracct"]
 export const boid_id = "testaccount"
@@ -119,4 +130,5 @@ export async function init() {
   chain.createAccount("recover.boid")
   await boid.actions["account.add"]({ boid_id: Name.from("teamownr"), owners: ["recover.boid"], sponsors: [], keys: [] }).send()
   await boid.actions["team.create"]({ owner: Name.from("teamownr"), min_pwr_tax_mult: 10, owner_cut_mult: 4, url_safe_name: "teamteam", info_json_ipfs: "" }).send()
+  await initTokens()
 }

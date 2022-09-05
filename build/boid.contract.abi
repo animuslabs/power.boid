@@ -2,6 +2,20 @@
   "version": "eosio::abi/1.2",
   "structs": [
     {
+      "name": "AtomicFormat",
+      "base": "",
+      "fields": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "type",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "name": "ConfigAccount",
       "base": "",
       "fields": [
@@ -192,6 +206,20 @@
       ]
     },
     {
+      "name": "ExtendedSymbol",
+      "base": "",
+      "fields": [
+        {
+          "name": "sym",
+          "type": "symbol"
+        },
+        {
+          "name": "contract",
+          "type": "name"
+        }
+      ]
+    },
+    {
       "name": "Global",
       "base": "",
       "fields": [
@@ -238,6 +266,76 @@
         {
           "name": "weight",
           "type": "uint8"
+        },
+        {
+          "name": "collateral",
+          "type": "OracleCollateral"
+        },
+        {
+          "name": "funds",
+          "type": "OracleFunds"
+        }
+      ]
+    },
+    {
+      "name": "OracleCollateral",
+      "base": "",
+      "fields": [
+        {
+          "name": "locked",
+          "type": "uint32"
+        },
+        {
+          "name": "unlocking",
+          "type": "uint32"
+        },
+        {
+          "name": "slashed",
+          "type": "uint32"
+        },
+        {
+          "name": "unlock_finished_round",
+          "type": "uint16"
+        },
+        {
+          "name": "min_unlock_start_round",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "name": "OracleFunds",
+      "base": "",
+      "fields": [
+        {
+          "name": "claimed",
+          "type": "uint32"
+        },
+        {
+          "name": "unclaimed",
+          "type": "uint32"
+        },
+        {
+          "name": "last_claim_round",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "name": "OracleStat",
+      "base": "",
+      "fields": [
+        {
+          "name": "round",
+          "type": "uint16"
+        },
+        {
+          "name": "weight",
+          "type": "uint8"
+        },
+        {
+          "name": "reports",
+          "type": "Reports"
         }
       ]
     },
@@ -308,6 +406,34 @@
       ]
     },
     {
+      "name": "Reports",
+      "base": "",
+      "fields": [
+        {
+          "name": "reported_merged",
+          "type": "uint32"
+        },
+        {
+          "name": "unreported_unmerged",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
+      "name": "Stat",
+      "base": "",
+      "fields": [
+        {
+          "name": "round",
+          "type": "uint16"
+        },
+        {
+          "name": "starting_global",
+          "type": "Global"
+        }
+      ]
+    },
+    {
       "name": "mergereports",
       "base": "",
       "fields": [
@@ -332,6 +458,10 @@
         {
           "name": "weight",
           "type": "uint8"
+        },
+        {
+          "name": "adding_collateral",
+          "type": "uint32"
         }
       ]
     },
@@ -403,6 +533,13 @@
       "key_types": []
     },
     {
+      "name": "oraclestats",
+      "type": "OracleStat",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+    },
+    {
       "name": "protocols",
       "type": "Protocol",
       "index_type": "i64",
@@ -415,10 +552,45 @@
       "index_type": "i64",
       "key_names": [],
       "key_types": []
+    },
+    {
+      "name": "stats",
+      "type": "Stat",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
     }
   ],
   "ricardian_clauses": [],
-  "variants": [],
+  "variants": [
+    {
+      "name": "AtomicValue",
+      "types": [
+        "int8",
+        "int16",
+        "int32",
+        "int64",
+        "uint8",
+        "uint16",
+        "uint32",
+        "uint64",
+        "float32",
+        "float64",
+        "string",
+        "int8[]",
+        "int16[]",
+        "int32[]",
+        "int64[]",
+        "bytes",
+        "uint16[]",
+        "uint32[]",
+        "uint64[]",
+        "float32[]",
+        "float64[]",
+        "string[]"
+      ]
+    }
+  ],
   "action_results": [],
   "abi_extensions": [],
   "error_messages": []

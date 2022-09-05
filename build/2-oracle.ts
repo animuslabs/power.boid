@@ -1,20 +1,51 @@
+import * as _chain from "as-chain";
 import { Action, ActionData, check, Contract, EMPTY_NAME, isAccount, Name, requireAuth } from "proton-tsc"
 import { Oracle, OracleCollateral } from "../tables/oracles"
 import { GlobalActions } from "./1-global"
 
-@packer
-class OracleSetParam extends ActionData {
+
+@packer(nocodegen)
+class OracleSetParam implements _chain.Packer {
+    
   constructor(
     public account:Name = EMPTY_NAME,
     public weight:u8 = 0,
     public adding_collateral:u32 = 0
-  ) { super() }
+  ) {  }
+    pack(): u8[] {
+        let enc = new _chain.Encoder(this.getSize());
+        enc.pack(this.account);
+        enc.packNumber<u8>(this.weight);
+        enc.packNumber<u32>(this.adding_collateral);
+        return enc.getBytes();
+    }
+    
+    unpack(data: u8[]): usize {
+        let dec = new _chain.Decoder(data);
+        
+        {
+            let obj = new Name();
+            dec.unpack(obj);
+            this.account = obj;
+        }
+        this.weight = dec.unpackNumber<u8>();
+        this.adding_collateral = dec.unpackNumber<u32>();
+        return dec.getPos();
+    }
+
+    getSize(): usize {
+        let size: usize = 0;
+        size += this.account.getSize();
+        size += sizeof<u8>();
+        size += sizeof<u32>();
+        return size;
+    }
 }
 @contract
 export class OracleActions extends GlobalActions {
   sendOracleSet(account:Name, weight:u8, adding_collateral:u32):void {
     const data = new OracleSetParam(account, weight, adding_collateral)
-    const action = new Action(this.receiver, Name.fromString("oracleset"), [this.codePerm], data.pack())
+    const action = new Action(this.receiver, Name.fromU64(0xA5CC88AB0AC80000), [this.codePerm], data.pack())
     action.send()
   }
 
