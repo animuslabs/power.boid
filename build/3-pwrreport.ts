@@ -74,6 +74,7 @@ export class PwrReportActions extends OracleActions {
     // accountsT.requireGet(boid_id_owner.value, "invalid boid_id_owner")
     const pwrReportsT = this.pwrReportsT(boid_id_scope)
     const existing = pwrReportsT.get(reportId)
+    const global = this.globalT.get()
     if (existing) {
       check(!existing.approvals.includes(oracle), "oracle already approved this report")
       check(!existing.reported, "report already reported")
@@ -82,14 +83,20 @@ export class PwrReportActions extends OracleActions {
       if (existing.approval_weight >= this.minWeightThreshold()) {
         this.sendReport(boid_id_scope, report)
         existing.reported = true
+        global.reports.reported++
+        global.reports.unreported_and_unmerged--
       }
       pwrReportsT.update(existing, this.receiver)
     } else {
       const reported = oracleRow.weight >= u16(this.minWeightThreshold())
       const row = new PwrReportRow(reportId, report, [oracle], oracleRow.weight, reported)
       pwrReportsT.store(row, this.receiver)
-      if (reported) this.sendReport(boid_id_scope, report)
+      if (reported) {
+        this.sendReport(boid_id_scope, report)
+        global.reports.reported++
+      } else global.reports.unreported_and_unmerged++
     }
+    this.globalT.set(global, this.receiver)
   }
 
   @action("mergereports")
@@ -120,16 +127,16 @@ export class PwrReportActions extends OracleActions {
     if (targetReports.length % 2) medianUnits = targetReports[half].report.units
     else medianUnits = u32((targetReports[half - 1].report.units + targetReports[half].report.units) / 2)
 
-    //find and safe min/max values
-    const safeAmount = medianUnits * 0.05
+    //find safe min/max values
+    const safeAmount = Math.max((medianUnits * 0.25) + 1, medianUnits)
     const safeMax = u32(medianUnits + safeAmount)
-    const safeMin = u32(medianUnits - safeAmount)
+    const safeMin = u32(Math.min(f32(medianUnits) - safeAmount, 1))
 
     // ensure each report is a safe range from the median
     for (let i = 0; i < targetReports.length; i++) {
       const pwrReport = targetReports[i]
-      check(pwrReport.report.units <= safeMax, "report units too wide a difference to be merged")
-      check(pwrReport.report.units >= safeMin, "report units too wide a difference to be merged")
+      check(pwrReport.report.units <= safeMax, "report units " + pwrReport.report.units.toString() + " above maximum: " + safeMax.toString())
+      check(pwrReport.report.units >= safeMin, "report units " + pwrReport.report.units.toString() + " below required minimum: " + safeMin.toString())
     }
 
     // aggregate weights and see if it's above the minimum
@@ -144,7 +151,7 @@ export class PwrReportActions extends OracleActions {
     } else {
       const newReport:PwrReport = { protocol_id: u8(targetProtocol), round: u16(targetRound), units: medianUnits }
       const report_id = this.getReportId(newReport)
-      mergedRow = new PwrReportRow(report_id, newReport, [Name.fromU64(0x92AEC52407A39200)], aggregateWeight, true, true)
+      mergedRow = new PwrReportRow(report_id, newReport, [Name.fromU64(0x92AEC52407A39200)], aggregateWeight, true, false)
       this.pwrReportsT(boid_id_scope).store(mergedRow, this.receiver)
     }
     this.sendReport(boid_id_scope, mergedRow.report)
@@ -155,5 +162,10 @@ export class PwrReportActions extends OracleActions {
       pwrReport.merged = true
       pwrReportsT.update(pwrReport, this.receiver)
     }
+    const global = this.globalT.get()
+    global.reports.reported++
+    global.reports.merged += u64(targetReports.length)
+    global.reports.unreported_and_unmerged -= u64(targetReports.length)
+    this.globalT.set(global, this.receiver)
   }
 }
