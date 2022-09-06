@@ -1,5 +1,6 @@
 import * as _chain from "as-chain";
 import { Action, ActionData, check, Contract, EMPTY_NAME, Encoder, isAccount, Name, PermissionLevel, requireAuth, TableStore } from "proton-tsc"
+import { Oracle } from "../tables/oracles"
 import { OracleStat } from "../tables/oracleStats"
 import { PwrReport, PwrReportRow } from "../tables/pwrreports"
 // import { Account } from "../tables/external/accounts"
@@ -105,19 +106,32 @@ export class PwrReportActions extends OracleActions {
     }
     this.globalT.set(global, this.receiver)
 
-    // TODO update oracle stats
-    // const oStatsT = this.oracleStatsT(oracle)
-    // const existingOStats = oStatsT.get(u64(this.currentRound()))
-    // if (existingOStats) {
-    //   if (reportSent) {
-    //     existingOStats.reports.reported_merged++
-    //     if (!reportCreated) existingOStats.reports.unreported_unmerged--
-    //   } else existingOStats.reports.unreported_unmerged++
-    //   oStatsT.update(existingOStats, this.receiver)
-    // } else {
-    //   const oracleStatsRow = new OracleStat(this.currentRound(), oracleRow.weight, { reported_merged: reportSent ? 1 : 0, unreported_unmerged: reportSent ? 0 : 1 })
-    //   oStatsT.store(oracleStatsRow, this.receiver)
-    // }
+    if (reportSent) {
+      if (!existing) return
+      for (let i = 0; i < existing.approvals.length; i++) {
+        const oracleName = existing.approvals[i]
+        let row:Oracle|null = null
+        if (oracleName == oracle) row = oracleRow
+        else row = this.oraclesT.get(oracleName.value)
+        if (!row) continue
+        else this.updateOracleStats(row, reportSent)
+      }
+    } else {
+      this.updateOracleStats(oracleRow, reportSent)
+    }
+  }
+
+  updateOracleStats(oracleRow:Oracle, reportSent:boolean):void {
+    const oStatsT = this.oracleStatsT(oracleRow.account)
+    const existingOStats = oStatsT.get(u64(this.currentRound()))
+    if (existingOStats) {
+      if (reportSent) existingOStats.reports.reported_merged++
+      else existingOStats.reports.unreported_unmerged++
+      oStatsT.update(existingOStats, this.receiver)
+    } else {
+      const oracleStatsRow = new OracleStat(this.currentRound(), oracleRow.weight, { reported_merged: reportSent ? 1 : 0, unreported_unmerged: reportSent ? 0 : 1 })
+      oStatsT.store(oracleStatsRow, this.receiver)
+    }
   }
 
   @action("mergereports")
