@@ -84,7 +84,7 @@ export class OStatsActions extends DepositActions {
       oracleRow.collateral.slashed = oracleRow.collateral.locked
       oracleRow.weight = 0
     } else {
-      oracleRow.weight = u8(oracleRow.trueCollateral / 5000000)
+      oracleRow.weight = this.getOracleWeight(oracleRow.trueCollateral, this.configT.get())
     }
     if (oracleRow.weight < weightBefore) {
       const global = this.globalT.get()
@@ -94,18 +94,24 @@ export class OStatsActions extends DepositActions {
     this.oraclesT.update(oracleRow, this.receiver)
   }
 
-  @action("slashinactive")
+  @action("slashabsent")
   slashInactive(oracle:Name, round:u16):void {
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle not found")
     const config = this.getConfig()
-    check(!oracleRow.standby, "oracle is in standby, can't be slashed for innactivity")
+    const oStatsT = this.oracleStatsT(oracle)
+    const oStatsRow = oStatsT.get(u64(round))
+
+    // verify that the oracle was absent in a round when they should be active
+    check(!oracleRow.standby, "oracle is in standby, can't be slashed for inactivity")
     check(oracleRow.expected_active_after_round > round, "oracle is not expected to be active this round")
     const finalizedRound = this.currentRound() - config.reports_finalized_after_rounds
     check(round < finalizedRound && round > finalizedRound - config.standby_toggle_interval_rounds, "invalid round specified")
-    const oStatsT = this.oracleStatsT(oracle)
-    const oStatsRow = oStatsT.get(u64(round))
+
+    // finally, if the row doesn't exist, send the slash action
     if (oStatsRow) check(false, "stats row exists for this oracle on this round, no slashing needed")
     else this.sendSlashOracle(oracle, config.slash_quantity)
+
+    // write an empty row so the account can't be slashed twice
     const newRow:OracleStat = new OracleStat(round, 0, { proposed: 0, reported_merged: 0, unreported_unmerged: 0 }, true)
     oStatsT.store(newRow, this.receiver)
   }

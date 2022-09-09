@@ -28,7 +28,11 @@ export class Config extends Table {
     // when the oracle is unlocking their locked collateral they must wait this many rounds to receive their funds
     public unlock_wait_rounds:u16 = 0,
     // when an oracle is toggling standby, they must wait this many rounds before they can do it again
-    public standby_toggle_interval_rounds:u16 = 0
+    public standby_toggle_interval_rounds:u16 = 0,
+    // raise collateral to this power to calculate oracle weight
+    public weight_collateral_pwr:f32 = 0,
+    // oracle collateral deposits must be divisible by this number
+    public oracle_collateral_deposit_increment:u32 = 0
   ) {
     super()
   }

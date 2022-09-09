@@ -3,17 +3,32 @@ import { expect } from "chai"
 import { beforeEach, describe, it, before } from "mocha"
 import { Asset, Name, TimePoint, PrivateKey, PublicKey, Action, Bytes, ABI, ABIDecoder, Authority, PermissionLevel, UInt32, Serializer } from "@greymass/eosio"
 import { Blockchain, nameToBigInt, symbolCodeToBigInt, protonAssert, expectToThrow, nameTypeToBigInt } from "@proton/vert"
-import { init, chain, act, oracles, global, contract, reports, boid, tkn } from "../tests/util.js"
+import { init, chain, act, oracles, global, contract, reports, boid, tkn, addRounds } from "../tests/util.js"
 
 async function main() {
   try {
     await init()
-    // console.log(JSON.stringify(boid.permissions, null, 2))
 
     chain.createAccount("oracle1")
+    chain.createAccount("oracle2")
+    chain.createAccount("oracle3")
+    chain.createAccount("oracle4")
+    addRounds(34)
+    await act("oracleset", { account: "oracle1", weight: 10, adding_collateral: 0 })
+    await act("setstandby", { oracle: "oracle1", standby: false })
+    await act("oracleset", { account: "oracle2", weight: 10, adding_collateral: 0 })
+    await act("setstandby", { oracle: "oracle2", standby: false })
+    await act("oracleset", { account: "oracle3", weight: 10, adding_collateral: 0 })
+    await act("setstandby", { oracle: "oracle3", standby: false })
+    await act("oracleset", { account: "oracle4", weight: 10, adding_collateral: 0 })
+    await act("setstandby", { oracle: "oracle4", standby: false })
 
-    await tkn("transfer", { to: "oracle1", from: "token.boid", quantity: "100000000.0000 BOID", memo: "" }, "token.boid@active")
-    await tkn("transfer", { to: "power.boid", from: "oracle1", quantity: "5000000.0000 BOID", memo: "collateral" }, "oracle1@active")
+    // console.log(JSON.stringify(boid.permissions, null, 2))
+
+    // chain.createAccount("oracle1")
+
+    // await tkn("transfer", { to: "oracle1", from: "token.boid", quantity: "100000000.0000 BOID", memo: "" }, "token.boid@active")
+    // await tkn("transfer", { to: "power.boid", from: "oracle1", quantity: "1000000.0000 BOID", memo: "collateral" }, "oracle1@active")
 
     // chain.createAccount("oracle2")
     // chain.createAccount("oracle3")
@@ -36,7 +51,7 @@ async function main() {
     console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
     // await act("mergereports", { boid_id_scope: "testaccount", pwrreport_ids: [103307000, 103308000, 1033010000, 1033013000] })
     // console.log(reports("testaccount"))
-    // console.log(global())
+    console.log(global())
   } catch (error) {
     console.log(error.toString())
     // console.log(error)

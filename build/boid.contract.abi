@@ -126,7 +126,7 @@
           "type": "float32"
         },
         {
-          "name": "base_pay_round_pct",
+          "name": "collateral_pct_pay_per_round",
           "type": "float32"
         },
         {
@@ -164,6 +164,14 @@
         {
           "name": "standby_toggle_interval_rounds",
           "type": "uint16"
+        },
+        {
+          "name": "weight_collateral_pwr",
+          "type": "float32"
+        },
+        {
+          "name": "oracle_collateral_deposit_increment",
+          "type": "uint32"
         }
       ]
     },
@@ -376,7 +384,11 @@
       "base": "",
       "fields": [
         {
-          "name": "num_validators",
+          "name": "active_validators",
+          "type": "uint8"
+        },
+        {
+          "name": "standby_validators",
           "type": "uint8"
         },
         {
@@ -690,6 +702,20 @@
       ]
     },
     {
+      "name": "oracldeposit",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        },
+        {
+          "name": "depositQuantity",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
       "name": "oracleset",
       "base": "",
       "fields": [
@@ -754,6 +780,16 @@
       ]
     },
     {
+      "name": "reportsclean",
+      "base": "",
+      "fields": [
+        {
+          "name": "scope",
+          "type": "name"
+        }
+      ]
+    },
+    {
       "name": "setstandby",
       "base": "",
       "fields": [
@@ -764,6 +800,20 @@
         {
           "name": "standby",
           "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "slashabsent",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        },
+        {
+          "name": "round",
+          "type": "uint16"
         }
       ]
     },
@@ -785,6 +835,31 @@
       "name": "statsclean",
       "base": "",
       "fields": []
+    },
+    {
+      "name": "thisround",
+      "base": "",
+      "fields": []
+    },
+    {
+      "name": "unlockend",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        }
+      ]
+    },
+    {
+      "name": "unlockinit",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        }
+      ]
     },
     {
       "name": "withdraw",
@@ -825,6 +900,11 @@
       "ricardian_contract": ""
     },
     {
+      "name": "oracldeposit",
+      "type": "oracldeposit",
+      "ricardian_contract": ""
+    },
+    {
       "name": "oracleset",
       "type": "oracleset",
       "ricardian_contract": ""
@@ -845,8 +925,18 @@
       "ricardian_contract": ""
     },
     {
+      "name": "reportsclean",
+      "type": "reportsclean",
+      "ricardian_contract": ""
+    },
+    {
       "name": "setstandby",
       "type": "setstandby",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "slashabsent",
+      "type": "slashabsent",
       "ricardian_contract": ""
     },
     {
@@ -857,6 +947,21 @@
     {
       "name": "statsclean",
       "type": "statsclean",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "thisround",
+      "type": "thisround",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "unlockend",
+      "type": "unlockend",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "unlockinit",
+      "type": "unlockinit",
       "ricardian_contract": ""
     },
     {

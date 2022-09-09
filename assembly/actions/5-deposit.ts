@@ -30,9 +30,13 @@ export class DepositActions extends ProtoActions {
       check(params.quantity.isAmountWithinRange(), "invalid quantity")
       const depositType = params.memo.split(" ")[0]
       if (depositType == "collateral") {
-        const weight = u8(params.quantity.amount / u64(5e10))
-        check(params.quantity.amount % u64(5e10) == 0, "must deposit collateral in increments of 5m BOID")
-        this.sendOracleSet(params.from, weight, u32(params.quantity.amount / u32(1e4)))
+        const config = this.getConfig()
+        const quantity = u32(params.quantity.amount / u32(1e4))
+        check(quantity % config.oracle_collateral_deposit_increment == 0, "must deposit collateral in correct increments")
+
+        // if oracle exists call oracldeposit otherwise call oracleset
+        if (this.oraclesT.exists(params.from.value)) this.sendOracleDeposit(params.from, quantity)
+        else this.sendOracleSet(params.from, this.getOracleWeight(quantity, config), quantity)
       } else check(false, "if depositing oracle collateral must specify 'collateral' as memo")
     }
   }

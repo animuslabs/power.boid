@@ -1,5 +1,5 @@
 import * as _chain from "as-chain";
-import { Action, ActionData, check, Contract, EMPTY_NAME, Encoder, isAccount, Name, PermissionLevel, requireAuth, TableStore } from "proton-tsc"
+import { Action, ActionData, check, Contract, EMPTY_NAME, Encoder, isAccount, Name, PermissionLevel, print, requireAuth, TableStore } from "proton-tsc"
 import { Account } from "../tables/external/accounts"
 import { Oracle } from "../tables/oracles"
 import { OracleStat } from "../tables/oracleStats"
@@ -69,12 +69,13 @@ export class PwrReportActions extends OracleActions {
     requireAuth(oracle)
     this.updateStats()
     const reportId = this.getReportId(report)
-    const config = this.configT.get()
+    const config = this.getConfig()
     check(report.round >= this.currentRound() - config.reports_finalized_after_rounds, "round is too far in the past")
     check(report.round < this.currentRound(), "report round must target a past round")
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle not registered")
     check(!oracleRow.standby, "oracle is in standby mode, disable standby first to start making reports")
-    const protocolRow = this.protocolsT.requireGet(u64(report.protocol_id), "invalid protocol_id")
+    check(oracleRow.weight > 0, "can't make reports with a weight of 0")
+    this.protocolsT.requireGet(u64(report.protocol_id), "invalid protocol_id")
     const coreContract = Name.fromU64(0x3D1C900000000000)
     const accountsT:TableStore<Account> = new TableStore<Account>(coreContract, coreContract)
     check(accountsT.exists(boid_id_scope.value), "invalid boid_id_owner")
@@ -182,7 +183,9 @@ export class PwrReportActions extends OracleActions {
 
     // aggregate weights and see if it's above the minimum
     aggregateWeight = targetReports.reduce((a:u16, b:PwrReportRow) => a + b.approval_weight, u16(0))
-    check(aggregateWeight >= this.minWeightThreshold(), "aggregate approval_weight isn't high enough")
+    print("\n min threshold: " + this.minWeightThreshold().toString())
+    print("\n aggregate: " + aggregateWeight.toString())
+    check(aggregateWeight >= this.minWeightThreshold(), "aggregate approval_weight isn't high enough " + this.minWeightThreshold().toString() + " " + aggregateWeight.toString())
 
     // create or update merged report
     let mergedRow = targetReports[half]

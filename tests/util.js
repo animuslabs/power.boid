@@ -117,7 +117,9 @@ export async function initTokens() {
   await tkn("issue", { to: issuer, quantity: maximum_supply, memo: "" })
 }
 
-const roundLengthSec = 900
+const roundLengthSec = 90000
+export const roundStartTime = TimePoint.fromMilliseconds(Date.now())
+console.log(roundStartTime.toString())
 const defaultConfig = {
   paused: false,
   account: { purchase_price: 1000, max_owners: 4, max_sponsors: 1, max_pwrmods: 4, suffix_whitelist: ["oid"], remove_sponsor_price: 100000 },
@@ -125,7 +127,7 @@ const defaultConfig = {
   mint: { round_powered_stake_mult: 0.3, round_power_mult: 0.09 },
   team: { change_min_rounds: 42, edit_team_min_rounds: 48, team_edit_max_pct_change: 1, buy_team_cost: 5e6, owner_stake_required: 2e7, owner_future_stake_lock_rounds_required: 80 },
   stake: { unstake_rounds: 24, extra_stake_min_locked_rounds: 12 },
-  time: { rounds_start: "2022-08-17T03:19:57.992", round_length_sec: roundLengthSec },
+  time: { rounds_start: roundStartTime, round_length_sec: roundLengthSec },
   auth: {
     key_actions_whitelist: ["unstake.init", "unstake.end", "power.claim", "team.change", "stake", "account.edit"],
     key_account_max_stake: 500000,
@@ -171,15 +173,25 @@ export const sponsors = ["sponsoracct"]
 export const boid_id = "testaccount"
 
 const config = {
-  min_consensus_weight: 20,
+  paused: false,
+  min_consensus_weight: 300,
   min_consensus_pct: 0.66,
-  base_pay_round_pct: 0.01,
-  round_bonus_pay_reports: 20000,
-  round_bonus_pay_proposed: 80000,
+  collateral_pct_pay_per_round: 0.01,
+  round_bonus_pay_reports: 50000,
+  round_bonus_pay_proposed: 200000,
   slash_threshold_pct: 0.5,
-  slash_quantity: 500000
+  slash_quantity: 500000,
+  withdraw_rounds_wait: 20,
+  keep_stats_rows: 200,
+  reports_finalized_after_rounds: 3,
+  unlock_wait_rounds: 40,
+  standby_toggle_interval_rounds: 20,
+  weight_collateral_pwr: 1.1,
+  oracle_collateral_deposit_increment: 1000000
 }
-
+export function addRounds(numRounds = 0) {
+  chain.addTime(TimePoint.fromMilliseconds(roundLengthSec * 1000 * numRounds))
+}
 export async function init() {
   await wait(100)
   await boid.actions["auth.init"]({ }).send()
@@ -190,5 +202,6 @@ export async function init() {
   await boid.actions["account.add"]({ boid_id: Name.from("teamownr"), owners: ["recover.boid"], sponsors: [], keys: [] }).send()
   await boid.actions["team.create"]({ owner: Name.from("teamownr"), min_pwr_tax_mult: 10, owner_cut_mult: 4, url_safe_name: "teamteam", info_json_ipfs: "" }).send()
   await initTokens()
+  chain.setTime(roundStartTime)
   await act("configset", { config })
 }

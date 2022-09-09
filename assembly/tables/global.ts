@@ -10,7 +10,8 @@ export class GlobalReports {
 @table("global", singleton)
 export class Global extends Table {
   constructor(
-    public num_validators:u8 = 0,
+    public active_validators:u8 = 0,
+    public standby_validators:u8 = 0,
     public total_weight:u16 = 0,
     public reports:GlobalReports = new GlobalReports(),
     public rewards_paid:u64 = 0

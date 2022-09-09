@@ -121,6 +121,40 @@ class slashOracleAction implements _chain.Packer {
     }
 }
 
+class slashInactiveAction implements _chain.Packer {
+    constructor (
+        public oracle: _chain.Name | null = null,
+        public round: u16 = 0,
+    ) {
+    }
+
+    pack(): u8[] {
+        let enc = new _chain.Encoder(this.getSize());
+        enc.pack(this.oracle!);
+        enc.packNumber<u16>(this.round);
+        return enc.getBytes();
+    }
+    
+    unpack(data: u8[]): usize {
+        let dec = new _chain.Decoder(data);
+        
+        {
+            let obj = new _chain.Name();
+            dec.unpack(obj);
+            this.oracle! = obj;
+        }
+        this.round = dec.unpackNumber<u16>();
+        return dec.getPos();
+    }
+
+    getSize(): usize {
+        let size: usize = 0;
+        size += this.oracle!.getSize();
+        size += sizeof<u16>();
+        return size;
+    }
+}
+
 class ondepositAction implements _chain.Packer {
     constructor (
     ) {
@@ -250,6 +284,40 @@ class mergeReportsAction implements _chain.Packer {
         let size: usize = 0;
         size += this.boid_id_scope!.getSize();
         size += _chain.calcPackedVarUint32Length(this.pwrreport_ids!.length);size += sizeof<u64>()*this.pwrreport_ids!.length;
+        return size;
+    }
+}
+
+class oracleDepositAction implements _chain.Packer {
+    constructor (
+        public oracle: _chain.Name | null = null,
+        public depositQuantity: u32 = 0,
+    ) {
+    }
+
+    pack(): u8[] {
+        let enc = new _chain.Encoder(this.getSize());
+        enc.pack(this.oracle!);
+        enc.packNumber<u32>(this.depositQuantity);
+        return enc.getBytes();
+    }
+    
+    unpack(data: u8[]): usize {
+        let dec = new _chain.Decoder(data);
+        
+        {
+            let obj = new _chain.Name();
+            dec.unpack(obj);
+            this.oracle! = obj;
+        }
+        this.depositQuantity = dec.unpackNumber<u32>();
+        return dec.getPos();
+    }
+
+    getSize(): usize {
+        let size: usize = 0;
+        size += this.oracle!.getSize();
+        size += sizeof<u32>();
         return size;
     }
 }
@@ -386,6 +454,66 @@ class withdrawEndAction implements _chain.Packer {
     }
 }
 
+class unlockOracleAction implements _chain.Packer {
+    constructor (
+        public oracle: _chain.Name | null = null,
+    ) {
+    }
+
+    pack(): u8[] {
+        let enc = new _chain.Encoder(this.getSize());
+        enc.pack(this.oracle!);
+        return enc.getBytes();
+    }
+    
+    unpack(data: u8[]): usize {
+        let dec = new _chain.Decoder(data);
+        
+        {
+            let obj = new _chain.Name();
+            dec.unpack(obj);
+            this.oracle! = obj;
+        }
+        return dec.getPos();
+    }
+
+    getSize(): usize {
+        let size: usize = 0;
+        size += this.oracle!.getSize();
+        return size;
+    }
+}
+
+class unlockEndAction implements _chain.Packer {
+    constructor (
+        public oracle: _chain.Name | null = null,
+    ) {
+    }
+
+    pack(): u8[] {
+        let enc = new _chain.Encoder(this.getSize());
+        enc.pack(this.oracle!);
+        return enc.getBytes();
+    }
+    
+    unpack(data: u8[]): usize {
+        let dec = new _chain.Decoder(data);
+        
+        {
+            let obj = new _chain.Name();
+            dec.unpack(obj);
+            this.oracle! = obj;
+        }
+        return dec.getPos();
+    }
+
+    getSize(): usize {
+        let size: usize = 0;
+        size += this.oracle!.getSize();
+        return size;
+    }
+}
+
 class configSetAction implements _chain.Packer {
     constructor (
         public config: _config.Config | null = null,
@@ -416,6 +544,27 @@ class configSetAction implements _chain.Packer {
     }
 }
 
+class thisRoundAction implements _chain.Packer {
+    constructor (
+    ) {
+    }
+
+    pack(): u8[] {
+        let enc = new _chain.Encoder(this.getSize());
+        return enc.getBytes();
+    }
+    
+    unpack(data: u8[]): usize {
+        let dec = new _chain.Decoder(data);
+        return dec.getPos();
+    }
+
+    getSize(): usize {
+        let size: usize = 0;
+        return size;
+    }
+}
+
 class statsCleanupAction implements _chain.Packer {
     constructor (
     ) {
@@ -433,6 +582,36 @@ class statsCleanupAction implements _chain.Packer {
 
     getSize(): usize {
         let size: usize = 0;
+        return size;
+    }
+}
+
+class reportsCleanupAction implements _chain.Packer {
+    constructor (
+        public scope: _chain.Name | null = null,
+    ) {
+    }
+
+    pack(): u8[] {
+        let enc = new _chain.Encoder(this.getSize());
+        enc.pack(this.scope!);
+        return enc.getBytes();
+    }
+    
+    unpack(data: u8[]): usize {
+        let dec = new _chain.Decoder(data);
+        
+        {
+            let obj = new _chain.Name();
+            dec.unpack(obj);
+            this.scope! = obj;
+        }
+        return dec.getPos();
+    }
+
+    getSize(): usize {
+        let size: usize = 0;
+        size += this.scope!.getSize();
         return size;
     }
 }
@@ -461,6 +640,11 @@ export function apply(receiver: u64, firstReceiver: u64, action: u64): void {
             args.unpack(actionData);
             mycontract.slashOracle(args.oracle!,args.quantity);
         }
+		if (action == 0xC44D8698F854F200) {//slashabsent
+            const args = new slashInactiveAction();
+            args.unpack(actionData);
+            mycontract.slashInactive(args.oracle!,args.round);
+        }
 		
 		if (action == 0xADE99A6159000000) {//protoset
             const args = new protoSetAction();
@@ -476,6 +660,11 @@ export function apply(receiver: u64, firstReceiver: u64, action: u64): void {
             const args = new mergeReportsAction();
             args.unpack(actionData);
             mycontract.mergeReports(args.boid_id_scope!,args.pwrreport_ids!);
+        }
+		if (action == 0xA5CC88A555A61D90) {//oracldeposit
+            const args = new oracleDepositAction();
+            args.unpack(actionData);
+            mycontract.oracleDeposit(args.oracle!,args.depositQuantity);
         }
 		if (action == 0xC2B38C9A693F8000) {//setstandby
             const args = new setStandbyAction();
@@ -497,15 +686,35 @@ export function apply(receiver: u64, firstReceiver: u64, action: u64): void {
             args.unpack(actionData);
             mycontract.withdrawEnd(args.oracle!);
         }
+		if (action == 0xD4E34441D3764000) {//unlockinit
+            const args = new unlockOracleAction();
+            args.unpack(actionData);
+            mycontract.unlockOracle(args.oracle!);
+        }
+		if (action == 0xD4E3444153480000) {//unlockend
+            const args = new unlockEndAction();
+            args.unpack(actionData);
+            mycontract.unlockEnd(args.oracle!);
+        }
 		if (action == 0x4526B7330AC80000) {//configset
             const args = new configSetAction();
             args.unpack(actionData);
             mycontract.configSet(args.config!);
         }
+		if (action == 0xCB5D8BD353480000) {//thisround
+            const args = new thisRoundAction();
+            args.unpack(actionData);
+            mycontract.thisRound();
+        }
 		if (action == 0xC64D9C222A34C000) {//statsclean
             const args = new statsCleanupAction();
             args.unpack(actionData);
             mycontract.statsCleanup();
+        }
+		if (action == 0xBAAB4BE7088A8D30) {//reportsclean
+            const args = new reportsCleanupAction();
+            args.unpack(actionData);
+            mycontract.reportsCleanup(args.scope!);
         }
 	}
   

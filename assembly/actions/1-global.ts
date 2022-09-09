@@ -69,6 +69,11 @@ export class GlobalActions extends Contract {
     action.send(actionParams)
   }
 
+  @action("thisround")
+  thisRound():void {
+    check(false, this.currentRound().toString())
+  }
+
   getConfig():Config {
     const config = this.configT.get()
     check(!config.paused, "contract paused or not initialized")
@@ -104,6 +109,10 @@ export class GlobalActions extends Contract {
         tbl.remove(row)
       } else break
     }
+  }
+
+  getOracleWeight(collateral:u32, config:Config):u8 {
+    return u8(Math.min((Math.pow(collateral / 1000000, config.weight_collateral_pwr)), u8.MAX_VALUE))
   }
 
   @action("reportsclean")

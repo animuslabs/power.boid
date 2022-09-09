@@ -1,6 +1,7 @@
 import * as _chain from "as-chain";
 import { check, Name, Asset, TableStore, print, SAME_PAYER, unpackActionData, ActionData, requireAuth, Action, EMPTY_NAME } from "proton-tsc"
 import { Assets, TransferNfts, ATOMICASSETS_CONTRACT } from "../../external/atomicassets"
+import { OracleStat } from "../tables/oracleStats"
 import { DepositActions } from "./5-deposit"
 
 export class OStatsActions extends DepositActions {
@@ -39,7 +40,7 @@ export class OStatsActions extends DepositActions {
     // calculate the final pay
     const oracleRow = this.oraclesT.requireGet(oracle.value, "can't find oracle in oracles table")
     let basePay:u32 = 0
-    if (reportedShare >= 0.01 || proposedShare >= 0.01) basePay = u32(f32(oracleRow.trueCollateral) * config.base_pay_round_pct)
+    if (reportedShare >= 0.01 || proposedShare >= 0.01) basePay = u32(f32(oracleRow.trueCollateral) * config.collateral_pct_pay_per_round)
     const bonusPay:u32 = u32(oracleBonusProposedPayout + oracleBonusReportedPayout)
 
     // call the payment action
@@ -84,7 +85,7 @@ export class OStatsActions extends DepositActions {
       oracleRow.collateral.slashed = oracleRow.collateral.locked
       oracleRow.weight = 0
     } else {
-      oracleRow.weight = u8(oracleRow.trueCollateral / 5000000)
+      oracleRow.weight = this.getOracleWeight(oracleRow.trueCollateral, this.configT.get())
     }
     if (oracleRow.weight < weightBefore) {
       const global = this.globalT.get()
@@ -92,6 +93,28 @@ export class OStatsActions extends DepositActions {
       this.globalT.set(global, this.receiver)
     }
     this.oraclesT.update(oracleRow, this.receiver)
+  }
+
+  @action("slashabsent")
+  slashInactive(oracle:Name, round:u16):void {
+    const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle not found")
+    const config = this.getConfig()
+    const oStatsT = this.oracleStatsT(oracle)
+    const oStatsRow = oStatsT.get(u64(round))
+
+    // verify that the oracle was absent in a round when they should be active
+    check(!oracleRow.standby, "oracle is in standby, can't be slashed for inactivity")
+    check(oracleRow.expected_active_after_round > round, "oracle is not expected to be active this round")
+    const finalizedRound = this.currentRound() - config.reports_finalized_after_rounds
+    check(round < finalizedRound && round > finalizedRound - config.standby_toggle_interval_rounds, "invalid round specified")
+
+    // finally, if the row doesn't exist, send the slash action
+    if (oStatsRow) check(false, "stats row exists for this oracle on this round, no slashing needed")
+    else this.sendSlashOracle(oracle, config.slash_quantity)
+
+    // write an empty row so the account can't be slashed twice
+    const newRow:OracleStat = new OracleStat(round, 0, { proposed: 0, reported_merged: 0, unreported_unmerged: 0 }, true)
+    oStatsT.store(newRow, this.receiver)
   }
 }
 
