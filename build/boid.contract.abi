@@ -2,6 +2,100 @@
   "version": "eosio::abi/1.2",
   "structs": [
     {
+      "name": "AccountAuth",
+      "base": "",
+      "fields": [
+        {
+          "name": "keys",
+          "type": "public_key[]"
+        },
+        {
+          "name": "nonce",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
+      "name": "AccountPower",
+      "base": "",
+      "fields": [
+        {
+          "name": "last_claimed_round",
+          "type": "uint16"
+        },
+        {
+          "name": "rating",
+          "type": "uint16"
+        },
+        {
+          "name": "mods",
+          "type": "AccountPowerMod[]"
+        }
+      ]
+    },
+    {
+      "name": "AccountPowerMod",
+      "base": "",
+      "fields": [
+        {
+          "name": "pwr_multiplier",
+          "type": "uint8"
+        },
+        {
+          "name": "pwr_add_per_round",
+          "type": "uint16"
+        },
+        {
+          "name": "expires_round",
+          "type": "uint16"
+        },
+        {
+          "name": "aggregate_pwr_remaining",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
+      "name": "AccountStake",
+      "base": "",
+      "fields": [
+        {
+          "name": "unstaking",
+          "type": "TokenUnstake[]"
+        },
+        {
+          "name": "self_staked",
+          "type": "uint32"
+        },
+        {
+          "name": "received_delegated_stake",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "name": "AccountTeam",
+      "base": "",
+      "fields": [
+        {
+          "name": "team_id",
+          "type": "uint16"
+        },
+        {
+          "name": "last_edit_round",
+          "type": "uint16"
+        },
+        {
+          "name": "team_tax_mult",
+          "type": "uint8"
+        },
+        {
+          "name": "team_cumulative_contribution",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
       "name": "AtomicFormat",
       "base": "",
       "fields": [
@@ -12,6 +106,64 @@
         {
           "name": "type",
           "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "Config",
+      "base": "",
+      "fields": [
+        {
+          "name": "paused",
+          "type": "bool"
+        },
+        {
+          "name": "min_consensus_weight",
+          "type": "uint32"
+        },
+        {
+          "name": "min_consensus_pct",
+          "type": "float32"
+        },
+        {
+          "name": "base_pay_round_pct",
+          "type": "float32"
+        },
+        {
+          "name": "round_bonus_pay_reports",
+          "type": "uint32"
+        },
+        {
+          "name": "round_bonus_pay_proposed",
+          "type": "uint32"
+        },
+        {
+          "name": "slash_threshold_pct",
+          "type": "float32"
+        },
+        {
+          "name": "slash_quantity",
+          "type": "uint32"
+        },
+        {
+          "name": "withdraw_rounds_wait",
+          "type": "uint16"
+        },
+        {
+          "name": "keep_stats_rows",
+          "type": "uint32"
+        },
+        {
+          "name": "reports_finalized_after_rounds",
+          "type": "uint8"
+        },
+        {
+          "name": "unlock_wait_rounds",
+          "type": "uint16"
+        },
+        {
+          "name": "standby_toggle_interval_rounds",
+          "type": "uint16"
         }
       ]
     },
@@ -234,6 +386,10 @@
         {
           "name": "reports",
           "type": "GlobalReports"
+        },
+        {
+          "name": "rewards_paid",
+          "type": "uint64"
         }
       ]
     },
@@ -251,6 +407,10 @@
         },
         {
           "name": "reported",
+          "type": "uint64"
+        },
+        {
+          "name": "proposed",
           "type": "uint64"
         }
       ]
@@ -274,6 +434,18 @@
         {
           "name": "funds",
           "type": "OracleFunds"
+        },
+        {
+          "name": "standby",
+          "type": "bool"
+        },
+        {
+          "name": "last_standby_toggle_round",
+          "type": "uint16"
+        },
+        {
+          "name": "expected_active_after_round",
+          "type": "uint16"
         }
       ]
     },
@@ -316,7 +488,11 @@
           "type": "uint32"
         },
         {
-          "name": "last_claim_round",
+          "name": "withdrawing",
+          "type": "uint32"
+        },
+        {
+          "name": "withdrawable_after_round",
           "type": "uint16"
         }
       ]
@@ -336,6 +512,10 @@
         {
           "name": "reports",
           "type": "Reports"
+        },
+        {
+          "name": "processed",
+          "type": "bool"
         }
       ]
     },
@@ -384,6 +564,10 @@
           "type": "uint64"
         },
         {
+          "name": "proposer",
+          "type": "name"
+        },
+        {
           "name": "report",
           "type": "PwrReport"
         },
@@ -410,6 +594,10 @@
       "base": "",
       "fields": [
         {
+          "name": "proposed",
+          "type": "uint32"
+        },
+        {
           "name": "reported_merged",
           "type": "uint32"
         },
@@ -430,6 +618,60 @@
         {
           "name": "starting_global",
           "type": "Global"
+        },
+        {
+          "name": "reported_since_previous",
+          "type": "uint32"
+        },
+        {
+          "name": "unreported_unmerged_since_previous",
+          "type": "uint32"
+        },
+        {
+          "name": "proposed_since_previous",
+          "type": "uint32"
+        },
+        {
+          "name": "rewarded_since_previous",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
+      "name": "TokenUnstake",
+      "base": "",
+      "fields": [
+        {
+          "name": "redeemable_after_round",
+          "type": "uint16"
+        },
+        {
+          "name": "quantity",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
+      "name": "configset",
+      "base": "",
+      "fields": [
+        {
+          "name": "config",
+          "type": "Config"
+        }
+      ]
+    },
+    {
+      "name": "handleostat",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        },
+        {
+          "name": "round",
+          "type": "uint16"
         }
       ]
     },
@@ -466,6 +708,24 @@
       ]
     },
     {
+      "name": "payoracle",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        },
+        {
+          "name": "basePay",
+          "type": "uint32"
+        },
+        {
+          "name": "bonusPay",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
       "name": "protoset",
       "base": "",
       "fields": [
@@ -492,10 +752,73 @@
           "type": "PwrReport"
         }
       ]
+    },
+    {
+      "name": "setstandby",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        },
+        {
+          "name": "standby",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "slashoracle",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        },
+        {
+          "name": "quantity",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
+      "name": "statsclean",
+      "base": "",
+      "fields": []
+    },
+    {
+      "name": "withdraw",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        }
+      ]
+    },
+    {
+      "name": "withdrawinit",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        }
+      ]
     }
   ],
   "types": [],
   "actions": [
+    {
+      "name": "configset",
+      "type": "configset",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "handleostat",
+      "type": "handleostat",
+      "ricardian_contract": ""
+    },
     {
       "name": "mergereports",
       "type": "mergereports",
@@ -507,6 +830,11 @@
       "ricardian_contract": ""
     },
     {
+      "name": "payoracle",
+      "type": "payoracle",
+      "ricardian_contract": ""
+    },
+    {
       "name": "protoset",
       "type": "protoset",
       "ricardian_contract": ""
@@ -515,9 +843,41 @@
       "name": "pwrreport",
       "type": "pwrreport",
       "ricardian_contract": ""
+    },
+    {
+      "name": "setstandby",
+      "type": "setstandby",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "slashoracle",
+      "type": "slashoracle",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "statsclean",
+      "type": "statsclean",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "withdraw",
+      "type": "withdraw",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "withdrawinit",
+      "type": "withdrawinit",
+      "ricardian_contract": ""
     }
   ],
   "tables": [
+    {
+      "name": "config",
+      "type": "Config",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+    },
     {
       "name": "global",
       "type": "Global",

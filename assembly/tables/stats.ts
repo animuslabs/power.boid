@@ -5,7 +5,11 @@ import { Global } from "./global"
 export class Stat extends Table {
   constructor(
     public round:u16 = 0,
-    public starting_global:Global = new Global()
+    public starting_global:Global = new Global(),
+    public reported_since_previous:u32 = 0,
+    public unreported_unmerged_since_previous:u32 = 0,
+    public proposed_since_previous:u32 = 0,
+    public rewarded_since_previous:u32 = 0
   ) {
     super()
   }

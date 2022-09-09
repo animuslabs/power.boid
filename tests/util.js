@@ -11,6 +11,55 @@ export const token = chain.createContract("token.boid", "./external/token/token.
 export const aa = chain.createContract("atomicassets", "./external/atomicassets/atomicassets")
 export const boid = chain.createContract("boid", "./external/boid/boid.contract")
 
+token.setPermissions([
+  AccountPermission.from({
+    perm_name: Name.from("owner"),
+    parent: Name.from(""),
+    required_auth: Authority.from({
+      threshold: UInt32.from(1),
+      keys: [],
+      accounts: [
+        PermissionLevelWeight.from({
+          permission: PermissionLevel.from("token.boid@active"),
+          weight: UInt16.from(1)
+        }),
+        PermissionLevelWeight.from({
+          permission: PermissionLevel.from("power.boid@eosio.code"),
+          weight: UInt16.from(1)
+        }),
+        PermissionLevelWeight.from({
+          permission: PermissionLevel.from("boid@eosio.code"),
+          weight: UInt16.from(1)
+        })
+      ],
+      waits: []
+    })
+  }),
+  AccountPermission.from({
+    perm_name: Name.from("active"),
+    parent: Name.from("owner"),
+    required_auth: Authority.from({
+      threshold: UInt32.from(1),
+      keys: [],
+      accounts: [
+        PermissionLevelWeight.from({
+          permission: PermissionLevel.from("token.boid@active"),
+          weight: UInt16.from(1)
+        }),
+        PermissionLevelWeight.from({
+          permission: PermissionLevel.from("power.boid@eosio.code"),
+          weight: UInt16.from(1)
+        }),
+        PermissionLevelWeight.from({
+          permission: PermissionLevel.from("boid@eosio.code"),
+          weight: UInt16.from(1)
+        })
+      ],
+      waits: []
+    })
+  })
+])
+
 boid.setPermissions([
   AccountPermission.from({
     perm_name: Name.from("owner"),
@@ -121,6 +170,16 @@ export const owners = ["boid"]
 export const sponsors = ["sponsoracct"]
 export const boid_id = "testaccount"
 
+const config = {
+  min_consensus_weight: 20,
+  min_consensus_pct: 0.66,
+  base_pay_round_pct: 0.01,
+  round_bonus_pay_reports: 20000,
+  round_bonus_pay_proposed: 80000,
+  slash_threshold_pct: 0.5,
+  slash_quantity: 500000
+}
+
 export async function init() {
   await wait(100)
   await boid.actions["auth.init"]({ }).send()
@@ -131,4 +190,5 @@ export async function init() {
   await boid.actions["account.add"]({ boid_id: Name.from("teamownr"), owners: ["recover.boid"], sponsors: [], keys: [] }).send()
   await boid.actions["team.create"]({ owner: Name.from("teamownr"), min_pwr_tax_mult: 10, owner_cut_mult: 4, url_safe_name: "teamteam", info_json_ipfs: "" }).send()
   await initTokens()
+  await act("configset", { config })
 }

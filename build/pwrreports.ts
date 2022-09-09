@@ -54,6 +54,7 @@ export class PwrReportRow implements _chain.MultiIndexValue {
     
   constructor(
     public report_id:u64 = 0,
+    public proposer:Name = EMPTY_NAME,
     public report:PwrReport = new PwrReport(),
     public approvals:Name[] = [],
     public approval_weight:u16 = 0,
@@ -80,6 +81,7 @@ export class PwrReportRow implements _chain.MultiIndexValue {
     pack(): u8[] {
         let enc = new _chain.Encoder(this.getSize());
         enc.packNumber<u64>(this.report_id);
+        enc.pack(this.proposer);
         enc.pack(this.report);
         enc.packObjectArray(this.approvals);
         enc.packNumber<u16>(this.approval_weight);
@@ -91,6 +93,12 @@ export class PwrReportRow implements _chain.MultiIndexValue {
     unpack(data: u8[]): usize {
         let dec = new _chain.Decoder(data);
         this.report_id = dec.unpackNumber<u64>();
+        
+        {
+            let obj = new Name();
+            dec.unpack(obj);
+            this.proposer = obj;
+        }
         
         {
             let obj = new PwrReport();
@@ -117,6 +125,7 @@ export class PwrReportRow implements _chain.MultiIndexValue {
     getSize(): usize {
         let size: usize = 0;
         size += sizeof<u64>();
+        size += this.proposer.getSize();
         size += this.report.getSize();
         size += _chain.calcPackedVarUint32Length(this.approvals.length);
         for (let i=0; i<this.approvals.length; i++) {

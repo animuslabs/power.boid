@@ -53,12 +53,14 @@ export class OracleFunds implements _chain.Packer {
     
   claimed:u32 = 0
   unclaimed:u32 = 0
-  last_claim_round:u16 = 0
+  withdrawing:u32 = 0
+  withdrawable_after_round:u16 = 0
     pack(): u8[] {
         let enc = new _chain.Encoder(this.getSize());
         enc.packNumber<u32>(this.claimed);
         enc.packNumber<u32>(this.unclaimed);
-        enc.packNumber<u16>(this.last_claim_round);
+        enc.packNumber<u32>(this.withdrawing);
+        enc.packNumber<u16>(this.withdrawable_after_round);
         return enc.getBytes();
     }
     
@@ -66,12 +68,14 @@ export class OracleFunds implements _chain.Packer {
         let dec = new _chain.Decoder(data);
         this.claimed = dec.unpackNumber<u32>();
         this.unclaimed = dec.unpackNumber<u32>();
-        this.last_claim_round = dec.unpackNumber<u16>();
+        this.withdrawing = dec.unpackNumber<u32>();
+        this.withdrawable_after_round = dec.unpackNumber<u16>();
         return dec.getPos();
     }
 
     getSize(): usize {
         let size: usize = 0;
+        size += sizeof<u32>();
         size += sizeof<u32>();
         size += sizeof<u32>();
         size += sizeof<u16>();
@@ -95,9 +99,16 @@ export class Oracle implements _chain.MultiIndexValue {
     public weight:u8 = 0,
     // public stats:OracleStats = new OracleStats()
     public collateral:OracleCollateral = new OracleCollateral(),
-    public funds:OracleFunds = new OracleFunds()
+    public funds:OracleFunds = new OracleFunds(),
+    public standby:boolean = true,
+    public last_standby_toggle_round:u16 = 0,
+    public expected_active_after_round:u16 = 0
   ) {
     
+  }
+
+  public get trueCollateral():u32 {
+    return this.collateral.locked - this.collateral.slashed
   }
 
   @primary
@@ -111,6 +122,9 @@ export class Oracle implements _chain.MultiIndexValue {
         enc.packNumber<u8>(this.weight);
         enc.pack(this.collateral);
         enc.pack(this.funds);
+        enc.packNumber<boolean>(this.standby);
+        enc.packNumber<u16>(this.last_standby_toggle_round);
+        enc.packNumber<u16>(this.expected_active_after_round);
         return enc.getBytes();
     }
     
@@ -135,6 +149,9 @@ export class Oracle implements _chain.MultiIndexValue {
             dec.unpack(obj);
             this.funds = obj;
         }
+        this.standby = dec.unpackNumber<boolean>();
+        this.last_standby_toggle_round = dec.unpackNumber<u16>();
+        this.expected_active_after_round = dec.unpackNumber<u16>();
         return dec.getPos();
     }
 
@@ -144,6 +161,9 @@ export class Oracle implements _chain.MultiIndexValue {
         size += sizeof<u8>();
         size += this.collateral.getSize();
         size += this.funds.getSize();
+        size += sizeof<boolean>();
+        size += sizeof<u16>();
+        size += sizeof<u16>();
         return size;
     }
 

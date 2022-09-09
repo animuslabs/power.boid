@@ -19,7 +19,8 @@ export class OracleCollateral {
 export class OracleFunds {
   claimed:u32 = 0
   unclaimed:u32 = 0
-  last_claim_round:u16 = 0
+  withdrawing:u32 = 0
+  withdrawable_after_round:u16 = 0
 }
 
 @table("oracles")
@@ -30,9 +31,16 @@ export class Oracle extends Table {
     public weight:u8 = 0,
     // public stats:OracleStats = new OracleStats()
     public collateral:OracleCollateral = new OracleCollateral(),
-    public funds:OracleFunds = new OracleFunds()
+    public funds:OracleFunds = new OracleFunds(),
+    public standby:boolean = true,
+    public last_standby_toggle_round:u16 = 0,
+    public expected_active_after_round:u16 = 0
   ) {
     super()
+  }
+
+  public get trueCollateral():u32 {
+    return this.collateral.locked - this.collateral.slashed
   }
 
   @primary

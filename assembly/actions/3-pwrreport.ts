@@ -1,4 +1,5 @@
 import { Action, ActionData, check, Contract, EMPTY_NAME, Encoder, isAccount, Name, PermissionLevel, requireAuth, TableStore } from "proton-tsc"
+import { Account } from "../tables/external/accounts"
 import { Oracle } from "../tables/oracles"
 import { OracleStat } from "../tables/oracleStats"
 import { PwrReport, PwrReportRow } from "../tables/pwrreports"
@@ -40,13 +41,16 @@ export class PwrReportActions extends OracleActions {
     requireAuth(oracle)
     this.updateStats()
     const reportId = this.getReportId(report)
-    // check(report.round > this.currentRound() - 5, "round is too far in the past")
-    // check(report.round <= this.currentRound(), "report round must be current or in the past")
+    const config = this.configT.get()
+    check(report.round >= this.currentRound() - config.reports_finalized_after_rounds, "round is too far in the past")
+    check(report.round < this.currentRound(), "report round must target a past round")
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle not registered")
-    // const protocolRow = this.protocolsT.requireGet(u64(report.protocol_id), "invalid protocol_id")
-    // const coreContract = Name.fromString("boid")
-    // const accountsT:TableStore<Account> = new TableStore<Account>(coreContract, coreContract)
-    // accountsT.requireGet(boid_id_owner.value, "invalid boid_id_owner")
+    check(!oracleRow.standby, "oracle is in standby mode, disable standby first to start making reports")
+    check(oracleRow.weight > 0, "can't make reports with a weight of 0")
+    this.protocolsT.requireGet(u64(report.protocol_id), "invalid protocol_id")
+    const coreContract = Name.fromString("boid")
+    const accountsT:TableStore<Account> = new TableStore<Account>(coreContract, coreContract)
+    check(accountsT.exists(boid_id_scope.value), "invalid boid_id_owner")
     let reportSent = false
     let reportCreated = false
     const pwrReportsT = this.pwrReportsT(boid_id_scope)
@@ -55,6 +59,7 @@ export class PwrReportActions extends OracleActions {
     if (existing) {
       check(!existing.approvals.includes(oracle), "oracle already approved this report")
       check(!existing.reported, "report already reported")
+      check(existing.merged, "report already merged")
       existing.approval_weight += oracleRow.weight
       existing.approvals.push(oracle)
       if (existing.approval_weight >= this.minWeightThreshold()) {
@@ -68,7 +73,7 @@ export class PwrReportActions extends OracleActions {
     } else {
       reportCreated = true
       const reported = oracleRow.weight >= u16(this.minWeightThreshold())
-      const row = new PwrReportRow(reportId, report, [oracle], oracleRow.weight, reported)
+      const row = new PwrReportRow(reportId, oracle, report, [oracle], oracleRow.weight, reported)
       pwrReportsT.store(row, this.receiver)
       if (reported) {
         reportSent = true
@@ -86,22 +91,23 @@ export class PwrReportActions extends OracleActions {
         if (oracleName == oracle) row = oracleRow
         else row = this.oraclesT.get(oracleName.value)
         if (!row) continue
-        else this.updateOracleStats(row, reportSent)
+        else this.updateOracleStats(row, reportSent, false)
       }
     } else {
-      this.updateOracleStats(oracleRow, reportSent)
+      this.updateOracleStats(oracleRow, reportSent, reportCreated)
     }
   }
 
-  updateOracleStats(oracleRow:Oracle, reportSent:boolean):void {
+  updateOracleStats(oracleRow:Oracle, reportSent:boolean, proposed:boolean):void {
     const oStatsT = this.oracleStatsT(oracleRow.account)
     const existingOStats = oStatsT.get(u64(this.currentRound()))
     if (existingOStats) {
       if (reportSent) existingOStats.reports.reported_merged++
       else existingOStats.reports.unreported_unmerged++
+      if (proposed) existingOStats.reports.proposed++
       oStatsT.update(existingOStats, this.receiver)
     } else {
-      const oracleStatsRow = new OracleStat(this.currentRound(), oracleRow.weight, { reported_merged: reportSent ? 1 : 0, unreported_unmerged: reportSent ? 0 : 1 })
+      const oracleStatsRow = new OracleStat(this.currentRound(), oracleRow.weight, { proposed: proposed ? 1 : 0, reported_merged: reportSent ? 1 : 0, unreported_unmerged: reportSent ? 0 : 1 })
       oStatsT.store(oracleStatsRow, this.receiver)
     }
   }
@@ -159,7 +165,7 @@ export class PwrReportActions extends OracleActions {
     } else {
       const newReport:PwrReport = { protocol_id: u8(targetProtocol), round: u16(targetRound), units: medianUnits }
       const report_id = this.getReportId(newReport)
-      mergedRow = new PwrReportRow(report_id, newReport, [Name.fromString("merged.boid")], aggregateWeight, true, false)
+      mergedRow = new PwrReportRow(report_id, Name.fromString("merged.boid"), newReport, [Name.fromString("merged.boid")], aggregateWeight, true, false)
       this.pwrReportsT(boid_id_scope).store(mergedRow, this.receiver)
     }
     this.sendReport(boid_id_scope, mergedRow.report)
@@ -193,7 +199,7 @@ export class PwrReportActions extends OracleActions {
       } else {
         const oracleData = this.oraclesT.get(oracle.value)
         if (!oracleData) continue
-        const oracleStatsRow = new OracleStat(this.currentRound(), oracleData.weight, { reported_merged: 1, unreported_unmerged: 0 })
+        const oracleStatsRow = new OracleStat(this.currentRound(), oracleData.weight, { reported_merged: 1, unreported_unmerged: 0, proposed: 0 })
         oStatsT.store(oracleStatsRow, this.receiver)
       }
     }

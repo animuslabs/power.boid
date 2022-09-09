@@ -14,7 +14,11 @@ export class Stat implements _chain.MultiIndexValue {
     
   constructor(
     public round:u16 = 0,
-    public starting_global:Global = new Global()
+    public starting_global:Global = new Global(),
+    public reported_since_previous:u32 = 0,
+    public unreported_unmerged_since_previous:u32 = 0,
+    public proposed_since_previous:u32 = 0,
+    public rewarded_since_previous:u32 = 0
   ) {
     
   }
@@ -28,6 +32,10 @@ export class Stat implements _chain.MultiIndexValue {
         let enc = new _chain.Encoder(this.getSize());
         enc.packNumber<u16>(this.round);
         enc.pack(this.starting_global);
+        enc.packNumber<u32>(this.reported_since_previous);
+        enc.packNumber<u32>(this.unreported_unmerged_since_previous);
+        enc.packNumber<u32>(this.proposed_since_previous);
+        enc.packNumber<u32>(this.rewarded_since_previous);
         return enc.getBytes();
     }
     
@@ -40,6 +48,10 @@ export class Stat implements _chain.MultiIndexValue {
             dec.unpack(obj);
             this.starting_global = obj;
         }
+        this.reported_since_previous = dec.unpackNumber<u32>();
+        this.unreported_unmerged_since_previous = dec.unpackNumber<u32>();
+        this.proposed_since_previous = dec.unpackNumber<u32>();
+        this.rewarded_since_previous = dec.unpackNumber<u32>();
         return dec.getPos();
     }
 
@@ -47,6 +59,10 @@ export class Stat implements _chain.MultiIndexValue {
         let size: usize = 0;
         size += sizeof<u16>();
         size += this.starting_global.getSize();
+        size += sizeof<u32>();
+        size += sizeof<u32>();
+        size += sizeof<u32>();
+        size += sizeof<u32>();
         return size;
     }
 

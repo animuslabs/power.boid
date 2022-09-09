@@ -3,6 +3,7 @@ import { Global, GlobalReports } from "./global"
 
 @packer
 export class Reports {
+  proposed:u32 = 0
   reported_merged:u32 = 0
   unreported_unmerged:u32 = 0
 }
@@ -12,7 +13,8 @@ export class OracleStat extends Table {
   constructor(
     public round:u16 = 0,
     public weight:u8 = 0,
-    public reports:Reports = new Reports()
+    public reports:Reports = new Reports(),
+    public processed:boolean = false
   ) {
     super()
   }

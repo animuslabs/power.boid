@@ -11,6 +11,7 @@ export class PwrReport {
 export class PwrReportRow extends Table {
   constructor(
     public report_id:u64 = 0,
+    public proposer:Name = EMPTY_NAME,
     public report:PwrReport = new PwrReport(),
     public approvals:Name[] = [],
     public approval_weight:u16 = 0,

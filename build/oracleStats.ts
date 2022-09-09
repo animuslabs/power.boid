@@ -6,10 +6,12 @@ import { Global, GlobalReports } from "./global"
 @packer(nocodegen)
 export class Reports implements _chain.Packer {
     
+  proposed:u32 = 0
   reported_merged:u32 = 0
   unreported_unmerged:u32 = 0
     pack(): u8[] {
         let enc = new _chain.Encoder(this.getSize());
+        enc.packNumber<u32>(this.proposed);
         enc.packNumber<u32>(this.reported_merged);
         enc.packNumber<u32>(this.unreported_unmerged);
         return enc.getBytes();
@@ -17,6 +19,7 @@ export class Reports implements _chain.Packer {
     
     unpack(data: u8[]): usize {
         let dec = new _chain.Decoder(data);
+        this.proposed = dec.unpackNumber<u32>();
         this.reported_merged = dec.unpackNumber<u32>();
         this.unreported_unmerged = dec.unpackNumber<u32>();
         return dec.getPos();
@@ -24,6 +27,7 @@ export class Reports implements _chain.Packer {
 
     getSize(): usize {
         let size: usize = 0;
+        size += sizeof<u32>();
         size += sizeof<u32>();
         size += sizeof<u32>();
         return size;
@@ -43,7 +47,8 @@ export class OracleStat implements _chain.MultiIndexValue {
   constructor(
     public round:u16 = 0,
     public weight:u8 = 0,
-    public reports:Reports = new Reports()
+    public reports:Reports = new Reports(),
+    public processed:boolean = false
   ) {
     
   }
@@ -58,6 +63,7 @@ export class OracleStat implements _chain.MultiIndexValue {
         enc.packNumber<u16>(this.round);
         enc.packNumber<u8>(this.weight);
         enc.pack(this.reports);
+        enc.packNumber<boolean>(this.processed);
         return enc.getBytes();
     }
     
@@ -71,6 +77,7 @@ export class OracleStat implements _chain.MultiIndexValue {
             dec.unpack(obj);
             this.reports = obj;
         }
+        this.processed = dec.unpackNumber<boolean>();
         return dec.getPos();
     }
 
@@ -79,6 +86,7 @@ export class OracleStat implements _chain.MultiIndexValue {
         size += sizeof<u16>();
         size += sizeof<u8>();
         size += this.reports.getSize();
+        size += sizeof<boolean>();
         return size;
     }
 
