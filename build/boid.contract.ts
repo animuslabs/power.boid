@@ -121,7 +121,58 @@ class slashOracleAction implements _chain.Packer {
     }
 }
 
-class slashInactiveAction implements _chain.Packer {
+class slashMultiAction implements _chain.Packer {
+    constructor (
+        public oracle: _chain.Name | null = null,
+        public boid_id_scope: _chain.Name | null = null,
+        public pwrreport_ids: Array<u64> | null = null,
+        public protocol_id: u8 = 0,
+        public round: u16 = 0,
+    ) {
+    }
+
+    pack(): u8[] {
+        let enc = new _chain.Encoder(this.getSize());
+        enc.pack(this.oracle!);
+        enc.pack(this.boid_id_scope!);
+        enc.packNumberArray<u64>(this.pwrreport_ids!)
+        enc.packNumber<u8>(this.protocol_id);
+        enc.packNumber<u16>(this.round);
+        return enc.getBytes();
+    }
+    
+    unpack(data: u8[]): usize {
+        let dec = new _chain.Decoder(data);
+        
+        {
+            let obj = new _chain.Name();
+            dec.unpack(obj);
+            this.oracle! = obj;
+        }
+        
+        {
+            let obj = new _chain.Name();
+            dec.unpack(obj);
+            this.boid_id_scope! = obj;
+        }
+        this.pwrreport_ids! = dec.unpackNumberArray<u64>();
+        this.protocol_id = dec.unpackNumber<u8>();
+        this.round = dec.unpackNumber<u16>();
+        return dec.getPos();
+    }
+
+    getSize(): usize {
+        let size: usize = 0;
+        size += this.oracle!.getSize();
+        size += this.boid_id_scope!.getSize();
+        size += _chain.calcPackedVarUint32Length(this.pwrreport_ids!.length);size += sizeof<u64>()*this.pwrreport_ids!.length;
+        size += sizeof<u8>();
+        size += sizeof<u16>();
+        return size;
+    }
+}
+
+class slashAbsentAction implements _chain.Packer {
     constructor (
         public oracle: _chain.Name | null = null,
         public round: u16 = 0,
@@ -250,6 +301,40 @@ class pwrReportAction implements _chain.Packer {
         size += this.oracle!.getSize();
         size += this.boid_id_scope!.getSize();
         size += this.report!.getSize();
+        return size;
+    }
+}
+
+class finishReportAction implements _chain.Packer {
+    constructor (
+        public boid_id_scope: _chain.Name | null = null,
+        public pwrreport_id: u64 = 0,
+    ) {
+    }
+
+    pack(): u8[] {
+        let enc = new _chain.Encoder(this.getSize());
+        enc.pack(this.boid_id_scope!);
+        enc.packNumber<u64>(this.pwrreport_id);
+        return enc.getBytes();
+    }
+    
+    unpack(data: u8[]): usize {
+        let dec = new _chain.Decoder(data);
+        
+        {
+            let obj = new _chain.Name();
+            dec.unpack(obj);
+            this.boid_id_scope! = obj;
+        }
+        this.pwrreport_id = dec.unpackNumber<u64>();
+        return dec.getPos();
+    }
+
+    getSize(): usize {
+        let size: usize = 0;
+        size += this.boid_id_scope!.getSize();
+        size += sizeof<u64>();
         return size;
     }
 }
@@ -640,10 +725,15 @@ export function apply(receiver: u64, firstReceiver: u64, action: u64): void {
             args.unpack(actionData);
             mycontract.slashOracle(args.oracle!,args.quantity);
         }
-		if (action == 0xC44D8698F854F200) {//slashabsent
-            const args = new slashInactiveAction();
+		if (action == 0xC44D86CB51CB8000) {//slashmulti
+            const args = new slashMultiAction();
             args.unpack(actionData);
-            mycontract.slashInactive(args.oracle!,args.round);
+            mycontract.slashMulti(args.oracle!,args.boid_id_scope!,args.pwrreport_ids!,args.protocol_id,args.round);
+        }
+		if (action == 0xC44D8698F854F200) {//slashabsent
+            const args = new slashAbsentAction();
+            args.unpack(actionData);
+            mycontract.slashAbsent(args.oracle!,args.round);
         }
 		
 		if (action == 0xADE99A6159000000) {//protoset
@@ -655,6 +745,11 @@ export function apply(receiver: u64, firstReceiver: u64, action: u64): void {
             const args = new pwrReportAction();
             args.unpack(actionData);
             mycontract.pwrReport(args.oracle!,args.boid_id_scope!,args.report!);
+        }
+		if (action == 0x5BA6EC36EAAD2F90) {//finishreport
+            const args = new finishReportAction();
+            args.unpack(actionData);
+            mycontract.finishReport(args.boid_id_scope!,args.pwrreport_id);
         }
 		if (action == 0x92AEC55D55A5F380) {//mergereports
             const args = new mergeReportsAction();

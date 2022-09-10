@@ -78,12 +78,13 @@ export class OStatsActions extends DepositActions {
   slashOracle(oracle:Name, quantity:u32):void {
     requireAuth(this.receiver)
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
+    check(!oracleRow.standby, "can't slash an oracle in standby")
     oracleRow.collateral.slashed += quantity
     const weightBefore = oracleRow.weight
-
     if (oracleRow.collateral.slashed >= oracleRow.collateral.locked) {
       oracleRow.collateral.slashed = oracleRow.collateral.locked
       oracleRow.weight = 0
+      this.sendOracleStandby(oracle, true)
     } else {
       oracleRow.weight = this.getOracleWeight(oracleRow.trueCollateral, this.configT.get())
     }
@@ -95,8 +96,37 @@ export class OStatsActions extends DepositActions {
     this.oraclesT.update(oracleRow, this.receiver)
   }
 
+  @action("slashmulti")
+  slashMulti(oracle:Name, boid_id_scope:Name, pwrreport_ids:u64[], protocol_id:u8, round:u16):void {
+    check(pwrreport_ids.length > 1, "must include at least two pwrreport_ids")
+    const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
+    const config = this.getConfig()
+    const pwrReportsT = this.pwrReportsT(boid_id_scope)
+    for (let i = 0; i < pwrreport_ids.length; i++) {
+      const reportId = pwrreport_ids[i]
+      const reportRow = pwrReportsT.requireGet(reportId, "invalid reportId: " + reportId.toString())
+      const oracleIndex:i32 = reportRow.approvals.indexOf(oracle)
+
+      // verify the row is problematic
+      check(oracleIndex > -1, "This report wasn't approved by the target oracle: " + reportId.toString())
+      check(reportRow.report.protocol_id == protocol_id, "protocol_ids must match")
+      check(reportRow.report.round == round, "rounds must match")
+      check(!reportRow.merged && !reportRow.reported, "report was already reported or merged")
+
+      // remove the oracle aproval and weight from the row and save it
+      reportRow.approvals.splice(oracleIndex, 1)
+      reportRow.approval_weight -= oracleRow.weight
+      pwrReportsT.update(reportRow, this.receiver)
+    }
+
+    // slash for every invalid row
+    for (let i = 0; i < pwrreport_ids.length; i++) {
+      this.sendSlashOracle(oracle, config.slash_quantity)
+    }
+  }
+
   @action("slashabsent")
-  slashInactive(oracle:Name, round:u16):void {
+  slashAbsent(oracle:Name, round:u16):void {
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle not found")
     const config = this.getConfig()
     const oStatsT = this.oracleStatsT(oracle)

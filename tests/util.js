@@ -174,7 +174,7 @@ export const boid_id = "testaccount"
 
 const config = {
   paused: false,
-  min_consensus_weight: 300,
+  min_consensus_weight: 30,
   min_consensus_pct: 0.66,
   collateral_pct_pay_per_round: 0.01,
   round_bonus_pay_reports: 50000,
@@ -187,7 +187,8 @@ const config = {
   unlock_wait_rounds: 40,
   standby_toggle_interval_rounds: 20,
   weight_collateral_pwr: 1.1,
-  oracle_collateral_deposit_increment: 1000000
+  oracle_collateral_deposit_increment: 1000000,
+  reports_accumulate_weight_round_pct: 0.20
 }
 export function addRounds(numRounds = 0) {
   chain.addTime(TimePoint.fromMilliseconds(roundLengthSec * 1000 * numRounds))

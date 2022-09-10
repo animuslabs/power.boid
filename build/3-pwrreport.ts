@@ -90,7 +90,7 @@ export class PwrReportActions extends OracleActions {
       check(existing.merged, "report already merged")
       existing.approval_weight += oracleRow.weight
       existing.approvals.push(oracle)
-      if (existing.approval_weight >= this.minWeightThreshold()) {
+      if (existing.approval_weight >= this.minWeightThreshold(config, global) && this.shouldFinalizeReports(config)) {
         this.sendReport(boid_id_scope, report)
         reportSent = true
         existing.reported = true
@@ -100,7 +100,7 @@ export class PwrReportActions extends OracleActions {
       pwrReportsT.update(existing, this.receiver)
     } else {
       reportCreated = true
-      const reported = oracleRow.weight >= u16(this.minWeightThreshold())
+      const reported = oracleRow.weight >= u16(this.minWeightThreshold()) && this.shouldFinalizeReports(config)
       const row = new PwrReportRow(reportId, oracle, report, [oracle], oracleRow.weight, reported)
       pwrReportsT.store(row, this.receiver)
       if (reported) {
@@ -140,9 +140,36 @@ export class PwrReportActions extends OracleActions {
     }
   }
 
+  @action("finishreport")
+  finishReport(boid_id_scope:Name, pwrreport_id:u64):void {
+    const pwrReportsT = this.pwrReportsT(boid_id_scope)
+    const existing = pwrReportsT.requireGet(pwrreport_id, "invalid report id or scope")
+    const config = this.getConfig()
+    const global = this.globalT.get()
+
+    check(existing.approval_weight >= this.minWeightThreshold() && this.shouldFinalizeReports(config), "report can't be finalized yet")
+    this.sendReport(boid_id_scope, existing.report)
+    existing.reported = true
+    global.reports.reported++
+    global.reports.unreported_and_unmerged--
+
+    pwrReportsT.update(existing, this.receiver)
+    this.globalT.set(global, this.receiver)
+
+    for (let i = 0; i < existing.approvals.length; i++) {
+      const oracleName = existing.approvals[i]
+      let row = this.oraclesT.get(oracleName.value)
+      if (!row) continue
+      else this.updateOracleStats(row, true, false)
+    }
+  }
+
   @action("mergereports")
   mergeReports(boid_id_scope:Name, pwrreport_ids:u64[]):void {
     this.updateStats()
+    const config = this.getConfig()
+    const global = this.globalT.get()
+    check(this.shouldFinalizeReports(config), "can't finalize/merge reports this early in a round")
     const targetReports:PwrReportRow[] = []
     let targetProtocol:i16 = -1
     let targetRound:i32 = -1
@@ -183,9 +210,9 @@ export class PwrReportActions extends OracleActions {
 
     // aggregate weights and see if it's above the minimum
     aggregateWeight = targetReports.reduce((a:u16, b:PwrReportRow) => a + b.approval_weight, u16(0))
-    print("\n min threshold: " + this.minWeightThreshold().toString())
+    print("\n min threshold: " + this.minWeightThreshold(config, global).toString())
     print("\n aggregate: " + aggregateWeight.toString())
-    check(aggregateWeight >= this.minWeightThreshold(), "aggregate approval_weight isn't high enough " + this.minWeightThreshold().toString() + " " + aggregateWeight.toString())
+    check(aggregateWeight >= this.minWeightThreshold(config, global), "aggregate approval_weight isn't high enough " + this.minWeightThreshold(config, global).toString() + " " + aggregateWeight.toString())
 
     // create or update merged report
     let mergedRow = targetReports[half]
@@ -201,7 +228,7 @@ export class PwrReportActions extends OracleActions {
     this.sendReport(boid_id_scope, mergedRow.report)
 
     let allOracles:Name[] = []
-    // update all the rows and save all oracles
+    // update all the report rows and store all oracles
     for (let i = 0; i < targetReports.length; i++) {
       const pwrReport = targetReports[i]
       pwrReport.merged = true
@@ -212,7 +239,8 @@ export class PwrReportActions extends OracleActions {
         if (exists == -1) allOracles.push(oracle)
         else {
           // TODO found an account with multiple reports, need to slash here
-          allOracles.splice(exists, 1)
+          // allOracles.splice(exists, 1)
+          check(false, "can't merge multiple reports that share an oracle, should slash: " + oracle.toString())
         }
       }
     }
@@ -235,7 +263,7 @@ export class PwrReportActions extends OracleActions {
     }
 
     // update global data
-    const global = this.globalT.get()
+
     global.reports.reported++
     global.reports.merged += u64(targetReports.length)
     global.reports.unreported_and_unmerged -= u64(targetReports.length)

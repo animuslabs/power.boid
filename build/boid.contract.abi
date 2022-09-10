@@ -172,6 +172,10 @@
         {
           "name": "oracle_collateral_deposit_increment",
           "type": "uint32"
+        },
+        {
+          "name": "reports_accumulate_weight_round_pct",
+          "type": "float32"
         }
       ]
     },
@@ -674,6 +678,20 @@
       ]
     },
     {
+      "name": "finishreport",
+      "base": "",
+      "fields": [
+        {
+          "name": "boid_id_scope",
+          "type": "name"
+        },
+        {
+          "name": "pwrreport_id",
+          "type": "uint64"
+        }
+      ]
+    },
+    {
       "name": "handleostat",
       "base": "",
       "fields": [
@@ -818,6 +836,32 @@
       ]
     },
     {
+      "name": "slashmulti",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        },
+        {
+          "name": "boid_id_scope",
+          "type": "name"
+        },
+        {
+          "name": "pwrreport_ids",
+          "type": "uint64[]"
+        },
+        {
+          "name": "protocol_id",
+          "type": "uint8"
+        },
+        {
+          "name": "round",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
       "name": "slashoracle",
       "base": "",
       "fields": [
@@ -890,6 +934,11 @@
       "ricardian_contract": ""
     },
     {
+      "name": "finishreport",
+      "type": "finishreport",
+      "ricardian_contract": ""
+    },
+    {
       "name": "handleostat",
       "type": "handleostat",
       "ricardian_contract": ""
@@ -937,6 +986,11 @@
     {
       "name": "slashabsent",
       "type": "slashabsent",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "slashmulti",
+      "type": "slashmulti",
       "ricardian_contract": ""
     },
     {

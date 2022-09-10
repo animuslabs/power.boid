@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { expect } from "chai"
 import { beforeEach, describe, it, before } from "mocha"
-import { Asset, Name, TimePoint, PrivateKey, PublicKey, Action, Bytes, ABI, ABIDecoder, Authority, PermissionLevel, UInt32, Serializer } from "@greymass/eosio"
+import { Asset, Name, TimePoint, PrivateKey, PublicKey, Action, Bytes, ABI, ABIDecoder, Authority, PermissionLevel, UInt32, Serializer, TimePointSec } from "@greymass/eosio"
 import { Blockchain, nameToBigInt, symbolCodeToBigInt, protonAssert, expectToThrow, nameTypeToBigInt } from "@proton/vert"
 import { init, chain, act, oracles, global, contract, reports, boid, addRounds } from "./util.js"
 
@@ -19,6 +19,7 @@ async function main() {
         chain.createAccount("oracle3")
         chain.createAccount("oracle4")
         addRounds(34)
+        chain.addTime(TimePointSec.fromInteger(111111))
         await act("oracleset", { account: "oracle1", weight: 10, adding_collateral: 0 })
         await act("setstandby", { oracle: "oracle1", standby: false })
         await act("oracleset", { account: "oracle2", weight: 10, adding_collateral: 0 })
@@ -57,6 +58,7 @@ async function main() {
         chain.createAccount("oracle3")
         chain.createAccount("oracle4")
         addRounds(34)
+        chain.addTime(TimePointSec.fromInteger(111111))
         await act("oracleset", { account: "oracle1", weight: 10, adding_collateral: 0 })
         await act("setstandby", { oracle: "oracle1", standby: false })
         await act("oracleset", { account: "oracle2", weight: 10, adding_collateral: 0 })
@@ -92,6 +94,7 @@ async function main() {
         chain.createAccount("oracle3")
         chain.createAccount("oracle4")
         addRounds(34)
+        chain.addTime(TimePointSec.fromInteger(111111))
         await act("oracleset", { account: "oracle1", weight: 10, adding_collateral: 0 })
         await act("setstandby", { oracle: "oracle1", standby: false })
         await act("oracleset", { account: "oracle2", weight: 10, adding_collateral: 0 })

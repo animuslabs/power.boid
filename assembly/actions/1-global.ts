@@ -19,6 +19,8 @@ export class GlobalActions extends Contract {
   configT:Singleton<Config> = new Singleton<Config>(this.receiver)
 
   round:u16 = 0
+  roundFloat:f32 = 0
+
   currentRound():u16 {
     if (this.round == 0) {
       const config = new Singleton<boid.Config>(Name.fromString("boid")).getOrNull()
@@ -26,6 +28,15 @@ export class GlobalActions extends Contract {
       else this.round = u16((currentTimeSec() - config.time.rounds_start.secSinceEpoch()) / config.time.round_length_sec)
     }
     return this.round
+  }
+
+  currentRoundFloat():f32 {
+    if (this.roundFloat == 0) {
+      const config = new Singleton<boid.Config>(Name.fromString("boid")).getOrNull()
+      if (!config) check(false, "boid system config not initialized")
+      else this.roundFloat = f32(currentTimeSec() - config.time.rounds_start.secSinceEpoch()) / f32(config.time.round_length_sec)
+    }
+    return this.roundFloat
   }
 
   pwrReportsT(boid_id:Name):TableStore<PwrReportRow> {
@@ -37,9 +48,9 @@ export class GlobalActions extends Contract {
   }
 
   codePerm:PermissionLevel = new PermissionLevel(this.receiver, Name.fromString("active"))
-  minWeightThreshold():u16 {
-    const global = this.globalT.get()
-    return u16((global.total_weight / 3 * 2) + 1)
+
+  minWeightThreshold(config:Config = this.getConfig(), global:Global = this.globalT.get()):u16 {
+    return u16(Math.max(global.total_weight * config.min_consensus_pct, config.min_consensus_weight))
   }
 
   updateStats():void {
@@ -60,6 +71,7 @@ export class GlobalActions extends Contract {
   @action("configset")
   configSet(config:Config):void {
     requireAuth(this.receiver)
+    // check(config.)
     this.configT.set(config, this.receiver)
   }
 
@@ -71,7 +83,13 @@ export class GlobalActions extends Contract {
 
   @action("thisround")
   thisRound():void {
-    check(false, this.currentRound().toString())
+    // check(false, this.currentRoundFloat().toString())
+    check(false, (this.currentRoundFloat() % f32(this.currentRound())).toString())
+  }
+
+  shouldFinalizeReports(config:Config):boolean {
+    const roundProgress = this.currentRoundFloat() % f32(this.currentRound())
+    return roundProgress > config.reports_accumulate_weight_round_pct
   }
 
   getConfig():Config {
@@ -112,7 +130,7 @@ export class GlobalActions extends Contract {
   }
 
   getOracleWeight(collateral:u32, config:Config):u8 {
-    return u8(Math.min((Math.pow(collateral / 1000000, config.weight_collateral_pwr)), u8.MAX_VALUE))
+    return u8(Math.min((Math.pow(f32(collateral) / 1000000, config.weight_collateral_pwr)), u8.MAX_VALUE))
   }
 
   @action("reportsclean")

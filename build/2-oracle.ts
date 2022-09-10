@@ -76,6 +76,41 @@ class OracleDepositParams implements _chain.Packer {
         return size;
     }
 }
+
+
+@packer(nocodegen)
+class OracleStandbyParams implements _chain.Packer {
+    
+  constructor(
+    public oracle:Name = EMPTY_NAME,
+    public standby:boolean = true
+  ) {  }
+    pack(): u8[] {
+        let enc = new _chain.Encoder(this.getSize());
+        enc.pack(this.oracle);
+        enc.packNumber<boolean>(this.standby);
+        return enc.getBytes();
+    }
+    
+    unpack(data: u8[]): usize {
+        let dec = new _chain.Decoder(data);
+        
+        {
+            let obj = new Name();
+            dec.unpack(obj);
+            this.oracle = obj;
+        }
+        this.standby = dec.unpackNumber<boolean>();
+        return dec.getPos();
+    }
+
+    getSize(): usize {
+        let size: usize = 0;
+        size += this.oracle.getSize();
+        size += sizeof<boolean>();
+        return size;
+    }
+}
 @contract
 export class OracleActions extends GlobalActions {
   sendOracleDeposit(oracle:Name, depositQuantity:u32):void {
@@ -113,14 +148,20 @@ export class OracleActions extends GlobalActions {
     this.oraclesT.update(oracleRow, this.receiver)
   }
 
-   @action("setstandby")
+  sendOracleStandby(oracle:Name, standby:boolean):void {
+    const data = new OracleStandbyParams(oracle, standby)
+    const action = new Action(this.receiver, Name.fromU64(0xC2B38C9A693F8000), [this.codePerm], data.pack())
+    action.send()
+  }
+
+  @action("setstandby")
   setStandby(oracle:Name, standby:boolean):void {
     if (!hasAuth(this.receiver)) requireAuth(oracle)
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
     const global = this.globalT.get()
     const config = this.getConfig()
     check(oracleRow.standby != standby, "nothing to change")
-    check(this.currentRound() - oracleRow.last_standby_toggle_round > config.standby_toggle_interval_rounds, "can't toggle standby this quickly")
+    if (!hasAuth(this.receiver)) check(this.currentRound() - oracleRow.last_standby_toggle_round > config.standby_toggle_interval_rounds, "can't toggle standby this quickly")
     check(oracleRow.collateral.unlocking == 0, "can't toggle standby during unlocking")
     if (standby) {
       oracleRow.standby = standby
@@ -139,56 +180,56 @@ export class OracleActions extends GlobalActions {
     this.oraclesT.update(oracleRow, this.receiver)
   }
 
-   sendOracleSet(account:Name, weight:u8, adding_collateral:u32):void {
-     const data = new OracleSetParam(account, weight, adding_collateral)
-     const action = new Action(this.receiver, Name.fromU64(0xA5CC88AB0AC80000), [this.codePerm], data.pack())
-     action.send()
-   }
+  sendOracleSet(account:Name, weight:u8, adding_collateral:u32):void {
+    const data = new OracleSetParam(account, weight, adding_collateral)
+    const action = new Action(this.receiver, Name.fromU64(0xA5CC88AB0AC80000), [this.codePerm], data.pack())
+    action.send()
+  }
 
   @action("oracleset")
-   oracleSet(account:Name, weight:u8, adding_collateral:u32):void {
-     requireAuth(this.receiver)
-     const existing = this.oraclesT.get(account.value)
-     const global = this.globalT.get()
-     const config = this.getConfig()
-     if (existing) {
-       check(weight != existing.weight, "data is the same, nothing to update")
-       check(existing.collateral.unlocking == 0, "can't modify oracle during unlocking")
+  oracleSet(account:Name, weight:u8, adding_collateral:u32):void {
+    requireAuth(this.receiver)
+    const existing = this.oraclesT.get(account.value)
+    const global = this.globalT.get()
+    const config = this.getConfig()
+    if (existing) {
+      check(weight != existing.weight, "data is the same, nothing to update")
+      check(existing.collateral.unlocking == 0, "can't modify oracle during unlocking")
 
-       existing.collateral.locked += adding_collateral
-       existing.collateral.min_unlock_start_round = this.currentRound() + config.unlock_wait_rounds
+      existing.collateral.locked += adding_collateral
+      existing.collateral.min_unlock_start_round = this.currentRound() + config.unlock_wait_rounds
 
-       // update globals with new weight change
-       if (weight > existing.weight) {
-         global.total_weight += (weight - existing.weight)
-       } else {
-         global.total_weight -= (existing.weight - weight)
-       }
-       existing.weight = weight
+      // update globals with new weight change
+      if (weight > existing.weight) {
+        global.total_weight += (weight - existing.weight)
+      } else {
+        global.total_weight -= (existing.weight - weight)
+      }
+      existing.weight = weight
 
-       this.oraclesT.update(existing, this.receiver)
-     } else {
-       check(isAccount(account), "oracle must be existing account")
-       const collateralData:OracleCollateral = {
-         locked: adding_collateral,
-         min_unlock_start_round: this.currentRound() + 20,
-         slashed: 0,
-         unlock_finished_round: 0,
-         unlocking: 0
-       }
-       const fundsData:OracleFunds = {
-         claimed: 0,
-         withdrawable_after_round: 0,
-         withdrawing: 0,
-         unclaimed: 0
-       }
-       const row = new Oracle(account, weight, collateralData, fundsData, true)
-       this.oraclesT.store(row, this.receiver)
-       //  global.total_weight += weight
-       global.standby_validators++
-     }
-     this.globalT.set(global, this.receiver)
-   }
+      this.oraclesT.update(existing, this.receiver)
+    } else {
+      check(isAccount(account), "oracle must be existing account")
+      const collateralData:OracleCollateral = {
+        locked: adding_collateral,
+        min_unlock_start_round: this.currentRound() + 20,
+        slashed: 0,
+        unlock_finished_round: 0,
+        unlocking: 0
+      }
+      const fundsData:OracleFunds = {
+        claimed: 0,
+        withdrawable_after_round: 0,
+        withdrawing: 0,
+        unclaimed: 0
+      }
+      const row = new Oracle(account, weight, collateralData, fundsData, true)
+      this.oraclesT.store(row, this.receiver)
+      //  global.total_weight += weight
+      global.standby_validators++
+    }
+    this.globalT.set(global, this.receiver)
+  }
 
   @action("withdrawinit")
   withdrawInit(oracle:Name):void {
