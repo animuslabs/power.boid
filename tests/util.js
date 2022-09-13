@@ -172,7 +172,7 @@ export const owners = ["boid"]
 export const sponsors = ["sponsoracct"]
 export const boid_id = "testaccount"
 
-const config = {
+export const config = {
   paused: false,
   min_consensus_weight: 30,
   min_consensus_pct: 0.66,
@@ -193,6 +193,14 @@ const config = {
 export function addRounds(numRounds = 0) {
   chain.addTime(TimePoint.fromMilliseconds(roundLengthSec * 1000 * numRounds))
 }
+
+export async function setupOracle(name = "oraclename") {
+  chain.createAccount(name)
+  await tkn("transfer", { from: "token.boid", to: name, quantity: "10000000.0000 BOID", memo: "" })
+  await tkn("transfer", { from: name, to: "power.boid", quantity: "10000000.0000 BOID", memo: "collateral" }, name)
+  await act("setstandby", { oracle: name, standby: false })
+}
+
 export async function init() {
   await wait(100)
   await boid.actions["auth.init"]({ }).send()

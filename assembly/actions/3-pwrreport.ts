@@ -59,7 +59,7 @@ export class PwrReportActions extends OracleActions {
     if (existing) {
       check(!existing.approvals.includes(oracle), "oracle already approved this report")
       check(!existing.reported, "report already reported")
-      check(existing.merged, "report already merged")
+      check(!existing.merged, "report already merged")
       existing.approval_weight += oracleRow.weight
       existing.approvals.push(oracle)
       if (existing.approval_weight >= this.minWeightThreshold(config, global) && this.shouldFinalizeReports(config)) {
@@ -118,8 +118,8 @@ export class PwrReportActions extends OracleActions {
     const existing = pwrReportsT.requireGet(pwrreport_id, "invalid report id or scope")
     const config = this.getConfig()
     const global = this.globalT.get()
-
-    check(existing.approval_weight >= this.minWeightThreshold() && this.shouldFinalizeReports(config), "report can't be finalized yet")
+    check(this.shouldFinalizeReports(config), "report can't be finalized yet, too early in the round")
+    check(existing.approval_weight >= this.minWeightThreshold(), "report can't be finalized yet, minimum weight threshold not met")
     this.sendReport(boid_id_scope, existing.report)
     existing.reported = true
     global.reports.reported++
@@ -235,7 +235,6 @@ export class PwrReportActions extends OracleActions {
     }
 
     // update global data
-
     global.reports.reported++
     global.reports.merged += u64(targetReports.length)
     global.reports.unreported_and_unmerged -= u64(targetReports.length)

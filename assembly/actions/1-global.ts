@@ -31,12 +31,14 @@ export class GlobalActions extends Contract {
   }
 
   currentRoundFloat():f32 {
-    if (this.roundFloat == 0) {
-      const config = new Singleton<boid.Config>(Name.fromString("boid")).getOrNull()
-      if (!config) check(false, "boid system config not initialized")
-      else this.roundFloat = f32(currentTimeSec() - config.time.rounds_start.secSinceEpoch()) / f32(config.time.round_length_sec)
-    }
-    return this.roundFloat
+    const config = new Singleton<boid.Config>(Name.fromString("boid")).getOrNull()
+    if (!config) {
+      check(false, "boid system config not initialized")
+      return 0
+    } else return f32(currentTimeSec() - config.time.rounds_start.secSinceEpoch()) / f32(config.time.round_length_sec)
+    // if (this.roundFloat == 0) {
+    // }
+    // return this.roundFloat
   }
 
   pwrReportsT(boid_id:Name):TableStore<PwrReportRow> {
@@ -87,8 +89,11 @@ export class GlobalActions extends Contract {
     check(false, (this.currentRoundFloat() % f32(this.currentRound())).toString())
   }
 
-  shouldFinalizeReports(config:Config):boolean {
-    const roundProgress = this.currentRoundFloat() % f32(this.currentRound())
+  shouldFinalizeReports(config:Config = this.getConfig()):boolean {
+    const roundProgress = (this.currentRoundFloat() % f32(this.currentRound()))
+    print("\n currentRoundFloat: " + this.currentRoundFloat().toString())
+    print("\n currentRound: " + this.currentRound().toString())
+    print("\n roundProgress: " + roundProgress.toString())
     return roundProgress > config.reports_accumulate_weight_round_pct
   }
 
