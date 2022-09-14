@@ -1,4 +1,4 @@
-import { Table } from "proton-tsc"
+import { Name, Table } from "proton-tsc"
 
 @packer
 export class GlobalReports {
@@ -10,7 +10,8 @@ export class GlobalReports {
 @table("global", singleton)
 export class Global extends Table {
   constructor(
-    public active_validators:u8 = 0,
+    public active_validators:Name[] = [],
+    public expected_active_validators:u8 = 0,
     public standby_validators:u8 = 0,
     public total_weight:u16 = 0,
     public reports:GlobalReports = new GlobalReports(),

@@ -142,8 +142,12 @@
           "type": "float32"
         },
         {
-          "name": "slash_quantity",
+          "name": "slash_quantity_static",
           "type": "uint32"
+        },
+        {
+          "name": "slash_quantity_collateral_pct",
+          "type": "float32"
         },
         {
           "name": "withdraw_rounds_wait",
@@ -389,6 +393,10 @@
       "fields": [
         {
           "name": "active_validators",
+          "type": "name[]"
+        },
+        {
+          "name": "expected_active_validators",
           "type": "uint8"
         },
         {
@@ -649,6 +657,10 @@
         },
         {
           "name": "rewarded_since_previous",
+          "type": "uint32"
+        },
+        {
+          "name": "valid_proposed_since_previous",
           "type": "uint32"
         }
       ]

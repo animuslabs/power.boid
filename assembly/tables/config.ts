@@ -17,8 +17,10 @@ export class Config extends Table {
     public round_bonus_pay_proposed:u32 = 0,
     // the threshold of unconfirmed reports (percentage of total for a round) required to automatically slash an oracle
     public slash_threshold_pct:f32 = 0,
-    // the quantity (whole BOID from collateral) of tokens slashed when a slash action happens
-    public slash_quantity:u32 = 0,
+    // a static quantity (whole BOID from collateral) of tokens slashed when a slash action happens
+    public slash_quantity_static:u32 = 0,
+    // the percentage of oracle collateral slashed when a slash action happens, additive with the static_quantity
+    public slash_quantity_collateral_pct:f32 = 0,
     // how long an oracle needs to wait when withdrawing oracle reward funds
     public withdraw_rounds_wait:u16 = 0,
     // how many stats rows should always be kept when running the stats cleanup action

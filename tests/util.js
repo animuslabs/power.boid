@@ -154,9 +154,16 @@ export async function wait(ms) {
 export function oracles() {
   return contract.tables.oracles().getTableRows()
 }
+export function stats() {
+  return contract.tables.stats().getTableRows()
+}
 export function reports(scope) {
   scope = Name.from(scope).value.toString()
   return contract.tables.pwrreports(scope).getTableRows()
+}
+export function oraclestats(scope) {
+  scope = Name.from(scope).value.toString()
+  return contract.tables.oraclestats(scope).getTableRows()
 }
 export function global() {
   return contract.tables.global().getTableRows()[0]
@@ -180,7 +187,8 @@ export const config = {
   round_bonus_pay_reports: 50000,
   round_bonus_pay_proposed: 200000,
   slash_threshold_pct: 0.5,
-  slash_quantity: 500000,
+  slash_quantity_static: 500000,
+  slash_quantity_collateral_pct: 0.01,
   withdraw_rounds_wait: 20,
   keep_stats_rows: 200,
   reports_finalized_after_rounds: 3,

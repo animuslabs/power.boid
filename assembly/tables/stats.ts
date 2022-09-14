@@ -9,7 +9,8 @@ export class Stat extends Table {
     public reported_since_previous:u32 = 0,
     public unreported_unmerged_since_previous:u32 = 0,
     public proposed_since_previous:u32 = 0,
-    public rewarded_since_previous:u32 = 0
+    public rewarded_since_previous:u32 = 0,
+    public valid_proposed_since_previous:u32 = 0
   ) {
     super()
   }

@@ -18,7 +18,8 @@ export class Stat implements _chain.MultiIndexValue {
     public reported_since_previous:u32 = 0,
     public unreported_unmerged_since_previous:u32 = 0,
     public proposed_since_previous:u32 = 0,
-    public rewarded_since_previous:u32 = 0
+    public rewarded_since_previous:u32 = 0,
+    public valid_proposed_since_previous:u32 = 0
   ) {
     
   }
@@ -36,6 +37,7 @@ export class Stat implements _chain.MultiIndexValue {
         enc.packNumber<u32>(this.unreported_unmerged_since_previous);
         enc.packNumber<u32>(this.proposed_since_previous);
         enc.packNumber<u32>(this.rewarded_since_previous);
+        enc.packNumber<u32>(this.valid_proposed_since_previous);
         return enc.getBytes();
     }
     
@@ -52,6 +54,7 @@ export class Stat implements _chain.MultiIndexValue {
         this.unreported_unmerged_since_previous = dec.unpackNumber<u32>();
         this.proposed_since_previous = dec.unpackNumber<u32>();
         this.rewarded_since_previous = dec.unpackNumber<u32>();
+        this.valid_proposed_since_previous = dec.unpackNumber<u32>();
         return dec.getPos();
     }
 
@@ -59,6 +62,7 @@ export class Stat implements _chain.MultiIndexValue {
         let size: usize = 0;
         size += sizeof<u16>();
         size += this.starting_global.getSize();
+        size += sizeof<u32>();
         size += sizeof<u32>();
         size += sizeof<u32>();
         size += sizeof<u32>();

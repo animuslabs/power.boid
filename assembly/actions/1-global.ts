@@ -55,18 +55,23 @@ export class GlobalActions extends Contract {
     return u16(Math.max(global.total_weight * config.min_consensus_pct, config.min_consensus_weight))
   }
 
+  markOracleActive(oracle:Name, global:Global = this.globalT.get()):void {
+    if (!global.active_validators.includes(oracle)) global.active_validators.push(oracle)
+  }
+
   updateStats():void {
     const existing = this.statsT.exists(u64(this.currentRound()))
     if (existing) return
     const currentGlobal = this.globalT.get()
     const statsBefore = this.statsT.get(this.currentRound() - 1)
-    if (!statsBefore) this.statsT.store(new Stat(this.currentRound(), this.globalT.get(), u32(currentGlobal.reports.reported), u32(currentGlobal.reports.unreported_and_unmerged), u32(currentGlobal.reports.proposed), u32(currentGlobal.rewards_paid)), this.receiver)
+    if (!statsBefore) this.statsT.store(new Stat(this.currentRound(), this.globalT.get(), u32(currentGlobal.reports.reported), u32(currentGlobal.reports.unreported_and_unmerged), u32(currentGlobal.reports.proposed), u32(currentGlobal.rewards_paid), u32(currentGlobal.reports.proposed)), this.receiver)
     else {
       const roundReported = currentGlobal.reports.reported - statsBefore.starting_global.reports.reported
       const roundUnreported = currentGlobal.reports.unreported_and_unmerged - statsBefore.starting_global.reports.unreported_and_unmerged
       const roundProposed = currentGlobal.reports.proposed - statsBefore.starting_global.reports.proposed
       const mintedSince = currentGlobal.rewards_paid - statsBefore.starting_global.rewards_paid
-      this.statsT.store(new Stat(this.currentRound(), this.globalT.get(), u32(roundReported), u32(roundUnreported), u32(roundProposed), u32(mintedSince)), this.receiver)
+      const validProposed = currentGlobal.reports.proposed - statsBefore.starting_global.reports.unreported_and_unmerged
+      this.statsT.store(new Stat(this.currentRound(), this.globalT.get(), u32(roundReported), u32(roundUnreported), u32(roundProposed), u32(mintedSince), u32(validProposed)), this.receiver)
     }
   }
 
@@ -85,8 +90,8 @@ export class GlobalActions extends Contract {
 
   @action("thisround")
   thisRound():void {
-    // check(false, this.currentRoundFloat().toString())
-    check(false, (this.currentRoundFloat() % f32(this.currentRound())).toString())
+    check(false, this.currentRoundFloat().toString())
+    // check(false, (this.currentRoundFloat() % f32(this.currentRound())).toString())
   }
 
   shouldFinalizeReports(config:Config = this.getConfig()):boolean {
@@ -95,6 +100,10 @@ export class GlobalActions extends Contract {
     print("\n currentRound: " + this.currentRound().toString())
     print("\n roundProgress: " + roundProgress.toString())
     return roundProgress > config.reports_accumulate_weight_round_pct
+  }
+
+  findSlashQuantity(oracleRow:Oracle, config:Config = this.getConfig()):u32 {
+    return config.slash_quantity_static + u32(f32(oracleRow.trueCollateral) * config.slash_quantity_collateral_pct)
   }
 
   getConfig():Config {

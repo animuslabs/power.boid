@@ -102,6 +102,7 @@ export class PwrReportActions extends OracleActions {
       reportCreated = true
       const reported = oracleRow.weight >= u16(this.minWeightThreshold()) && this.shouldFinalizeReports(config)
       const row = new PwrReportRow(reportId, oracle, report, [oracle], oracleRow.weight, reported)
+      global.reports.proposed++
       pwrReportsT.store(row, this.receiver)
       if (reported) {
         reportSent = true
@@ -109,6 +110,7 @@ export class PwrReportActions extends OracleActions {
         global.reports.reported++
       } else global.reports.unreported_and_unmerged++
     }
+    this.markOracleActive(oracle, global)
     this.globalT.set(global, this.receiver)
 
     if (reportSent) {
@@ -130,8 +132,10 @@ export class PwrReportActions extends OracleActions {
     const oStatsT = this.oracleStatsT(oracleRow.account)
     const existingOStats = oStatsT.get(u64(this.currentRound()))
     if (existingOStats) {
-      if (reportSent) existingOStats.reports.reported_merged++
-      else existingOStats.reports.unreported_unmerged++
+      if (reportSent) {
+        existingOStats.reports.reported_merged++
+        existingOStats.reports.unreported_unmerged--
+      } else existingOStats.reports.unreported_unmerged++
       if (proposed) existingOStats.reports.proposed++
       oStatsT.update(existingOStats, this.receiver)
     } else {

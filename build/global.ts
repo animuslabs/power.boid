@@ -1,5 +1,5 @@
 import * as _chain from "as-chain";
-import { Table } from "proton-tsc"
+import { Name, Table } from "proton-tsc"
 
 
 @packer(nocodegen)
@@ -47,7 +47,8 @@ export class GlobalDB extends _chain.MultiIndex<Global> {
 export class Global implements _chain.MultiIndexValue {
     
   constructor(
-    public active_validators:u8 = 0,
+    public active_validators:Name[] = [],
+    public expected_active_validators:u8 = 0,
     public standby_validators:u8 = 0,
     public total_weight:u16 = 0,
     public reports:GlobalReports = new GlobalReports(),
@@ -58,7 +59,8 @@ export class Global implements _chain.MultiIndexValue {
 
     pack(): u8[] {
         let enc = new _chain.Encoder(this.getSize());
-        enc.packNumber<u8>(this.active_validators);
+        enc.packObjectArray(this.active_validators);
+        enc.packNumber<u8>(this.expected_active_validators);
         enc.packNumber<u8>(this.standby_validators);
         enc.packNumber<u16>(this.total_weight);
         enc.pack(this.reports);
@@ -68,7 +70,18 @@ export class Global implements _chain.MultiIndexValue {
     
     unpack(data: u8[]): usize {
         let dec = new _chain.Decoder(data);
-        this.active_validators = dec.unpackNumber<u8>();
+        
+    {
+        let length = <i32>dec.unpackLength();
+        this.active_validators = new Array<Name>(length)
+        for (let i=0; i<length; i++) {
+            let obj = new Name();
+            this.active_validators[i] = obj;
+            dec.unpack(obj);
+        }
+    }
+
+        this.expected_active_validators = dec.unpackNumber<u8>();
         this.standby_validators = dec.unpackNumber<u8>();
         this.total_weight = dec.unpackNumber<u16>();
         
@@ -83,6 +96,11 @@ export class Global implements _chain.MultiIndexValue {
 
     getSize(): usize {
         let size: usize = 0;
+        size += _chain.calcPackedVarUint32Length(this.active_validators.length);
+        for (let i=0; i<this.active_validators.length; i++) {
+            size += this.active_validators[i].getSize();
+        }
+
         size += sizeof<u8>();
         size += sizeof<u8>();
         size += sizeof<u16>();

@@ -83,12 +83,12 @@ export class OracleActions extends GlobalActions {
       oracleRow.last_standby_toggle_round = this.currentRound()
       global.total_weight -= oracleRow.weight
       global.standby_validators++
-      global.active_validators--
+      global.expected_active_validators--
     } else {
       oracleRow.standby = standby
       oracleRow.expected_active_after_round = this.currentRound() + 2
       global.total_weight += oracleRow.weight
-      global.active_validators++
+      global.expected_active_validators++
       global.standby_validators--
     }
     this.globalT.set(global, this.receiver)
