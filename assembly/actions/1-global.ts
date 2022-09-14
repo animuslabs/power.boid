@@ -52,16 +52,19 @@ export class GlobalActions extends Contract {
   codePerm:PermissionLevel = new PermissionLevel(this.receiver, Name.fromString("active"))
 
   minWeightThreshold(config:Config = this.getConfig(), global:Global = this.globalT.get()):u16 {
-    return u16(Math.max(global.total_weight * config.min_consensus_pct, config.min_consensus_weight))
+    return u16(Math.max(global.expected_active_weight * config.min_consensus_pct, config.min_consensus_weight))
   }
 
-  markOracleActive(oracle:Name, global:Global = this.globalT.get()):void {
-    if (!global.active_validators.includes(oracle)) global.active_validators.push(oracle)
+  markOracleActive(oracleRow:Oracle, global:Global = this.globalT.get()):void {
+    if (!global.active_validators.includes(oracleRow.account)) {
+      global.active_validators.push(oracleRow.account)
+      global.active_weight += oracleRow.weight
+    }
   }
 
-  updateStats():void {
+  updateStats():boolean {
     const existing = this.statsT.exists(u64(this.currentRound()))
-    if (existing) return
+    if (existing) return false
     const currentGlobal = this.globalT.get()
     const statsBefore = this.statsT.get(this.currentRound() - 1)
     if (!statsBefore) this.statsT.store(new Stat(this.currentRound(), this.globalT.get(), u32(currentGlobal.reports.reported), u32(currentGlobal.reports.unreported_and_unmerged), u32(currentGlobal.reports.proposed), u32(currentGlobal.rewards_paid), u32(currentGlobal.reports.proposed)), this.receiver)
@@ -73,6 +76,7 @@ export class GlobalActions extends Contract {
       const validProposed = currentGlobal.reports.proposed - statsBefore.starting_global.reports.unreported_and_unmerged
       this.statsT.store(new Stat(this.currentRound(), this.globalT.get(), u32(roundReported), u32(roundUnreported), u32(roundProposed), u32(mintedSince), u32(validProposed)), this.receiver)
     }
+    return true
   }
 
   @action("configset")
@@ -121,6 +125,11 @@ export class GlobalActions extends Contract {
         this.statsT.remove(row)
       } else break
     }
+  }
+
+  @action("roundstats")
+  roundStats():void {
+    check(this.updateStats(), "action already performed this round")
   }
 
   @action("statsclean")

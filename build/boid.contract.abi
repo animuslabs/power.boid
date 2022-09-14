@@ -404,7 +404,7 @@
           "type": "uint8"
         },
         {
-          "name": "total_weight",
+          "name": "expected_active_weight",
           "type": "uint16"
         },
         {
@@ -414,6 +414,10 @@
         {
           "name": "rewards_paid",
           "type": "uint64"
+        },
+        {
+          "name": "active_weight",
+          "type": "uint16"
         }
       ]
     },
@@ -820,6 +824,11 @@
       ]
     },
     {
+      "name": "roundstats",
+      "base": "",
+      "fields": []
+    },
+    {
       "name": "setstandby",
       "base": "",
       "fields": [
@@ -988,6 +997,11 @@
     {
       "name": "reportsclean",
       "type": "reportsclean",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "roundstats",
+      "type": "roundstats",
       "ricardian_contract": ""
     },
     {

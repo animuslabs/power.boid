@@ -50,9 +50,10 @@ export class Global implements _chain.MultiIndexValue {
     public active_validators:Name[] = [],
     public expected_active_validators:u8 = 0,
     public standby_validators:u8 = 0,
-    public total_weight:u16 = 0,
+    public expected_active_weight:u16 = 0,
     public reports:GlobalReports = new GlobalReports(),
-    public rewards_paid:u64 = 0
+    public rewards_paid:u64 = 0,
+    public active_weight:u16 = 0
   ) {
     
   }
@@ -62,9 +63,10 @@ export class Global implements _chain.MultiIndexValue {
         enc.packObjectArray(this.active_validators);
         enc.packNumber<u8>(this.expected_active_validators);
         enc.packNumber<u8>(this.standby_validators);
-        enc.packNumber<u16>(this.total_weight);
+        enc.packNumber<u16>(this.expected_active_weight);
         enc.pack(this.reports);
         enc.packNumber<u64>(this.rewards_paid);
+        enc.packNumber<u16>(this.active_weight);
         return enc.getBytes();
     }
     
@@ -83,7 +85,7 @@ export class Global implements _chain.MultiIndexValue {
 
         this.expected_active_validators = dec.unpackNumber<u8>();
         this.standby_validators = dec.unpackNumber<u8>();
-        this.total_weight = dec.unpackNumber<u16>();
+        this.expected_active_weight = dec.unpackNumber<u16>();
         
         {
             let obj = new GlobalReports();
@@ -91,6 +93,7 @@ export class Global implements _chain.MultiIndexValue {
             this.reports = obj;
         }
         this.rewards_paid = dec.unpackNumber<u64>();
+        this.active_weight = dec.unpackNumber<u16>();
         return dec.getPos();
     }
 
@@ -106,6 +109,7 @@ export class Global implements _chain.MultiIndexValue {
         size += sizeof<u16>();
         size += this.reports.getSize();
         size += sizeof<u64>();
+        size += sizeof<u16>();
         return size;
     }
 

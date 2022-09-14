@@ -650,6 +650,27 @@ class thisRoundAction implements _chain.Packer {
     }
 }
 
+class roundStatsAction implements _chain.Packer {
+    constructor (
+    ) {
+    }
+
+    pack(): u8[] {
+        let enc = new _chain.Encoder(this.getSize());
+        return enc.getBytes();
+    }
+    
+    unpack(data: u8[]): usize {
+        let dec = new _chain.Decoder(data);
+        return dec.getPos();
+    }
+
+    getSize(): usize {
+        let size: usize = 0;
+        return size;
+    }
+}
+
 class statsCleanupAction implements _chain.Packer {
     constructor (
     ) {
@@ -800,6 +821,11 @@ export function apply(receiver: u64, firstReceiver: u64, action: u64): void {
             const args = new thisRoundAction();
             args.unpack(actionData);
             mycontract.thisRound();
+        }
+		if (action == 0xBD3534E326CE0000) {//roundstats
+            const args = new roundStatsAction();
+            args.unpack(actionData);
+            mycontract.roundStats();
         }
 		if (action == 0xC64D9C222A34C000) {//statsclean
             const args = new statsCleanupAction();

@@ -82,7 +82,7 @@ export class PwrReportActions extends OracleActions {
         global.reports.reported++
       } else global.reports.unreported_and_unmerged++
     }
-    this.markOracleActive(oracle, global)
+    this.markOracleActive(oracleRow, global)
     this.globalT.set(global, this.receiver)
 
     if (reportSent) {

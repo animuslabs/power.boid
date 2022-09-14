@@ -13,9 +13,10 @@ export class Global extends Table {
     public active_validators:Name[] = [],
     public expected_active_validators:u8 = 0,
     public standby_validators:u8 = 0,
-    public total_weight:u16 = 0,
+    public expected_active_weight:u16 = 0,
     public reports:GlobalReports = new GlobalReports(),
-    public rewards_paid:u64 = 0
+    public rewards_paid:u64 = 0,
+    public active_weight:u16 = 0
   ) {
     super()
   }

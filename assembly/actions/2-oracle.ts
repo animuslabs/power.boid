@@ -54,7 +54,7 @@ export class OracleActions extends GlobalActions {
     if (newWeight > weightBefore) {
       const difference = newWeight - weightBefore
       const global = this.globalT.get()
-      global.total_weight += difference
+      global.expected_active_weight += difference
       this.globalT.set(global, this.receiver)
     }
 
@@ -81,13 +81,13 @@ export class OracleActions extends GlobalActions {
     if (standby) {
       oracleRow.standby = standby
       oracleRow.last_standby_toggle_round = this.currentRound()
-      global.total_weight -= oracleRow.weight
+      global.expected_active_weight -= oracleRow.weight
       global.standby_validators++
       global.expected_active_validators--
     } else {
       oracleRow.standby = standby
       oracleRow.expected_active_after_round = this.currentRound() + 2
-      global.total_weight += oracleRow.weight
+      global.expected_active_weight += oracleRow.weight
       global.expected_active_validators++
       global.standby_validators--
     }
@@ -116,9 +116,9 @@ export class OracleActions extends GlobalActions {
 
       // update globals with new weight change
       if (weight > existing.weight) {
-        global.total_weight += (weight - existing.weight)
+        global.expected_active_weight += (weight - existing.weight)
       } else {
-        global.total_weight -= (existing.weight - weight)
+        global.expected_active_weight -= (existing.weight - weight)
       }
       existing.weight = weight
 
@@ -153,6 +153,7 @@ export class OracleActions extends GlobalActions {
     check(oracleRow.funds.withdrawable_after_round == 0, "currently withdrawing, must wait for current withdraw to finish.")
     const config = this.getConfig()
     const funds = oracleRow.funds
+    check(funds.unclaimed > 0, "claimable funds must be greater than zero")
     funds.withdrawable_after_round = this.currentRound() + config.withdraw_rounds_wait
     funds.withdrawing = funds.unclaimed
     this.oraclesT.update(oracleRow, this.receiver)

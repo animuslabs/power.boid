@@ -3,7 +3,7 @@ import { expect } from "chai"
 import { beforeEach, describe, it, before } from "mocha"
 import { Asset, Name, TimePoint, PrivateKey, PublicKey, Action, Bytes, ABI, ABIDecoder, Authority, PermissionLevel, UInt32, Serializer, TimePointSec } from "@greymass/eosio"
 import { Blockchain, nameToBigInt, symbolCodeToBigInt, protonAssert, expectToThrow, nameTypeToBigInt } from "@proton/vert"
-import { init, chain, act, oracles, global, contract, reports, boid, addRounds, tkn, config, wait, setupOracle, oraclestats, stats } from "./util.js"
+import { init, chain, act, oracles, global, contract, reports, boid, addRounds, tkn, config, wait, setupOracle, oracleStats, stats } from "./util.js"
 
 // beforeEach(() => chain.resetTables())
 const report = { protocol_id: 0, round: 10, units: 100 }
@@ -26,6 +26,8 @@ async function main() {
           tkn("transfer", { from: "oracle1", to: "power.boid", quantity: "100000.0000 BOID", memo: "collateral" }, "oracle1"),
           "eosio_assert: must deposit collateral in correct increments")
       })
+    })
+    describe("reports", async() => {
       it("pwrreport", async() => {
         addRounds(10)
 
@@ -115,23 +117,91 @@ async function main() {
         // console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
         expect(oracles()[0].funds.unclaimed).eq(230000)
       })
-      it("slash bad oracles", async() => {
+    })
+    describe("slashing", async() => {
+      it("slashmulti", async() => {
         // await act("thisround")
         const goodReport = { round: 15, units: 100, protocol_id: 0 }
         const badReport = { round: 15, units: 20, protocol_id: 0 }
         await act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report: badReport }, "oracle1")
         await act("pwrreport", { oracle: "oracle2", boid_id_scope: "testaccount", report: badReport }, "oracle2")
+        // await act("thisround")
         await act("pwrreport", { oracle: "oracle3", boid_id_scope: "testaccount", report: goodReport }, "oracle3")
         await act("pwrreport", { oracle: "oracle4", boid_id_scope: "testaccount", report: goodReport }, "oracle4")
         await act("pwrreport", { oracle: "oracle5", boid_id_scope: "testaccount", report: goodReport }, "oracle5")
-        console.log(reports("testaccount").filter(el => el.report.round == 15))
+        // console.log(reports("testaccount").filter(el => el.report.round == 15))
         // await act("handleostat", { oracle: "oracle1", round: 15 })
-        console.log(global())
+        // console.log(global())
         await act("slashmulti", { oracle: "oracle1", boid_id_scope: "testaccount", pwrreport_ids: ["1015020000", "10150100000"], round: 15, protocol_id: 0 })
-        console.log(reports("testaccount").filter(el => el.report.round == 15))
-        console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
-        console.log(oracles()[0])
-        console.log(global())
+        // console.log(reports("testaccount").filter(el => el.report.round == 15))
+        // console.log(oracles()[0])
+        // console.log(global())
+        expect(oracles()[0].standby).true
+        expect(oracles()[0].weight).eq(0)
+        addRounds(1)
+        await act("roundstats")
+        addRounds(1)
+        await act("roundstats")
+        addRounds(1)
+        await act("roundstats")
+        addRounds(1)
+        await act("roundstats")
+        addRounds(1)
+        await act("roundstats")
+        await act("handleostat", { oracle: "oracle1", round: 17 })
+        expect(oracleStats("oracle1").filter(el => el.round == 17)[0].processed).true
+        // console.log(oracleStats("oracle2"))
+        await act("handleostat", { oracle: "oracle2", round: 17 })
+        // console.log(oracleStats("oracle2"))
+      })
+      it("slashabsent", async() => {
+        // console.log(oracles()[1])
+        await act("slashabsent", { oracle: "oracle2", round: 14 })
+        // console.log(oracles()[1])
+        // console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
+        await act("slashabsent", { oracle: "oracle2", round: 15 })
+        // console.log(oracles()[1])
+        // console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
+        await act("slashabsent", { oracle: "oracle2", round: 16 })
+        // console.log(oracles()[1])
+        // console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
+        await act("slashabsent", { oracle: "oracle2", round: 18 })
+        await expectToThrow(
+          act("slashabsent", { oracle: "oracle2", round: 19 }),
+          "eosio_assert: invalid round specified, must be before the finalized round: 19"
+        )
+        // await act("thisround")
+      })
+    })
+    describe("funds", async() => {
+      it("withdrawinit", async() => {
+        const unclaimed = oracles()[0].funds.unclaimed
+        await act("withdrawinit", { oracle: "oracle1" }, "oracle1")
+        expect(oracles()[0].funds.withdrawing).eq(unclaimed)
+        expect(oracles()[0].funds.withdrawable_after_round).eq(42)
+        addRounds(5)
+        await expectToThrow(
+          act("withdrawinit", { oracle: "oracle1" }, "oracle1"),
+          "eosio_assert: currently withdrawing, must wait for current withdraw to finish."
+        )
+      })
+      it("withdraw", async() => {
+        addRounds(15)
+        await expectToThrow(
+          act("withdraw", { oracle: "oracle1" }, "oracle1"),
+          "eosio_assert: can't withdraw funds yet"
+        )
+        const withdrawing = oracles()[0].funds.withdrawing
+        addRounds(1)
+        await act("withdraw", { oracle: "oracle1" }, "oracle1")
+        expect(oracles()[0].funds.withdrawing).eq(0)
+        expect(oracles()[0].funds.claimed).eq(withdrawing)
+        expect(oracles()[0].funds.withdrawable_after_round).eq(0)
+        await expectToThrow(
+          act("withdrawinit", { oracle: "oracle1" }, "oracle1"),
+          "eosio_assert: unclaimed funds must be greater than zero"
+        )
+        // console.log(oracles()[0])
       })
     })
   } catch (error) {

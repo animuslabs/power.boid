@@ -11,6 +11,56 @@ export const token = chain.createContract("token.boid", "./external/token/token.
 export const aa = chain.createContract("atomicassets", "./external/atomicassets/atomicassets")
 export const boid = chain.createContract("boid", "./external/boid/boid.contract")
 
+const mint = chain.createAccount("mint.boid")
+
+mint.setPermissions([
+  AccountPermission.from({
+    perm_name: Name.from("owner"),
+    parent: Name.from(""),
+    required_auth: Authority.from({
+      threshold: UInt32.from(1),
+      keys: [],
+      accounts: [
+        PermissionLevelWeight.from({
+          permission: PermissionLevel.from("mint.boid@active"),
+          weight: UInt16.from(1)
+        }),
+        PermissionLevelWeight.from({
+          permission: PermissionLevel.from("power.boid@eosio.code"),
+          weight: UInt16.from(1)
+        }),
+        PermissionLevelWeight.from({
+          permission: PermissionLevel.from("boid@eosio.code"),
+          weight: UInt16.from(1)
+        })
+      ],
+      waits: []
+    })
+  }),
+  AccountPermission.from({
+    perm_name: Name.from("active"),
+    parent: Name.from("owner"),
+    required_auth: Authority.from({
+      threshold: UInt32.from(1),
+      keys: [],
+      accounts: [
+        PermissionLevelWeight.from({
+          permission: PermissionLevel.from("mint.boid@active"),
+          weight: UInt16.from(1)
+        }),
+        PermissionLevelWeight.from({
+          permission: PermissionLevel.from("power.boid@eosio.code"),
+          weight: UInt16.from(1)
+        }),
+        PermissionLevelWeight.from({
+          permission: PermissionLevel.from("boid@eosio.code"),
+          weight: UInt16.from(1)
+        })
+      ],
+      waits: []
+    })
+  })
+])
 token.setPermissions([
   AccountPermission.from({
     perm_name: Name.from("owner"),
@@ -115,6 +165,7 @@ export async function initTokens() {
   const maximum_supply = "25000000000.0000 BOID"
   await tkn("create", { issuer, maximum_supply })
   await tkn("issue", { to: issuer, quantity: maximum_supply, memo: "" })
+  await tkn("transfer", { from: issuer, to: "mint.boid", quantity: "100000000.0000 BOID", memo: "" })
 }
 
 const roundLengthSec = 90000
@@ -161,7 +212,7 @@ export function reports(scope) {
   scope = Name.from(scope).value.toString()
   return contract.tables.pwrreports(scope).getTableRows()
 }
-export function oraclestats(scope) {
+export function oracleStats(scope) {
   scope = Name.from(scope).value.toString()
   return contract.tables.oraclestats(scope).getTableRows()
 }

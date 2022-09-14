@@ -14,6 +14,7 @@ export class OStatsActions extends DepositActions {
     const oRoundData = oStatsT.requireGet(round, "oStats round doesn't exist")
     check(!oRoundData.processed, "round stats is already processed")
     const globalData = this.statsT.requireGet(round + 1, "round stats not yet available")
+    // TODO need to handle situation where no stats are available because stats generation was skipped
 
     // find the oracle pct of the round
     let unReportedShare:f32 = f32(oRoundData.reports.unreported_unmerged) / f32(globalData.unreported_unmerged_since_previous)
@@ -53,7 +54,7 @@ export class OStatsActions extends DepositActions {
 
     // calculate the final pay
     const oracleRow = this.oraclesT.requireGet(oracle.value, "can't find oracle in oracles table")
-    if (unReportedShare > config.slash_threshold_pct) this.sendSlashOracle(oracle, this.findSlashQuantity(oracleRow, config))
+    if (unReportedShare > config.slash_threshold_pct && !oracleRow.standby) this.sendSlashOracle(oracle, this.findSlashQuantity(oracleRow, config))
     let basePay:u32 = 0
     if (reportedShare >= 0.01 || proposedShare >= 0.01) basePay = u32(f32(oracleRow.trueCollateral) * config.collateral_pct_pay_per_round)
     const bonusPay:u32 = u32(oracleBonusProposedPayout + oracleBonusReportedPayout)
@@ -107,7 +108,7 @@ export class OStatsActions extends DepositActions {
     }
     if (oracleRow.weight < weightBefore) {
       const global = this.globalT.get()
-      global.total_weight -= u16(weightBefore - oracleRow.weight)
+      global.expected_active_weight -= u16(weightBefore - oracleRow.weight)
       this.globalT.set(global, this.receiver)
     }
     this.oraclesT.update(oracleRow, this.receiver)
@@ -154,9 +155,9 @@ export class OStatsActions extends DepositActions {
 
     // verify that the oracle was absent in a round when they should be active
     check(!oracleRow.standby, "oracle is in standby, can't be slashed for inactivity")
-    check(oracleRow.expected_active_after_round > round, "oracle is not expected to be active this round")
+    check(oracleRow.expected_active_after_round < round, "oracle is not expected to be active this round")
     const finalizedRound = this.currentRound() - config.reports_finalized_after_rounds
-    check(round < finalizedRound && round > finalizedRound - config.standby_toggle_interval_rounds, "invalid round specified")
+    check(round < finalizedRound, "invalid round specified, must be before the finalized round: " + finalizedRound.toString())
 
     // finally, if the row doesn't exist, send the slash action
     if (oStatsRow) check(false, "stats row exists for this oracle on this round, no slashing needed")
