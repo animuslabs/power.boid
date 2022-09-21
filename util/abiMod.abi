@@ -396,15 +396,15 @@
       "base": "",
       "fields": [
         {
-          "name": "active_validators",
+          "name": "active_oracles",
           "type": "name[]"
         },
         {
-          "name": "expected_active_validators",
-          "type": "uint8"
+          "name": "expected_active_oracles",
+          "type": "name[]"
         },
         {
-          "name": "standby_validators",
+          "name": "standby_oracles",
           "type": "uint8"
         },
         {
@@ -717,6 +717,11 @@
       ]
     },
     {
+      "name": "globalclear",
+      "base": "",
+      "fields": []
+    },
+    {
       "name": "handleostat",
       "base": "",
       "fields": [
@@ -757,6 +762,11 @@
           "type": "uint32"
         }
       ]
+    },
+    {
+      "name": "oraclesclear",
+      "base": "",
+      "fields": []
     },
     {
       "name": "oracleset",
@@ -974,6 +984,11 @@
       "ricardian_contract": ""
     },
     {
+      "name": "globalclear",
+      "type": "globalclear",
+      "ricardian_contract": ""
+    },
+    {
       "name": "handleostat",
       "type": "handleostat",
       "ricardian_contract": ""
@@ -986,6 +1001,11 @@
     {
       "name": "oracldeposit",
       "type": "oracldeposit",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "oraclesclear",
+      "type": "oraclesclear",
       "ricardian_contract": ""
     },
     {

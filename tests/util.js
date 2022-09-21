@@ -3,13 +3,12 @@ import { expect } from "chai"
 import { beforeEach, describe, it, before } from "mocha"
 import { Asset, Authority, Name, PermissionLevel, PermissionLevelWeight, Serializer, TimePoint, UInt16, UInt32 } from "@greymass/eosio"
 import { Blockchain, nameToBigInt, symbolCodeToBigInt, protonAssert, expectToThrow, nameTypeToBigInt, AccountPermission } from "@proton/vert"
-import fs from "fs"
 export const chain = new Blockchain()
 
-export const contract = chain.createContract("power.boid", "./build/boid.contract")
-export const token = chain.createContract("token.boid", "./external/token/token.contract")
-export const aa = chain.createContract("atomicassets", "./external/atomicassets/atomicassets")
-export const boid = chain.createContract("boid", "./external/boid/boid.contract")
+export const contract = chain.createContract("power.boid", "../build/boid.contract")
+export const token = chain.createContract("token.boid", "../src/external/token/token.contract")
+export const aa = chain.createContract("atomicassets", "../src/external/atomicassets/atomicassets")
+export const boid = chain.createContract("boid", "../src/external/boid/boid.contract")
 
 const mint = chain.createAccount("mint.boid")
 
@@ -255,9 +254,11 @@ export const config = {
   standby_toggle_interval_rounds: 20,
   weight_collateral_pwr: 1.1,
   oracle_collateral_deposit_increment: 1000000,
-  reports_accumulate_weight_round_pct: 0.20
+  reports_accumulate_weight_round_pct: 0.20,
+  weight_collateral_divisor:1000000
 }
 export function addRounds(numRounds = 0) {
+  // @ts-ignore
   chain.addTime(TimePoint.fromMilliseconds(roundLengthSec * 1000 * numRounds))
 }
 
@@ -278,6 +279,7 @@ export async function init() {
   await boid.actions["account.add"]({ boid_id: Name.from("teamownr"), owners: ["recover.boid"], sponsors: [], keys: [] }).send()
   await boid.actions["team.create"]({ owner: Name.from("teamownr"), min_pwr_tax_mult: 10, owner_cut_mult: 4, url_safe_name: "teamteam", info_json_ipfs: "" }).send()
   await initTokens()
+  // @ts-ignore
   chain.setTime(roundStartTime)
   await act("configset", { config })
 }

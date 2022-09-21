@@ -25,7 +25,7 @@ const config = {
 }
 
 const methods = {
-  async configSet() {
+  async configset() {
     await doAction('configset',{config})
   },
   async configClear() {
@@ -41,6 +41,15 @@ const methods = {
   },
   async protoset() {
     await doAction("protoset",{protocol:{protocol_id:0,protocol_name:"fah",unitPowerMult:0.0001}})
+  },
+  async statsclean() {
+    await doAction("statsclean")
+  },
+  async globalclear() {
+    await doAction("globalclear")
+  },
+  async oraclesclear() {
+    await doAction("oraclesclear")
   }
 }
 

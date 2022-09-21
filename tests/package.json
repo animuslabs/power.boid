@@ -1,7 +1,17 @@
 {
   "scripts": {
     "test:all": "yarn test:oracle && yarn test:merge",
-    "test:merge": "mocha -b ./tests/merge.spec.js",
-    "test:oracle": "mocha -b ./tests/oracle.spec.js"
+    "test:merge": "mocha -b ./merge.spec.js",
+    "test:oracle": "mocha -b ./oracle.spec.js"
+  },
+  "type": "module",
+  "devDependencies": {
+    "mocha": "^10.0.0"
+  },
+  "dependencies": {
+    "@greymass/eosio": "^0.6.4",
+    "@proton/vert": "^0.3.20",
+    "@types/node": "^18.7.18",
+    "chai": "^4.3.6"
   }
 }

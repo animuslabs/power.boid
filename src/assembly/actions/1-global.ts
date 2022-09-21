@@ -56,16 +56,15 @@ export class GlobalActions extends Contract {
   }
 
   markOracleActive(oracleRow:Oracle, global:Global = this.globalT.get()):void {
-    if (!global.active_validators.includes(oracleRow.account)) {
-      global.active_validators.push(oracleRow.account)
+    if (!global.active_oracles.includes(oracleRow.account)) {
+      global.active_oracles.push(oracleRow.account)
       global.active_weight += oracleRow.weight
     }
   }
 
-  updateStats():boolean {
+  updateStats(currentGlobal:Global = this.globalT.get()):boolean {
     const existing = this.statsT.exists(u64(this.currentRound()))
     if (existing) return false
-    const currentGlobal = this.globalT.get()
     const statsBefore = this.statsT.get(this.currentRound() - 1)
     if (!statsBefore) this.statsT.store(new Stat(this.currentRound(), this.globalT.get(), u32(currentGlobal.reports.reported), u32(currentGlobal.reports.unreported_and_unmerged), u32(currentGlobal.reports.proposed), u32(currentGlobal.rewards_paid), u32(currentGlobal.reports.proposed)), this.receiver)
     else {
@@ -76,6 +75,9 @@ export class GlobalActions extends Contract {
       const validProposed = currentGlobal.reports.proposed - statsBefore.starting_global.reports.unreported_and_unmerged
       this.statsT.store(new Stat(this.currentRound(), this.globalT.get(), u32(roundReported), u32(roundUnreported), u32(roundProposed), u32(mintedSince), u32(validProposed)), this.receiver)
     }
+    currentGlobal.active_oracles = []
+    currentGlobal.active_weight = 0
+    this.globalT.set(currentGlobal, this.receiver)
     return true
   }
 
@@ -90,6 +92,12 @@ export class GlobalActions extends Contract {
   configClear():void {
     requireAuth(this.receiver)
     this.configT.remove()
+  }
+
+  @action("globalclear")
+  globalClear():void {
+    requireAuth(this.receiver)
+    this.globalT.remove()
   }
 
   sendWholeBoid(from:Name, to:Name, whole_quantity:u32, memo:string):void {
@@ -141,7 +149,7 @@ export class GlobalActions extends Contract {
   @action("statsclean")
   statsCleanup():void {
     const config = this.getConfig()
-    check(this.currentRound() > config.keep_stats_rows, "can't cleanup stats yet")
+    // check(this.currentRound() > config.keep_stats_rows, "can't cleanup stats yet")
     const cleanupOlder = this.currentRound() - u32(config.keep_stats_rows)
     this.loopStatsCleanup(cleanupOlder)
   }
@@ -168,5 +176,18 @@ export class GlobalActions extends Contract {
     const cleanupOlder = u32(Math.max(this.currentRound() - config.reports_finalized_after_rounds - config.standby_toggle_interval_rounds, 0))
     check(cleanupOlder != 0, "can't cleanup reports yet")
     this.loopReportsCleanup(scope, cleanupOlder)
+  }
+
+  loopOraclesCleanup():void {
+    for (let i = 0; i < 50; i++) {
+      let row = this.oraclesT.first()
+      if (row) this.oraclesT.remove(row)
+      else break
+    }
+  }
+
+  @action("oraclesclear")
+  oraclesClear():void {
+    this.loopOraclesCleanup()
   }
 }

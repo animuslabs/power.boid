@@ -36,8 +36,8 @@ export class OStatsActions extends DepositActions {
     print("\n oracle reported/merged: " + oRoundData.reports.reported_merged.toString())
     print("\n validProposed: " + validProposed.toString())
     print("\n globalValidProposed: " + globalValidProposed.toString())
-    print("\n activeValidators: " + globalData.starting_global.active_validators.length.toString())
-    let reportedShare:f32 = f32(oRoundData.reports.reported_merged) / f32(globalData.reported_since_previous) / f32(globalData.starting_global.active_validators.length)
+    print("\n active Oracles: " + globalData.starting_global.active_oracles.length.toString())
+    let reportedShare:f32 = f32(oRoundData.reports.reported_merged) / f32(globalData.reported_since_previous) / f32(globalData.starting_global.active_oracles.length)
     let proposedShare:f32 = f32(validProposed) / f32(globalValidProposed)
     if (!isFinite(proposedShare)) proposedShare = 1
     else if (isNaN(proposedShare)) proposedShare = 0

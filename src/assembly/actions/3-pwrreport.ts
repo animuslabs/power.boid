@@ -39,7 +39,6 @@ export class PwrReportActions extends OracleActions {
   @action("pwrreport")
   pwrReport(oracle:Name, boid_id_scope:Name, report:PwrReport):void {
     requireAuth(oracle)
-    this.updateStats()
     const reportId = this.getReportId(report)
     const config = this.getConfig()
     check(report.round >= this.currentRound() - config.reports_finalized_after_rounds, "round is too far in the past")
@@ -56,6 +55,7 @@ export class PwrReportActions extends OracleActions {
     const pwrReportsT = this.pwrReportsT(boid_id_scope)
     const existing = pwrReportsT.get(reportId)
     const global = this.globalT.get()
+    this.updateStats(global)
     if (existing) {
       check(!existing.approvals.includes(oracle), "oracle already approved this report")
       check(!existing.reported, "report already reported")
@@ -142,9 +142,9 @@ export class PwrReportActions extends OracleActions {
 
   @action("mergereports")
   mergeReports(boid_id_scope:Name, pwrreport_ids:u64[]):void {
-    this.updateStats()
     const config = this.getConfig()
     const global = this.globalT.get()
+    this.updateStats(global)
     check(this.shouldFinalizeReports(config), "can't finalize/merge reports this early in a round")
     const targetReports:PwrReportRow[] = []
     let targetProtocol:i16 = -1
