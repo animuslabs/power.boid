@@ -36,7 +36,8 @@ export class Config extends Table {
     // oracle collateral deposits must be divisible by this number
     public oracle_collateral_deposit_increment:u32 = 0,
     // percentage of the round (starting from beginning of the round) when reports accumulate weight but don't finalize, the purpose is to give all oracles a chance to make a report
-    public reports_accumulate_weight_round_pct:f32 = 0
+    public reports_accumulate_weight_round_pct:f32 = 0,
+    public weight_collateral_divisor:f32 = 0
   ) {
     super()
   }

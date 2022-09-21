@@ -86,6 +86,12 @@ export class GlobalActions extends Contract {
     this.configT.set(config, this.receiver)
   }
 
+  @action("configclear")
+  configClear():void {
+    requireAuth(this.receiver)
+    this.configT.remove()
+  }
+
   sendWholeBoid(from:Name, to:Name, whole_quantity:u32, memo:string):void {
     const action = new InlineAction<TokenTransfer>("transfer").act(Name.fromString("token.boid"), new PermissionLevel(from))
     const actionParams = new TokenTransfer(from, to, new Asset(whole_quantity * u64(1e4), Symbol.fromU64(boidSym)), memo)
@@ -153,7 +159,7 @@ export class GlobalActions extends Contract {
   }
 
   getOracleWeight(collateral:u32, config:Config):u8 {
-    return u8(Math.min((Math.pow(f32(collateral) / 1000000, config.weight_collateral_pwr)), u8.MAX_VALUE))
+    return u8(Math.min((Math.pow(f32(collateral) / config.weight_collateral_divisor, config.weight_collateral_pwr)), u8.MAX_VALUE))
   }
 
   @action("reportsclean")

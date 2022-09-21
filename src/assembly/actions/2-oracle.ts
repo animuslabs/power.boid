@@ -41,6 +41,7 @@ export class OracleActions extends GlobalActions {
     const config = this.getConfig()
     this.updateStats()
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
+    check(oracleRow.collateral.unlocking == 0, "can't deposit funds into an oracle that is unlocking")
 
     // add the new collateral and push the next available unlock time into the future
     oracleRow.collateral.locked += depositQuantity
@@ -153,7 +154,7 @@ export class OracleActions extends GlobalActions {
     check(oracleRow.funds.withdrawable_after_round == 0, "currently withdrawing, must wait for current withdraw to finish.")
     const config = this.getConfig()
     const funds = oracleRow.funds
-    check(funds.unclaimed > 0, "claimable funds must be greater than zero")
+    check(funds.unclaimed > 0, "unclaimed funds must be greater than zero")
     funds.withdrawable_after_round = this.currentRound() + config.withdraw_rounds_wait
     funds.withdrawing = funds.unclaimed
     this.oraclesT.update(oracleRow, this.receiver)
@@ -184,7 +185,7 @@ export class OracleActions extends GlobalActions {
   }
 
   @action("unlockinit")
-  unlockOracle(oracle:Name):void {
+  unlockInit(oracle:Name):void {
     if (hasAuth(this.receiver)) requireAuth(oracle)
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
     const existingStats = this.oracleStatsT(oracle).isEmpty()
@@ -196,6 +197,7 @@ export class OracleActions extends GlobalActions {
     check(coll.unlocking == 0, "account is already unlocking, must wait for existing unlock to finish")
     check(!existingStats, "oracle still has rows in the oraclestats table, must wait for rows to be cleared")
     check(oracleRow.standby, "oracle must be in standby to be unlocked")
+    check(oracleRow.trueCollateral > 0, "no valid collateral to unlock (locked - slashed)")
 
     // move locked to unlocking and set the future unlock round
     coll.unlocking = oracleRow.trueCollateral
@@ -207,8 +209,8 @@ export class OracleActions extends GlobalActions {
     this.oraclesT.update(oracleRow, this.receiver)
   }
 
-  @action("unlockend")
-  unlockEnd(oracle:Name):void {
+  @action("unlock")
+  unlock(oracle:Name):void {
     // no auth required
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
     const coll = oracleRow.collateral

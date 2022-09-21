@@ -3,7 +3,7 @@ import { expect } from "chai"
 import { beforeEach, describe, it, before } from "mocha"
 import { Asset, Name, TimePoint, PrivateKey, PublicKey, Action, Bytes, ABI, ABIDecoder, Authority, PermissionLevel, UInt32, Serializer, TimePointSec } from "@greymass/eosio"
 import { Blockchain, nameToBigInt, symbolCodeToBigInt, protonAssert, expectToThrow, nameTypeToBigInt } from "@proton/vert"
-import { init, chain, act, oracles, global, contract, reports, boid, addRounds, tkn, config, wait, setupOracle, oracleStats, stats } from "./util.js"
+import { init, chain, act, oracles, global, contract, reports, boid, addRounds, tkn, config, wait, setupOracle, oracleStats, stats, logActions } from "./util.js"
 
 // beforeEach(() => chain.resetTables())
 const report = { protocol_id: 0, round: 10, units: 100 }
@@ -202,6 +202,38 @@ async function main() {
           "eosio_assert: unclaimed funds must be greater than zero"
         )
         // console.log(oracles()[0])
+      })
+    })
+    describe("unlocking", async() => {
+      it("unlockinit", async() => {
+        const oracle = oracles()[0]
+        const validCollateral = oracle.collateral.locked - oracle.collateral.slashed
+        await act("unlockinit", { oracle: "oracle1" }, "oracle1")
+        expect(oracles()[0].collateral.unlocking).eq(validCollateral)
+        await expectToThrow(
+          act("unlockinit", { oracle: "oracle2" }, "oracle2"),
+          "eosio_assert: oracle must be in standby to be unlocked"
+        )
+        await act("setstandby", { oracle: "oracle2", standby: true })
+        await act("unlockinit", { oracle: "oracle2" }, "oracle2")
+        // console.log(oracles()[1].collateral)
+
+        // logActions()
+      })
+      it("unlock", async() => {
+        await expectToThrow(
+          act("unlock", { oracle: "oracle1" }),
+          "eosio_assert: unlock is still under progress"
+        )
+        addRounds(40)
+        // console.log(oracles()[0].collateral)
+        await expectToThrow(
+          tkn("transfer", { from: "oracle1", to: "power.boid", quantity: "1000000.0000 BOID", memo: "collateral" }, "oracle1"),
+          "eosio_assert: can't deposit funds into an oracle that is unlocking"
+        )
+        await act("unlock", { oracle: "oracle1" })
+        expect(oracles()[0].collateral.locked).eq(0)
+        await act("unlock", { oracle: "oracle2" })
       })
     })
   } catch (error) {

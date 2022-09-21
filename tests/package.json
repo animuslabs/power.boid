@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "test:all": "yarn test:oracle && yarn test:merge",
+    "test:merge": "mocha -b ./tests/merge.spec.js",
+    "test:oracle": "mocha -b ./tests/oracle.spec.js"
+  }
+}

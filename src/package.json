@@ -4,12 +4,8 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build:clear": "rm -rf ./build",
-    "build": "yarn build:clear && npx proton-asc ./assembly/boid.contract.ts && mv ./assembly/target ./build ",
-    "build:debug": "yarn build:clear && npx proton-asc ./assembly/boid.contract.ts && mv ./assembly/target ./build  ",
-    "test:all": "yarn test:oracle && yarn test:merge",
-    "test:merge": "mocha -b ./tests/merge.spec.js",
-    "test:oracle": "mocha -b ./tests/oracle.spec.js",
+    "build:clear": "rm -rf ../build",
+    "build": "yarn build:clear && npx proton-asc ./assembly/boid.contract.ts && mv ./assembly/target ../build ",
     "dev": "nodemon -w ./assembly/actions -w ./assembly/tables -w ./assembly/boid.contract.ts -i ./assembly/target -e .ts --exec yarn build:debug",
     "pg": "ts-node-esm ./pg/playground.ts"
   },

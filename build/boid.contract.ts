@@ -539,7 +539,7 @@ class withdrawEndAction implements _chain.Packer {
     }
 }
 
-class unlockOracleAction implements _chain.Packer {
+class unlockInitAction implements _chain.Packer {
     constructor (
         public oracle: _chain.Name | null = null,
     ) {
@@ -569,7 +569,7 @@ class unlockOracleAction implements _chain.Packer {
     }
 }
 
-class unlockEndAction implements _chain.Packer {
+class unlockAction implements _chain.Packer {
     constructor (
         public oracle: _chain.Name | null = null,
     ) {
@@ -625,6 +625,27 @@ class configSetAction implements _chain.Packer {
     getSize(): usize {
         let size: usize = 0;
         size += this.config!.getSize();
+        return size;
+    }
+}
+
+class configClearAction implements _chain.Packer {
+    constructor (
+    ) {
+    }
+
+    pack(): u8[] {
+        let enc = new _chain.Encoder(this.getSize());
+        return enc.getBytes();
+    }
+    
+    unpack(data: u8[]): usize {
+        let dec = new _chain.Decoder(data);
+        return dec.getPos();
+    }
+
+    getSize(): usize {
+        let size: usize = 0;
         return size;
     }
 }
@@ -803,19 +824,24 @@ export function apply(receiver: u64, firstReceiver: u64, action: u64): void {
             mycontract.withdrawEnd(args.oracle!);
         }
 		if (action == 0xD4E34441D3764000) {//unlockinit
-            const args = new unlockOracleAction();
+            const args = new unlockInitAction();
             args.unpack(actionData);
-            mycontract.unlockOracle(args.oracle!);
+            mycontract.unlockInit(args.oracle!);
         }
-		if (action == 0xD4E3444153480000) {//unlockend
-            const args = new unlockEndAction();
+		if (action == 0xD4E3444000000000) {//unlock
+            const args = new unlockAction();
             args.unpack(actionData);
-            mycontract.unlockEnd(args.oracle!);
+            mycontract.unlock(args.oracle!);
         }
 		if (action == 0x4526B7330AC80000) {//configset
             const args = new configSetAction();
             args.unpack(actionData);
             mycontract.configSet(args.config!);
+        }
+		if (action == 0x4526B7311151AE00) {//configclear
+            const args = new configClearAction();
+            args.unpack(actionData);
+            mycontract.configClear();
         }
 		if (action == 0xCB5D8BD353480000) {//thisround
             const args = new thisRoundAction();

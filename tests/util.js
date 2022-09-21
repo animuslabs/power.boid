@@ -226,6 +226,14 @@ export function act(name, params = {}, permission = "power.boid@active") {
 export function tkn(name, params = {}, permission = "token.boid@active") {
   return token.actions[name](params).send(permission)
 }
+
+export function logActions() {
+  console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
+}
+export function logChain() {
+  console.log(chain.console)
+}
+
 export const owners = ["boid"]
 export const sponsors = ["sponsoracct"]
 export const boid_id = "testaccount"

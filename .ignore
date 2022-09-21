@@ -1,2 +1,2 @@
-build/*/**
-assembly/target/*/**
+build
+src/assembly/target/*/**
