@@ -11,7 +11,7 @@ const config = {
   round_bonus_pay_reports: 50000,
   round_bonus_pay_proposed: 200000,
   slash_threshold_pct: 0.5,
-  slash_quantity_static: 500000,
+  slash_quantity_static: 100,
   slash_quantity_collateral_pct: 0.01,
   withdraw_rounds_wait: 20,
   keep_stats_rows: 200,
