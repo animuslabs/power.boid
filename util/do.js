@@ -45,9 +45,7 @@ const methods = {
   async protoclear() {
     await doAction("protoclear")
   },
-  async statsclean() {
-    await doAction("statsclean")
-  },
+
   async globalclear() {
     await doAction("globalclear")
   },
@@ -59,6 +57,12 @@ const methods = {
   },
   async reportsclean(scope) {
     await doAction("reportsclean",{scope})
+  },
+  async statsclean() {
+    await doAction("statsclean")
+  },
+  async ostatsclean(scope) {
+    await doAction("ostatsclean",{scope})
   }
 }
 

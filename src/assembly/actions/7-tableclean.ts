@@ -1,4 +1,5 @@
 import { check, Name, requireAuth } from "proton-tsc"
+import { Config } from "../tables/config"
 import { OStatsActions } from "./6-ostats"
 
 export class TableCleanActions extends OStatsActions {
@@ -85,7 +86,10 @@ export class TableCleanActions extends OStatsActions {
 
   @action("statsclean")
   statsCleanup():void {
-    const config = this.getConfig()
+    this.statsClean()
+  }
+
+  statsClean(config:Config = this.getConfig()):void {
     const cleanupOlder = u32(Math.max(i32(this.currentRound()) - config.reports_finalized_after_rounds - config.keep_finalized_stats_rows, 0))
     this.loopStatsCleanup(cleanupOlder)
   }
@@ -93,8 +97,7 @@ export class TableCleanActions extends OStatsActions {
   @action("reportsclean")
   reportsCleanup(scope:Name):void {
     const config = this.getConfig()
-    const statsCleanupOlder = u32(Math.max(i32(this.currentRound()) - config.reports_finalized_after_rounds - config.keep_finalized_stats_rows, 0))
-    this.loopStatsCleanup(statsCleanupOlder)
+    this.statsClean(config)
     const minRetain = Math.max(config.reports_finalized_after_rounds, config.standby_toggle_interval_rounds)
     const cleanupOlder = u32(Math.max(i32(this.currentRound()) - minRetain - config.keep_finalized_stats_rows, 0))
     check(cleanupOlder != 0, "can't cleanup reports yet")
@@ -104,8 +107,7 @@ export class TableCleanActions extends OStatsActions {
   @action("ostatsclean")
   oStatsClean(scope:Name):void {
     const config = this.getConfig()
-    const statsCleanupOlder = u32(Math.max(i32(this.currentRound()) - config.reports_finalized_after_rounds - config.keep_finalized_stats_rows, 0))
-    this.loopStatsCleanup(statsCleanupOlder)
+    this.statsClean(config)
     const minRetain = Math.max(config.reports_finalized_after_rounds, config.standby_toggle_interval_rounds)
     const cleanupOlder = u32(Math.max(i32(this.currentRound()) - minRetain - config.keep_finalized_stats_rows, 0))
     check(cleanupOlder != 0, "can't cleanup oStats yet")

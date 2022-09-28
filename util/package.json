@@ -8,6 +8,7 @@
     "child-process-promise": "^2.2.1",
     "dotenv": "^10.0.0",
     "eosjs": "^21.0.3",
+    "eslint": "^8.24.0",
     "fakelish": "^0.3.0",
     "fs-extra": "^10.0.0",
     "gm": "^1.23.1",
