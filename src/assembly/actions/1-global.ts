@@ -1,4 +1,4 @@
-import { ActionData, Symbol, Asset, check, Contract, currentTimeSec, InlineAction, Name, PermissionLevel, requireAuth, Singleton, TableStore, print } from "proton-tsc"
+import { ActionData, Symbol, Asset, check, Contract, currentTimeSec, InlineAction, Name, PermissionLevel, requireAuth, Singleton, TableStore, print, Table, EMPTY_NAME, Action } from "proton-tsc"
 import { Oracle } from "../tables/oracles"
 import { Global } from "../tables/global"
 import { Protocol } from "../tables/protocols"
@@ -62,7 +62,7 @@ export class GlobalActions extends Contract {
     }
   }
 
-  updateStats(currentGlobal:Global = this.globalT.get()):boolean {
+  updateStats(currentGlobal:Global = this.globalT.get(), config:Config = this.getConfig()):boolean {
     const existing = this.statsT.exists(u64(this.currentRound()))
     if (existing) return false
     const statsBefore = this.statsT.get(this.currentRound() - 1)
@@ -78,6 +78,16 @@ export class GlobalActions extends Contract {
     currentGlobal.active_oracles = []
     currentGlobal.active_weight = 0
     this.globalT.set(currentGlobal, this.receiver)
+
+    // delete old rows
+    const firstRow = this.statsT.first()
+    if (!firstRow) return true
+    const deleteBeforeRound = u16(Math.max(i32(this.currentRound()) - config.reports_finalized_after_rounds - config.keep_finalized_stats_rows, 0))
+    print("\n DeleteBeforeRound: " + deleteBeforeRound.toString())
+    if (firstRow.round < deleteBeforeRound) this.statsT.remove(firstRow)
+    const nextRow = this.statsT.first()
+    if (!nextRow) return true
+    if (nextRow.round < deleteBeforeRound) this.statsT.remove(nextRow)
     return true
   }
 
@@ -86,18 +96,6 @@ export class GlobalActions extends Contract {
     requireAuth(this.receiver)
     // check(config.)
     this.configT.set(config, this.receiver)
-  }
-
-  @action("configclear")
-  configClear():void {
-    requireAuth(this.receiver)
-    this.configT.remove()
-  }
-
-  @action("globalclear")
-  globalClear():void {
-    requireAuth(this.receiver)
-    this.globalT.remove()
   }
 
   sendWholeBoid(from:Name, to:Name, whole_quantity:u32, memo:string):void {
@@ -130,64 +128,26 @@ export class GlobalActions extends Contract {
     return config
   }
 
-  loopStatsCleanup(olderThan:u32):void {
-    let next = this.statsT.first()
-    for (let i = 0; i < 50; i++) {
-      let row = next
-      if (row && row.round < olderThan) {
-        next = this.statsT.next(row)
-        this.statsT.remove(row)
-      } else break
-    }
-  }
-
   @action("roundstats")
   roundStats():void {
     check(this.updateStats(), "action already performed this round")
   }
 
-  @action("statsclean")
-  statsCleanup():void {
-    const config = this.getConfig()
-    // check(this.currentRound() > config.keep_stats_rows, "can't cleanup stats yet")
-    const cleanupOlder = this.currentRound() - u32(config.keep_stats_rows)
-    this.loopStatsCleanup(cleanupOlder)
-  }
-
-  loopReportsCleanup(scope:Name, olderThan:u32):void {
-    const tbl = this.pwrReportsT(scope)
-    let next = tbl.first()
-    for (let i = 0; i < 50; i++) {
-      let row = next
-      if (row && row.report.round < olderThan) {
-        next = tbl.next(row)
-        tbl.remove(row)
-      } else break
-    }
+  sendSlashOracle(oracle:Name, quantity:u32):void {
+    const data = new SlashOracleParams(oracle, quantity)
+    const action = new Action(this.receiver, Name.fromString("slashoracle"), [this.codePerm], data.pack())
+    action.send()
   }
 
   getOracleWeight(collateral:u32, config:Config):u8 {
     return u8(Math.min((Math.pow(f32(collateral) / config.weight_collateral_divisor, config.weight_collateral_pwr)), u8.MAX_VALUE))
   }
+}
 
-  @action("reportsclean")
-  reportsCleanup(scope:Name):void {
-    const config = this.getConfig()
-    const cleanupOlder = u32(Math.max(this.currentRound() - config.reports_finalized_after_rounds - config.standby_toggle_interval_rounds, 0))
-    check(cleanupOlder != 0, "can't cleanup reports yet")
-    this.loopReportsCleanup(scope, cleanupOlder)
-  }
-
-  loopOraclesCleanup():void {
-    for (let i = 0; i < 50; i++) {
-      let row = this.oraclesT.first()
-      if (row) this.oraclesT.remove(row)
-      else break
-    }
-  }
-
-  @action("oraclesclear")
-  oraclesClear():void {
-    this.loopOraclesCleanup()
-  }
+@packer
+export class SlashOracleParams extends ActionData {
+  constructor(
+    public oracle:Name = EMPTY_NAME,
+    public quantity:u32 = 0
+  ) { super() }
 }

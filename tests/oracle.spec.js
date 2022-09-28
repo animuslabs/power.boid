@@ -98,6 +98,7 @@ async function main() {
         addRounds(1)
         report2.round = 16
         await act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report: report2 }, "oracle1")
+        console.log(chain.console);
         // await act("thisround")
         await act("handleostat", { oracle: "oracle1", round: 11 }).catch(err => {
           console.log(err.toString())

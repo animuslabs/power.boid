@@ -248,7 +248,7 @@ export const config = {
   slash_quantity_static: 500000,
   slash_quantity_collateral_pct: 0.01,
   withdraw_rounds_wait: 20,
-  keep_stats_rows: 200,
+  keep_finalized_stats_rows: 200,
   reports_finalized_after_rounds: 3,
   unlock_wait_rounds: 40,
   standby_toggle_interval_rounds: 20,

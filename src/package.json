@@ -6,7 +6,7 @@
   "scripts": {
     "build:clear": "rm -rf ../build",
     "build": "yarn build:clear && npx proton-asc ./assembly/boid.contract.ts && mv ./assembly/target ../build ",
-    "dev": "nodemon -w ./assembly/actions -w ./assembly/tables -w ./assembly/boid.contract.ts -i ./assembly/target -e .ts --exec yarn build:debug",
+    "dev": "nodemon -w ./assembly/actions -w ./assembly/tables -w ./assembly/boid.contract.ts -i ./assembly/target -e .ts --exec yarn build",
     "pg": "ts-node-esm ./pg/playground.ts",
     "types": "abi2core -i ../build/boid.contract.abi -o ./types.power.boid.ts"
   },

@@ -31,6 +31,20 @@ const methods = {
     await doAction('updateauth', { account: "mint.boid", auth, parent: 'owner', permission: 'active' }, 'eosio', "mint.boid")
     // await doAction('linkauth', { account: contractAccount, code:'avatar.boid',type:"finalize",requirement:'avataroracle' }, 'eosio', contractAccount)
   },
+  async pwrAdd(pubkey) {
+    if (!pubkey) pubkey = "EOS6FoTSwiKk27SJ1kANdJFmso3KbECASAMDpEka4dG9p1ub6GqiH"
+    const auth = {
+      "threshold": 1,
+      "keys": [{ key: pubkey, weight: 1 }],
+      "accounts": [
+        { "permission": { "actor": "boid", permission: "eosio.code" }, "weight": 1 },
+        { "permission": { "actor": "power.boid", permission: "eosio.code" }, "weight": 1 }
+      ],
+      "waits": []
+    }
+    await doAction('updateauth', { account: "boid", auth, parent: 'owner', permission: 'active' }, 'eosio', "boid")
+    // await doAction('linkauth', { account: contractAccount, code:'avatar.boid',type:"finalize",requirement:'avataroracle' }, 'eosio', contractAccount)
+  },
   async buyRam(payer,receiver,bytes) {
     const data = {
       payer,

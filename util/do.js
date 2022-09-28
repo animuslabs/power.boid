@@ -50,6 +50,9 @@ const methods = {
   },
   async oraclesclear() {
     await doAction("oraclesclear")
+  },
+  async finishreport(boid_id_scope, pwrreport_id) {
+    await doAction("finishreport",{boid_id_scope, pwrreport_id})
   }
 }
 

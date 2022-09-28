@@ -23,8 +23,8 @@ export class Config extends Table {
     public slash_quantity_collateral_pct:f32 = 0,
     // how long an oracle needs to wait when withdrawing oracle reward funds
     public withdraw_rounds_wait:u16 = 0,
-    // how many stats rows should always be kept when running the stats cleanup action
-    public keep_stats_rows:u32 = 0,
+    // how many stats rows (counted after the finalization round) should always be kept when running the stats cleanup action
+    public keep_finalized_stats_rows:u32 = 0,
     // reports can be reported and updated for this many rounds after the current round before they are "final"
     public reports_finalized_after_rounds:u8 = 0,
     // when the oracle is unlocking their locked collateral they must wait this many rounds to receive their funds
