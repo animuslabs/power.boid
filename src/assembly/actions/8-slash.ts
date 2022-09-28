@@ -9,9 +9,12 @@ export class SlashActions extends TableCleanActions {
     const config = this.getConfig()
     const oStatsT = this.oracleStatsT(oracle)
     const oStatsRow = oStatsT.get(u64(round))
+
+    // stats row either hasn't been created or was cleared, important to fail to prevent cleared rows from being mistaken as absent
     const statsRow = this.statsT.requireGet(round + 1, "stats row missing")
 
     // check the global table first
+    // This is important because when rows are cleared it may look like the oracle was missing
     const global = statsRow.starting_global
     check(global.expected_active_oracles.includes(oracle), "oracle was not expected to be active this round")
     check(!global.active_oracles.includes(oracle), "oracle was active this round")
@@ -72,6 +75,7 @@ export class SlashActions extends TableCleanActions {
         // check(!reportRow.merged && !reportRow.reported, "report was already reported or merged")
 
         // remove the oracle aproval and weight from the row and save it
+        // TODO: check for overflow if the oracle weight has changed since the report was made this could be problematic
         if (!reportRow.merged && !reportRow.reported) {
           reportRow.approvals.splice(oracleIndex, 1)
           if (oracleRow.weight < reportRow.approval_weight) reportRow.approval_weight -= oracleRow.weight
