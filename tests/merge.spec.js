@@ -32,7 +32,7 @@ async function main() {
         // console.log(global())
         // await act("thisround")
 
-        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "fah", unitPowerMult: 1 } })
+        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "fah", unitPowerMult: 1,active:true } })
         // addRounds(33)
         await act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report: { protocol_id: 0, round: 33, units: 7 } }, "oracle1@active")
         // console.log(reports("testaccount"))
@@ -68,7 +68,7 @@ async function main() {
         await act("oracleset", { account: "oracle4", weight: 10, adding_collateral: 0 })
         await act("setstandby", { oracle: "oracle4", standby: false })
 
-        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "fah", unitPowerMult: 1 } })
+        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "fah", unitPowerMult: 1 ,active:true} })
         await act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report: { protocol_id: 0, round: 33, units: 7 } }, "oracle1@active")
         // console.log(reports("testaccount"))
         await act("pwrreport", { oracle: "oracle2", boid_id_scope: "testaccount", report: { protocol_id: 0, round: 33, units: 8 } }, "oracle2@active")
@@ -104,7 +104,7 @@ async function main() {
         await act("oracleset", { account: "oracle4", weight: 10, adding_collateral: 0 })
         await act("setstandby", { oracle: "oracle4", standby: false })
 
-        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "fah", unitPowerMult: 1 } })
+        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "fah", unitPowerMult: 1,active:true } })
         await act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report: { protocol_id: 0, round: 33, units: 2 } }, "oracle1@active")
         // console.log(reports("testaccount"))
         await act("pwrreport", { oracle: "oracle2", boid_id_scope: "testaccount", report: { protocol_id: 0, round: 33, units: 8 } }, "oracle2@active")

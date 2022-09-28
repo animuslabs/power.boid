@@ -42,7 +42,7 @@ async function main() {
         await expectToThrow(
           act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report }, "oracle1"),
           "eosio_assert: invalid protocol_id")
-        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1 } })
+        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1,active:true } })
         await act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report }, "oracle1")
         // console.log(reports("testaccount"))
         const rRow = reports("testaccount")[0]

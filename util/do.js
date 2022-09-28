@@ -14,7 +14,7 @@ const config = {
   slash_quantity_static: 100,
   slash_quantity_collateral_pct: 0.01,
   withdraw_rounds_wait: 20,
-  keep_stats_rows: 200,
+  keep_finalized_stats_rows: 10,
   reports_finalized_after_rounds: 3,
   unlock_wait_rounds: 40,
   standby_toggle_interval_rounds: 20,
@@ -40,7 +40,10 @@ const methods = {
     await doAction("setstandby",{oracle,standby})
   },
   async protoset() {
-    await doAction("protoset",{protocol:{protocol_id:0,protocol_name:"fah",unitPowerMult:0.0001}})
+    await doAction("protoset",{protocol:{protocol_id:0,protocol_name:"fah",unitPowerMult:0.0001,active:true}})
+  },
+  async protoclear() {
+    await doAction("protoclear")
   },
   async statsclean() {
     await doAction("statsclean")
@@ -53,6 +56,9 @@ const methods = {
   },
   async finishreport(boid_id_scope, pwrreport_id) {
     await doAction("finishreport",{boid_id_scope, pwrreport_id})
+  },
+  async reportsclean(scope) {
+    await doAction("reportsclean",{scope})
   }
 }
 

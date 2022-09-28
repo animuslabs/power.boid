@@ -5,7 +5,8 @@ export class Protocol extends Table {
   constructor(
     public protocol_id:u64 = 0,
     public protocol_name:Name = EMPTY_NAME,
-    public unitPowerMult:f32 = 0
+    public unitPowerMult:f32 = 0,
+    public active:boolean = true
   ) {
     super()
   }

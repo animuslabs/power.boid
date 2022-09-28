@@ -154,7 +154,7 @@
           "type": "uint16"
         },
         {
-          "name": "keep_stats_rows",
+          "name": "keep_finalized_stats_rows",
           "type": "uint32"
         },
         {
@@ -566,6 +566,10 @@
         {
           "name": "unitPowerMult",
           "type": "float32"
+        },
+        {
+          "name": "active",
+          "type": "bool"
         }
       ]
     },
@@ -787,6 +791,16 @@
       ]
     },
     {
+      "name": "ostatsclean",
+      "base": "",
+      "fields": [
+        {
+          "name": "scope",
+          "type": "name"
+        }
+      ]
+    },
+    {
       "name": "payoracle",
       "base": "",
       "fields": [
@@ -803,6 +817,11 @@
           "type": "uint32"
         }
       ]
+    },
+    {
+      "name": "protoclear",
+      "base": "",
+      "fields": []
     },
     {
       "name": "protoset",
@@ -1014,8 +1033,18 @@
       "ricardian_contract": ""
     },
     {
+      "name": "ostatsclean",
+      "type": "ostatsclean",
+      "ricardian_contract": ""
+    },
+    {
       "name": "payoracle",
       "type": "payoracle",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "protoclear",
+      "type": "protoclear",
       "ricardian_contract": ""
     },
     {
