@@ -23,6 +23,15 @@ export class TableCleanActions extends OStatsActions {
     }
   }
 
+  loopReportsClear(scope:Name, num:i32 = 50):void {
+    const reports = this.pwrReportsT(scope)
+    for (let i = 0; i < num; i++) {
+      let row = reports.first()
+      if (row) reports.remove(row)
+      else break
+    }
+  }
+
   loopProtocolsClear(num:i32 = 50):void {
     const oracles = this.protocolsT
     for (let i = 0; i < num; i++) {
@@ -34,11 +43,16 @@ export class TableCleanActions extends OStatsActions {
 
   loopReportsCleanup(scope:Name, olderThan:u32):void {
     const tbl = this.pwrReportsT(scope)
-    let next = tbl.first()
+    let next = tbl.getBySecondaryU64(0, 0)
+    if (!next) {
+      check(false, "no rows to clean")
+      return
+    }
+    check(next && next.report.round < olderThan, "no rows to clean")
     for (let i = 0; i < 50; i++) {
       let row = next
       if (row && row.report.round < olderThan) {
-        next = tbl.next(row)
+        next = tbl.nextBySecondaryU64(row, 0)
         tbl.remove(row)
       } else break
     }
@@ -47,6 +61,11 @@ export class TableCleanActions extends OStatsActions {
   loopOstatsCleanup(scope:Name, olderThan:u32):void {
     const tbl = this.oracleStatsT(scope)
     let next = tbl.first()
+    if (!next) {
+      check(false, "no rows to clean")
+      return
+    }
+    check(next && next.round < olderThan, "no rows to clean")
     for (let i = 0; i < 50; i++) {
       let row = next
       if (row && row.round < olderThan) {
@@ -68,6 +87,12 @@ export class TableCleanActions extends OStatsActions {
   protocolsClear():void {
     requireAuth(this.receiver)
     this.loopProtocolsClear()
+  }
+
+  @action("reportsclear")
+  reportsClear(scope:Name):void {
+    requireAuth(this.receiver)
+    this.loopReportsClear(scope)
   }
 
   @action("configclear")

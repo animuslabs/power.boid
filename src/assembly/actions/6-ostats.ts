@@ -7,7 +7,7 @@ export class OStatsActions extends DepositActions {
   @action("handleostat")
   handleOStat(oracle:Name, round:u16):void {
     const config = this.getConfig()
-    check(round < this.currentRound() - (1 + config.reports_finalized_after_rounds), "can't process this round yet, not yet finalized")
+    check(round < this.currentRound() - config.reports_finalized_after_rounds, "can't process this round yet, not yet finalized")
 
     // get config, global and oracle stats
     const oStatsT = this.oracleStatsT(oracle)
@@ -22,7 +22,6 @@ export class OStatsActions extends DepositActions {
     print("\n unreportedShare: " + unReportedShare.toString())
 
     // if unreported is above the threshold, slash funds from the oracle
-
     const validProposed = u32(Math.max(i32(oRoundData.reports.proposed) - i32(oRoundData.reports.unreported_unmerged), 0))
     const globalValidProposed = globalData.valid_proposed_since_previous
     // const globalValidProposed = u32(globalData.proposed_since_previous)

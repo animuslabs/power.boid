@@ -80,7 +80,7 @@ export class Config extends Struct {
     @Struct.field(UInt32) slash_quantity_static!: UInt32
     @Struct.field(Float32) slash_quantity_collateral_pct!: Float32
     @Struct.field(UInt16) withdraw_rounds_wait!: UInt16
-    @Struct.field(UInt32) keep_stats_rows!: UInt32
+    @Struct.field(UInt32) keep_finalized_stats_rows!: UInt32
     @Struct.field(UInt8) reports_finalized_after_rounds!: UInt8
     @Struct.field(UInt16) unlock_wait_rounds!: UInt16
     @Struct.field(UInt16) standby_toggle_interval_rounds!: UInt16
@@ -233,6 +233,7 @@ export class Protocol extends Struct {
     @Struct.field(UInt64) protocol_id!: UInt64
     @Struct.field(Name) protocol_name!: Name
     @Struct.field(Float32) unitPowerMult!: Float32
+    @Struct.field('bool') active!: boolean
 }
 
 @Struct.type('PwrReport')
@@ -312,11 +313,20 @@ export class Oracleset extends Struct {
     @Struct.field(UInt32) adding_collateral!: UInt32
 }
 
+@Struct.type('ostatsclean')
+export class Ostatsclean extends Struct {
+    @Struct.field(Name) scope!: Name
+}
+
 @Struct.type('payoracle')
 export class Payoracle extends Struct {
     @Struct.field(Name) oracle!: Name
     @Struct.field(UInt32) basePay!: UInt32
     @Struct.field(UInt32) bonusPay!: UInt32
+}
+
+@Struct.type('protoclear')
+export class Protoclear extends Struct {
 }
 
 @Struct.type('protoset')
@@ -333,6 +343,11 @@ export class Pwrreport extends Struct {
 
 @Struct.type('reportsclean')
 export class Reportsclean extends Struct {
+    @Struct.field(Name) scope!: Name
+}
+
+@Struct.type('reportsclear')
+export class Reportsclear extends Struct {
     @Struct.field(Name) scope!: Name
 }
 

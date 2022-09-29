@@ -14,7 +14,7 @@ const config = {
   slash_quantity_static: 100,
   slash_quantity_collateral_pct: 0.01,
   withdraw_rounds_wait: 20,
-  keep_finalized_stats_rows: 10,
+  keep_finalized_stats_rows: 3,
   reports_finalized_after_rounds: 3,
   unlock_wait_rounds: 40,
   standby_toggle_interval_rounds: 20,
@@ -33,6 +33,9 @@ const methods = {
   },
   async thisround() {
     await doAction("thisround")
+  },
+  async finalround() {
+    await doAction("finalround")
   },
   async setstandby(oracle, standby) {
     if (standby == "false") standby = false
@@ -63,6 +66,13 @@ const methods = {
   },
   async ostatsclean(scope) {
     await doAction("ostatsclean",{scope})
+  },
+  async clearAllReports() {
+    const scopes = (await api.rpc.get_table_by_scope({ code: contractAccount, table: "pwrreports", limit: 1000 })).rows.map(el => el.scope)
+    console.log(scopes)
+    for (const scope of scopes) {
+      await doAction('reportsclear',{scope})
+    }
   }
 }
 

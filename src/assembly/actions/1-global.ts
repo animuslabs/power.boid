@@ -110,6 +110,12 @@ export class GlobalActions extends Contract {
     // check(false, (this.currentRoundFloat() % f32(this.currentRound())).toString())
   }
 
+  @action("finalround")
+  finalRound():void {
+    check(false, (this.currentRound() - (this.configT.get().reports_finalized_after_rounds + 1)).toString())
+    // check(false, (this.currentRoundFloat() % f32(this.currentRound())).toString())
+  }
+
   shouldFinalizeReports(config:Config = this.getConfig()):boolean {
     const roundProgress = (this.currentRoundFloat() % f32(this.currentRound()))
     print("\n currentRoundFloat: " + this.currentRoundFloat().toString())

@@ -707,6 +707,11 @@
       ]
     },
     {
+      "name": "finalround",
+      "base": "",
+      "fields": []
+    },
+    {
       "name": "finishreport",
       "base": "",
       "fields": [
@@ -862,6 +867,16 @@
       ]
     },
     {
+      "name": "reportsclear",
+      "base": "",
+      "fields": [
+        {
+          "name": "scope",
+          "type": "name"
+        }
+      ]
+    },
+    {
       "name": "roundstats",
       "base": "",
       "fields": []
@@ -998,6 +1013,11 @@
       "ricardian_contract": ""
     },
     {
+      "name": "finalround",
+      "type": "finalround",
+      "ricardian_contract": ""
+    },
+    {
       "name": "finishreport",
       "type": "finishreport",
       "ricardian_contract": ""
@@ -1060,6 +1080,11 @@
     {
       "name": "reportsclean",
       "type": "reportsclean",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "reportsclear",
+      "type": "reportsclear",
       "ricardian_contract": ""
     },
     {
