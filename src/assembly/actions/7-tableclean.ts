@@ -43,16 +43,16 @@ export class TableCleanActions extends OStatsActions {
 
   loopReportsCleanup(scope:Name, olderThan:u32):void {
     const tbl = this.pwrReportsT(scope)
-    let next = tbl.getBySecondaryU64(0, 0)
+    let next = tbl.getBySecondaryU64(u64(olderThan - 1), 0)
     if (!next) {
       check(false, "no rows to clean")
       return
     }
-    check(next && next.report.round < olderThan, "no rows to clean")
+    check(next && next.report.round < olderThan, "no rows to clean" + next.report.round.toString())
     for (let i = 0; i < 50; i++) {
       let row = next
       if (row && row.report.round < olderThan) {
-        next = tbl.nextBySecondaryU64(row, 0)
+        next = tbl.previousBySecondaryU64(row, 0)
         tbl.remove(row)
       } else break
     }

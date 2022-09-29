@@ -17,7 +17,7 @@ const config = {
   keep_finalized_stats_rows: 3,
   reports_finalized_after_rounds: 3,
   unlock_wait_rounds: 40,
-  standby_toggle_interval_rounds: 20,
+  standby_toggle_interval_rounds: 3,
   weight_collateral_pwr: 1.1,
   oracle_collateral_deposit_increment: 1000,
   reports_accumulate_weight_round_pct: 0.20,
