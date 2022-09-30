@@ -63,7 +63,8 @@ export class PwrReportActions extends OracleActions {
       check(!existing.merged, "report already merged")
       existing.approval_weight += oracleRow.weight
       existing.approvals.push(oracle)
-      if (existing.approval_weight >= this.minWeightThreshold(config, global) && this.shouldFinalizeReports(config)) {
+      const checkFinalize = existing.report.round == this.currentRound() - 1
+      if (existing.approval_weight >= this.minWeightThreshold(config, global) && (checkFinalize ? this.shouldFinalizeReports(config) : true)) {
         this.sendReport(boid_id_scope, report)
         reportSent = true
         existing.reported = true
@@ -73,7 +74,13 @@ export class PwrReportActions extends OracleActions {
       pwrReportsT.update(existing, this.receiver)
     } else {
       reportCreated = true
-      const reported = oracleRow.weight >= u16(this.minWeightThreshold()) && this.shouldFinalizeReports(config)
+      const checkFinalize = report.round == this.currentRound() - 1
+      print("\n minThreshold: " + u16(this.minWeightThreshold()).toString())
+      print("\n checkFinalize: " + checkFinalize.toString())
+      print("\n shouldFinalize: " + this.shouldFinalizeReports(config).toString())
+      print("\n weightEnough? " + (oracleRow.weight >= u16(this.minWeightThreshold())).toString())
+      const reported = oracleRow.weight >= u16(this.minWeightThreshold()) && (checkFinalize ? this.shouldFinalizeReports(config) : true)
+      print("\n reported: " + reported.toString())
       const row = new PwrReportRow(reportId, oracle, report, [oracle], oracleRow.weight, reported)
       global.reports.proposed++
       pwrReportsT.store(row, this.receiver)
@@ -123,7 +130,7 @@ export class PwrReportActions extends OracleActions {
     const existing = pwrReportsT.requireGet(pwrreport_id, "invalid report id or scope")
     const config = this.getConfig()
     const global = this.globalT.get()
-    check(this.shouldFinalizeReports(config), "report can't be finalized yet, too early in the round")
+    if (existing.report.round == this.currentRound() - 1) check(this.shouldFinalizeReports(config), "report can't be finalized yet, too early in the round")
     check(existing.approval_weight >= this.minWeightThreshold(), "report can't be finalized yet, minimum weight threshold not met")
     this.sendReport(boid_id_scope, existing.report)
     existing.reported = true

@@ -83,10 +83,6 @@ export class SlashActions extends TableCleanActions {
           pwrReportsT.update(reportRow, this.receiver)
         }
       }
-
-      // slash for every invalid row
-      for (let i = 0; i < pwrreport_ids.length; i++) {
-        this.sendSlashOracle(oracle, this.findSlashQuantity(oracleRow, config))
-      }
+      this.sendSlashOracle(oracle, this.findSlashQuantity(oracleRow, config) * pwrreport_ids.length)
     }
 }
