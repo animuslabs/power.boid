@@ -66,8 +66,8 @@ export class GlobalActions extends Contract {
    *
    * update the stats table if an entry has not been written for the current round.
    * reads data from the previous round and calculates differences
-   * @param {Global} [currentGlobal=this.globalT.get()]
-   * @param {Config} [config=this.getConfig()]
+   * @param {Global} [currentGlobal=this.globalT.get()] if you don't provide a Global reference it will create one
+   * @param {Config} [config=this.getConfig()] if you don't provide a Config reference it will create one
    * @return {*}  {boolean}
    * @memberof GlobalActions
    */

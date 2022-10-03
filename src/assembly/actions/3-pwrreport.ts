@@ -132,6 +132,7 @@ export class PwrReportActions extends OracleActions {
     const global = this.globalT.get()
     if (existing.report.round == this.currentRound() - 1) check(this.shouldFinalizeReports(config), "report can't be finalized yet, too early in the round")
     check(existing.approval_weight >= this.minWeightThreshold(), "report can't be finalized yet, minimum weight threshold not met")
+    check(!existing.merged || !existing.reported, "report already merged or reported")
     this.sendReport(boid_id_scope, existing.report)
     existing.reported = true
     global.reports.reported++
