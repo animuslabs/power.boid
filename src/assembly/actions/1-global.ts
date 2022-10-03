@@ -62,14 +62,25 @@ export class GlobalActions extends Contract {
     }
   }
 
+  /**
+   *
+   * update the stats table if an entry has not been written for the current round.
+   * reads data from the previous round and calculates differences
+   * @param {Global} [currentGlobal=this.globalT.get()]
+   * @param {Config} [config=this.getConfig()]
+   * @return {*}  {boolean}
+   * @memberof GlobalActions
+   */
   updateStats(currentGlobal:Global = this.globalT.get(), config:Config = this.getConfig()):boolean {
     const existing = this.statsT.exists(u64(this.currentRound()))
     if (existing) return false
     const statsBefore = this.statsT.get(this.currentRound() - 1)
     if (!statsBefore) this.statsT.store(new Stat(this.currentRound(), this.globalT.get(), u32(currentGlobal.reports.reported), u32(currentGlobal.reports.unreported_and_unmerged), u32(currentGlobal.reports.proposed), u32(currentGlobal.rewards_paid), u32(currentGlobal.reports.proposed)), this.receiver)
     else {
+      const unreported = currentGlobal.reports.unreported_and_unmerged
+      const beforeUnreported = statsBefore.starting_global.reports.unreported_and_unmerged
+      const roundUnreported = unreported > beforeUnreported ? unreported - beforeUnreported : 0
       const roundReported = currentGlobal.reports.reported - statsBefore.starting_global.reports.reported
-      const roundUnreported = currentGlobal.reports.unreported_and_unmerged - statsBefore.starting_global.reports.unreported_and_unmerged
       const roundProposed = currentGlobal.reports.proposed - statsBefore.starting_global.reports.proposed
       const mintedSince = currentGlobal.rewards_paid - statsBefore.starting_global.rewards_paid
       const validProposed = currentGlobal.reports.proposed - statsBefore.starting_global.reports.unreported_and_unmerged

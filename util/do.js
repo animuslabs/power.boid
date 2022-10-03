@@ -20,7 +20,7 @@ const config = {
   standby_toggle_interval_rounds: 3,
   weight_collateral_pwr: 1.1,
   oracle_collateral_deposit_increment: 1000,
-  reports_accumulate_weight_round_pct: 0.20,
+  reports_accumulate_weight_round_pct: 1,
   weight_collateral_divisor:1000
 }
 
@@ -73,6 +73,9 @@ const methods = {
     for (const scope of scopes) {
       await doAction('reportsclear',{scope})
     }
+  },
+  async slashabsent(oracle, round) {
+    await doAction("slashabsent",{oracle,round})
   }
 }
 
