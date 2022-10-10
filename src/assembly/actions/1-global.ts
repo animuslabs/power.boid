@@ -12,6 +12,7 @@ export const boidSym:u64 = 293287707140
 
 @contract
 export class GlobalActions extends Contract {
+  // references to commonly used tables
   oraclesT:TableStore<Oracle> = new TableStore<Oracle>(this.receiver, this.receiver)
   protocolsT:TableStore<Protocol> = new TableStore<Protocol>(this.receiver, this.receiver)
   statsT:TableStore<Stat> = new TableStore<Stat>(this.receiver, this.receiver)
@@ -21,6 +22,10 @@ export class GlobalActions extends Contract {
   round:u16 = 0
   roundFloat:f32 = 0
 
+  /**
+   * for calculating the current round, copied logic from system contract
+   * @memberof GlobalActions
+   */
   currentRound():u16 {
     if (this.round == 0) {
       const config = new Singleton<boid.Config>(Name.fromString("boid")).getOrNull()
@@ -30,6 +35,9 @@ export class GlobalActions extends Contract {
     return this.round
   }
 
+  /**
+   * Determines the progress of the current round
+  */
   currentRoundFloat():f32 {
     const config = new Singleton<boid.Config>(Name.fromString("boid")).getOrNull()
     if (!config) {
@@ -63,13 +71,11 @@ export class GlobalActions extends Contract {
   }
 
   /**
-   *
    * update the stats table if an entry has not been written for the current round.
    * reads data from the previous round and calculates differences
-   * @param {Global} [currentGlobal=this.globalT.get()] if you don't provide a Global reference it will create one
-   * @param {Config} [config=this.getConfig()] if you don't provide a Config reference it will create one
-   * @return {*}  {boolean}
-   * @memberof GlobalActions
+   * the data is used when calculating rewards and slash actions
+   * @param Global if you don't provide a Global reference it will create one
+   * @param Config if you don't provide a Config reference it will create one
    */
   updateStats(currentGlobal:Global = this.globalT.get(), config:Config = this.getConfig()):boolean {
     const existing = this.statsT.exists(u64(this.currentRound()))

@@ -5,9 +5,9 @@ export class Config extends Table {
   constructor(
     // pauses most contract actions, for use during contract upgrades
     public paused:boolean = true,
-    // the minimum weight required to confirm a report
+    // the minimum weight required to confirm a report, this is to help protect from and instance where many oracles may go into standby at once.
     public min_consensus_weight:u32 = 0,
-    // the minimum percentage of all weight required to confirm a report
+    // the minimum percentage of all weight required to confirm a report, overridden by min_consensus_weight
     public min_consensus_pct:f32 = 0,
     // percentage of collateral is paid each round as long as the oracle was active that round
     public collateral_pct_pay_per_round:f32 = 0,

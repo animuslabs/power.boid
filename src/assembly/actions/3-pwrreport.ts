@@ -1,10 +1,8 @@
-import { Action, ActionData, check, Contract, EMPTY_NAME, Encoder, isAccount, Name, PermissionLevel, print, requireAuth, TableStore } from "proton-tsc"
+import { Action, ActionData, check, EMPTY_NAME, Encoder, Name, PermissionLevel, print, requireAuth, TableStore } from "proton-tsc"
 import { Account } from "../tables/external/accounts"
 import { Oracle } from "../tables/oracles"
 import { OracleStat } from "../tables/oracleStats"
 import { PwrReport, PwrReportRow } from "../tables/pwrreports"
-// import { Account } from "../tables/external/accounts"
-// import { PwrReportRow } from "../tables/pwrreports"
 import { OracleActions } from "./2-oracle"
 @packer
 export class PowerAddParams extends ActionData {
@@ -18,6 +16,13 @@ export class PowerAddParams extends ActionData {
 
 @contract
 export class PwrReportActions extends OracleActions {
+  /**
+   * calculates a unique report ID based on the report metadata
+   * @todo move to the pwreports primary index function
+   * @param {PwrReport} report
+   * @return {*}  {u64}
+   * @memberof PwrReportActions
+   */
   getReportId(report:PwrReport):u64 {
     const idEncoder = new Encoder(8)
     idEncoder.packObjectArray([report])
@@ -30,33 +35,54 @@ export class PwrReportActions extends OracleActions {
     const proto = this.protocolsT.requireGet(u64(report.protocol_id), "invalid protocol_id")
     const power:u16 = u16(proto.unitPowerMult * f32(report.units))
     // check(false, proto.unitPowerMult.toString() + " " + report.units.toString() + " " + power.toString())
+    // silently fail if no power was generated
     if (power == 0) return
     const data = new PowerAddParams(boid_id, power)
     const action = new Action(Name.fromString("boid"), Name.fromString("power.add"), [new PermissionLevel(Name.fromString("boid"), Name.fromString("active"))], data.pack())
     action.send()
   }
 
+  /**
+   * oracles call this action to add reports into the pwrreports table
+   *
+   * @param {Name} oracle
+   * @param {Name} boid_id_scope
+   * @param {PwrReport} report
+   */
   @action("pwrreport")
   pwrReport(oracle:Name, boid_id_scope:Name, report:PwrReport):void {
     requireAuth(oracle)
     const reportId = this.getReportId(report)
     const config = this.getConfig()
+
+    // ensure the report is for a round that is valid
     check(report.round >= this.currentRound() - config.reports_finalized_after_rounds, "round is too far in the past")
     check(report.round < this.currentRound(), "report round must target a past round")
+
+    // ensure the oracle can make reports
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle not registered")
     check(!oracleRow.standby, "oracle is in standby mode, disable standby first to start making reports")
     check(oracleRow.weight > 0, "can't make reports with a weight of 0")
+
+    // make sure it's a valid protocol
     const protocol = this.protocolsT.requireGet(u64(report.protocol_id), "invalid protocol_id")
     check(protocol.active, "protocol not currently active, can't make report")
     const coreContract = Name.fromString("boid")
+
+    // make sure the target boid_id is valid
     const accountsT:TableStore<Account> = new TableStore<Account>(coreContract, coreContract)
     check(accountsT.exists(boid_id_scope.value), "invalid boid_id_owner")
+
     let reportSent = false
     let reportCreated = false
     const pwrReportsT = this.pwrReportsT(boid_id_scope)
     const existing = pwrReportsT.get(reportId)
     const global = this.globalT.get()
+
+    // make sure the stats table is updated for this round
     this.updateStats(global)
+
+    // if the report already exists, aggregate our weight with the existing weight and possibly finalize it
     if (existing) {
       check(!existing.approvals.includes(oracle), "oracle already approved this report")
       check(!existing.reported, "report already reported")
@@ -64,6 +90,8 @@ export class PwrReportActions extends OracleActions {
       existing.approval_weight += oracleRow.weight
       existing.approvals.push(oracle)
       const checkFinalize = existing.report.round == this.currentRound() - 1
+
+      // if we can finalize, go ahead and do it now
       if (existing.approval_weight >= this.minWeightThreshold(config, global) && (checkFinalize ? this.shouldFinalizeReports(config) : true)) {
         this.sendReport(boid_id_scope, report)
         reportSent = true
@@ -73,6 +101,7 @@ export class PwrReportActions extends OracleActions {
       }
       pwrReportsT.update(existing, this.receiver)
     } else {
+      // we are the first to make this report so this oracle is the proposer
       reportCreated = true
       const checkFinalize = report.round == this.currentRound() - 1
       print("\n minThreshold: " + u16(this.minWeightThreshold()).toString())
@@ -93,6 +122,7 @@ export class PwrReportActions extends OracleActions {
     this.markOracleActive(oracleRow, global)
     this.globalT.set(global, this.receiver)
 
+    // if report was sent, we need to update the stats for all oracles that participated
     if (reportSent) {
       if (!existing) return
       for (let i = 0; i < existing.approvals.length; i++) {
@@ -104,10 +134,19 @@ export class PwrReportActions extends OracleActions {
         else this.updateOracleStats(row, reportSent, false)
       }
     } else {
+      // otherwise we just need to update our own oracle stats
       this.updateOracleStats(oracleRow, reportSent, reportCreated)
     }
   }
 
+  /**
+   * Update the oracle stats or create a new oraclestats row for the target round.
+   *
+   * @param {Oracle} oracleRow reference to the oracle row to be edited
+   * @param {boolean} reportSent was the report finalized or not
+   * @param {boolean} proposed did the oracle propose the report or just adding to an existing one
+   * @memberof PwrReportActions
+   */
   updateOracleStats(oracleRow:Oracle, reportSent:boolean, proposed:boolean):void {
     const oStatsT = this.oracleStatsT(oracleRow.account)
     const existingOStats = oStatsT.get(u64(this.currentRound()))
@@ -124,6 +163,13 @@ export class PwrReportActions extends OracleActions {
     }
   }
 
+  /**
+   * Since reports can't always be finalized when receiving reports, sometimes we need to finalize the report seperately.
+   * This action doesn't require any authentication as it is only possible when the target report has already receive sufficient consensus.
+   *
+   * @param {Name} boid_id_scope the scope of the pwrreports table where we can find the report
+   * @param {u64} pwrreport_id the id of the target report to finalize
+   */
   @action("finishreport")
   finishReport(boid_id_scope:Name, pwrreport_id:u64):void {
     const pwrReportsT = this.pwrReportsT(boid_id_scope)
@@ -141,6 +187,7 @@ export class PwrReportActions extends OracleActions {
     pwrReportsT.update(existing, this.receiver)
     this.globalT.set(global, this.receiver)
 
+    // update the stats of all the oracles that participated
     for (let i = 0; i < existing.approvals.length; i++) {
       const oracleName = existing.approvals[i]
       let row = this.oraclesT.get(oracleName.value)
@@ -149,6 +196,14 @@ export class PwrReportActions extends OracleActions {
     }
   }
 
+  /**
+   * Sometimes oracles may make slightly different reports based on fuzzy data.
+   * In this case, multiple reports that are within a range can be combined and finalized as one report.
+   * does not require any authentication
+   *
+   * @param {Name} boid_id_scope the scope of pwrreports table where the reports can be find
+   * @param {u64[]} pwrreport_ids a vector of reports that could be combined
+   */
   @action("mergereports")
   mergeReports(boid_id_scope:Name, pwrreport_ids:u64[]):void {
     const config = this.getConfig()
@@ -213,6 +268,7 @@ export class PwrReportActions extends OracleActions {
     this.sendReport(boid_id_scope, mergedRow.report)
 
     let allOracles:Name[] = []
+
     // update all the report rows and store all oracles
     for (let i = 0; i < targetReports.length; i++) {
       const pwrReport = targetReports[i]

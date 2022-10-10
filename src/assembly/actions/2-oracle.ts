@@ -34,6 +34,13 @@ export class OracleActions extends GlobalActions {
     action.send()
   }
 
+  /**
+   * Action triggered when an existing oracle deposits additional collateral. Action is never called externally.
+   *
+   * @param {Name} oracle oracle must already exist
+   * @param {u32} depositQuantity quantity is in whole values of BOID
+   * @memberof OracleActions
+   */
   @action("oracldeposit")
   oracleDeposit(oracle:Name, depositQuantity:u32):void {
     requireAuth(this.receiver)
@@ -70,6 +77,12 @@ export class OracleActions extends GlobalActions {
     action.send()
   }
 
+  /**
+   * Action called by oracles or the contract to set an oracle in/out of standby mode.
+   *
+   * @param {Name} oracle
+   * @param {boolean} standby
+   */
   @action("setstandby")
   setStandby(oracle:Name, standby:boolean):void {
     if (!hasAuth(this.receiver)) requireAuth(oracle)
@@ -104,8 +117,19 @@ export class OracleActions extends GlobalActions {
     action.send()
   }
 
+  /**
+   * This action is triggered when a new oracle deposits collateral
+   *
+   * @param {Name} account
+   * @param {u8} weight
+   * @param {u32} adding_collateral
+   * @memberof OracleActions
+   */
   @action("oracleset")
   oracleSet(account:Name, weight:u8, adding_collateral:u32):void {
+    // TODO, this action originally handled new and existing oracles but now it only needs to handle new oracles
+    // still thinking about the best way to organize the actions...
+    // The original idea is that arbitrary weight could be added, like from the DAO or other sources of voting
     requireAuth(this.receiver)
     const existing = this.oraclesT.get(account.value)
     const global = this.globalT.get()
@@ -149,6 +173,11 @@ export class OracleActions extends GlobalActions {
     this.globalT.set(global, this.receiver)
   }
 
+  /**
+   * oracle can call this to begin withdrawing funds they earned from rewards
+   *
+   * @param {Name} oracle
+   */
   @action("withdrawinit")
   withdrawInit(oracle:Name):void {
     requireAuth(oracle)
@@ -162,6 +191,11 @@ export class OracleActions extends GlobalActions {
     this.oraclesT.update(oracleRow, this.receiver)
   }
 
+  /**
+   * After the withdraw waiting period has passed anyone can call this action to push the funds to the oracle
+   *
+   * @param {Name} oracle
+   */
   @action("withdraw")
   withdrawEnd(oracle:Name):void {
     // authentication is not needed
@@ -186,6 +220,11 @@ export class OracleActions extends GlobalActions {
     this.oraclesT.update(oracleRow, this.receiver)
   }
 
+  /**
+   * Oracle can call this action to start unlocking deposited collateral
+   *
+   * @param {Name} oracle
+   */
   @action("unlockinit")
   unlockInit(oracle:Name):void {
     if (hasAuth(this.receiver)) requireAuth(oracle)
@@ -211,6 +250,11 @@ export class OracleActions extends GlobalActions {
     this.oraclesT.update(oracleRow, this.receiver)
   }
 
+  /**
+   * When the unlock waiting period has passed, anyone can call this action to push the funds to the oracle
+   *
+   * @param {Name} oracle
+   */
   @action("unlock")
   unlock(oracle:Name):void {
     // no auth required

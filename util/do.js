@@ -5,12 +5,12 @@ const activeChain = process.env.CHAIN || env.defaultChain
 const contractAccount = conf.accountName[activeChain]
 const config = {
   paused: false,
-  min_consensus_weight: 30,
-  min_consensus_pct: 0.66,
+  min_consensus_weight: 10,
+  min_consensus_pct: 0.51,
   collateral_pct_pay_per_round: 0.01,
   round_bonus_pay_reports: 500,
   round_bonus_pay_proposed: 1000,
-  slash_threshold_pct: 1,
+  slash_threshold_pct: 0.9,
   slash_quantity_static: 1,
   slash_quantity_collateral_pct: 0.001,
   withdraw_rounds_wait: 20,
@@ -43,7 +43,7 @@ const methods = {
     await doAction("setstandby",{oracle,standby})
   },
   async protoset() {
-    await doAction("protoset",{protocol:{protocol_id:0,protocol_name:"fah",unitPowerMult:0.0001,active:true}})
+    await doAction("protoset",{protocol:{protocol_id:0,protocol_name:"fah",unitPowerMult:0.01,active:true}})
   },
   async protoclear() {
     await doAction("protoclear")
