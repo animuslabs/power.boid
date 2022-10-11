@@ -2,6 +2,9 @@ import { check, Name, requireAuth } from "proton-tsc"
 import { Config } from "../tables/config"
 import { OStatsActions } from "./6-ostats"
 
+/**
+ *These actions clear tables or clean them within some limits.
+ */
 export class TableCleanActions extends OStatsActions {
   loopStatsCleanup(olderThan:u32):void {
     let next = this.statsT.first()

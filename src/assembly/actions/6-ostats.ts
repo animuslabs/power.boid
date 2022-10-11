@@ -4,8 +4,16 @@ import { OracleStat } from "../tables/oracleStats"
 import { DepositActions } from "./5-deposit"
 
 export class OStatsActions extends DepositActions {
+  /**
+   * reads oraclestats row and reward/slash an oracle based on relative performance
+   *
+   * @param {Name} oracle
+   * @param {u16} round
+   */
   @action("handleostat")
   handleOStat(oracle:Name, round:u16):void {
+    // TODO this action needs to be refined
+
     const config = this.getConfig()
     check(round < this.currentRound() - config.reports_finalized_after_rounds, "can't process this round yet, not yet finalized")
 
@@ -63,6 +71,8 @@ export class OStatsActions extends DepositActions {
     if (basePay > 0 || bonusPay > 0) this.sendPayOracle(oracle, basePay, bonusPay)
 
     // don't delete the row yet
+    // need to keep the row so we don't accidentally slash the oracle for being absent
+    // safe to delete when the rounds row in stats table is cleaned up
     oRoundData.processed = true
     oStatsT.update(oRoundData, this.receiver)
   }
@@ -73,6 +83,13 @@ export class OStatsActions extends DepositActions {
     action.send()
   }
 
+  /**
+   * For paying oracle rewards. Rewards are added to unclaimed bucket. This action is triggered inline by the contract.
+   *
+   * @param {Name} oracle
+   * @param {u32} basePay
+   * @param {u32} bonusPay
+   */
   @action("payoracle")
   payOracle(oracle:Name, basePay:u32, bonusPay:u32):void {
     requireAuth(this.receiver)

@@ -17,6 +17,9 @@ export class TokenTransfer extends ActionData {
 }
 @contract
 export class DepositActions extends ProtoActions {
+  /**
+   * notify transfer, listens for BOID deposits and calls inline actions to handle collateral for oracles.
+   */
   @action("transfer", notify)
   ondeposit():void {
     if (this.firstReceiver == Name.fromString("token.boid")) {
