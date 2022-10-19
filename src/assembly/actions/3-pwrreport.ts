@@ -24,10 +24,7 @@ export class PwrReportActions extends OracleActions {
    * @memberof PwrReportActions
    */
   getReportId(report:PwrReport):u64 {
-    const idEncoder = new Encoder(8)
-    idEncoder.packObjectArray([report])
-    const bytes = idEncoder.getBytes()
-    return u64(parseInt(bytes.reduce((acc:string, val:u8) => acc + val.toString(), "")))
+    return (u64(report.protocol_id) << 48) + (u64(report.round) << 32) + u64(report.units)
   }
 
   sendReport(boid_id:Name, report:PwrReport):void {
