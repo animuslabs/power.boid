@@ -24,10 +24,7 @@ export class PwrReportActions extends OracleActions {
    * @memberof PwrReportActions
    */
   getReportId(report:PwrReport):u64 {
-    const idEncoder = new Encoder(8)
-    idEncoder.packObjectArray([report])
-    const bytes = idEncoder.getBytes()
-    return u64(parseInt(bytes.reduce((acc:string, val:u8) => acc + val.toString(), "")))
+    return (u64(report.protocol_id) << 48) + (u64(report.round) << 32) + u64(report.units)
   }
 
   sendReport(boid_id:Name, report:PwrReport):void {
@@ -164,7 +161,7 @@ export class PwrReportActions extends OracleActions {
   }
 
   /**
-   * Since reports can't always be finalized when receiving reports, sometimes we need to finalize the report seperately.
+   * Since reports can't alenways be finalized wh receiving reports, sometimes we need to finalize the report seperately.
    * This action doesn't require any authentication as it is only possible when the target report has already receive sufficient consensus.
    *
    * @param {Name} boid_id_scope the scope of the pwrreports table where we can find the report
