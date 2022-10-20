@@ -44,6 +44,10 @@
         {
           "name": "nft_balance",
           "type": "uint16"
+        },
+        {
+          "name": "created_utc_sec",
+          "type": "uint32"
         }
       ]
     },
@@ -198,10 +202,6 @@
         {
           "name": "boid_id_auth",
           "type": "name"
-        },
-        {
-          "name": "actions_num",
-          "type": "uint8"
         }
       ]
     },
@@ -268,6 +268,14 @@
           "type": "uint32"
         },
         {
+          "name": "premium_purchase_price",
+          "type": "uint32"
+        },
+        {
+          "name": "max_premium_prefix",
+          "type": "uint8"
+        },
+        {
           "name": "max_owners",
           "type": "uint8"
         },
@@ -281,7 +289,7 @@
         },
         {
           "name": "suffix_whitelist",
-          "type": "string[]"
+          "type": "name[]"
         },
         {
           "name": "remove_sponsor_price",
@@ -333,6 +341,10 @@
         },
         {
           "name": "adjustment_interval_rounds",
+          "type": "uint16"
+        },
+        {
+          "name": "max_check_rounds",
           "type": "uint16"
         }
       ]
@@ -388,6 +400,14 @@
         {
           "name": "claim_maximum_elapsed_rounds",
           "type": "uint16"
+        },
+        {
+          "name": "soft_max_pwr_add",
+          "type": "uint16"
+        },
+        {
+          "name": "dev_fund_tax_mult",
+          "type": "float32"
         }
       ]
     },
@@ -498,11 +518,11 @@
           "type": "uint64"
         },
         {
-          "name": "last_rebalance_round",
+          "name": "last_inflation_adjust_round",
           "type": "uint16"
         },
         {
-          "name": "last_inflation_adjust_round",
+          "name": "last_rebalance_round",
           "type": "uint16"
         }
       ]
@@ -525,6 +545,10 @@
         },
         {
           "name": "overstake",
+          "type": "uint32"
+        },
+        {
+          "name": "fundstake",
           "type": "uint32"
         },
         {
@@ -1105,6 +1129,10 @@
       "base": "",
       "fields": [
         {
+          "name": "boid_id",
+          "type": "name"
+        },
+        {
           "name": "received",
           "type": "uint16"
         },
@@ -1137,6 +1165,20 @@
         {
           "name": "mint",
           "type": "MintLog"
+        }
+      ]
+    },
+    {
+      "name": "mint",
+      "base": "",
+      "fields": [
+        {
+          "name": "to",
+          "type": "name"
+        },
+        {
+          "name": "whole_quantity",
+          "type": "uint32"
         }
       ]
     },
@@ -1619,6 +1661,11 @@
     {
       "name": "logpwrclaim",
       "type": "logpwrclaim",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "mint",
+      "type": "mint",
       "ricardian_contract": ""
     },
     {
