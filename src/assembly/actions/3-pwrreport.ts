@@ -16,17 +16,6 @@ export class PowerAddParams extends ActionData {
 
 @contract
 export class PwrReportActions extends OracleActions {
-  /**
-   * calculates a unique report ID based on the report metadata
-   * @todo move to the pwreports primary index function
-   * @param {PwrReport} report
-   * @return {*}  {u64}
-   * @memberof PwrReportActions
-   */
-  getReportId(report:PwrReport):u64 {
-    return (u64(report.protocol_id) << 48) + (u64(report.round) << 32) + u64(report.units)
-  }
-
   sendReport(boid_id:Name, report:PwrReport):void {
     // check(false, "finalize report here: " + this.minWeightThreshold().toString())
     const proto = this.protocolsT.requireGet(u64(report.protocol_id), "invalid protocol_id")
@@ -49,7 +38,7 @@ export class PwrReportActions extends OracleActions {
   @action("pwrreport")
   pwrReport(oracle:Name, boid_id_scope:Name, report:PwrReport):void {
     requireAuth(oracle)
-    const reportId = this.getReportId(report)
+    const reportId = PwrReportRow.getReportId(report)
     const config = this.getConfig()
 
     // ensure the report is for a round that is valid
@@ -258,7 +247,7 @@ export class PwrReportActions extends OracleActions {
       mergedRow.approvals.push(Name.fromString("merged.boid"))
     } else {
       const newReport:PwrReport = { protocol_id: u8(targetProtocol), round: u16(targetRound), units: medianUnits }
-      const report_id = this.getReportId(newReport)
+      const report_id = PwrReportRow.getReportId(newReport)
       mergedRow = new PwrReportRow(report_id, Name.fromString("merged.boid"), newReport, [Name.fromString("merged.boid")], aggregateWeight, true, false)
       this.pwrReportsT(boid_id_scope).store(mergedRow, this.receiver)
     }

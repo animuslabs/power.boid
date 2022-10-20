@@ -270,16 +270,20 @@ export async function setupOracle(name = "oraclename") {
 }
 
 export async function init() {
-  await wait(100)
+  chain.createAccount("recover.boid")
+
   await boid.actions["auth.init"]({ }).send()
   await boid.actions["config.set"]({ config: defaultConfig }).send()
   await boid.actions["account.add"]({ boid_id: "boid", owners: ["boid"], sponsors: [], keys: [] }).send()
-  await boid.actions["account.add"]({ boid_id, owners: ["boid"], sponsors: [], keys: [] }).send()
-  chain.createAccount("recover.boid")
+  await boid.actions["account.add"]({ boid_id, owners: ["boid"], sponsors: [], keys: [] }).send()  
   await boid.actions["account.add"]({ boid_id: Name.from("teamownr"), owners: ["recover.boid"], sponsors: [], keys: [] }).send()
   await boid.actions["team.create"]({ owner: Name.from("teamownr"), min_pwr_tax_mult: 10, owner_cut_mult: 4, url_safe_name: "teamteam", info_json_ipfs: "" }).send()
   await initTokens()
   // @ts-ignore
   chain.setTime(roundStartTime)
   await act("configset", { config })
+}
+
+export function getReportId(report = {protocol_id:0,round:0,units:0}) {
+  return Number((BigInt(report.protocol_id) << BigInt(48)) + (BigInt(report.round) << BigInt(32)) + BigInt(report.units))
 }

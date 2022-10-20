@@ -19,6 +19,7 @@ async function main() {
         chain.createAccount("oracle3")
         chain.createAccount("oracle4")
         addRounds(34)
+        // @ts-ignore
         chain.addTime(TimePointSec.fromInteger(111111))
         await act("oracleset", { account: "oracle1", weight: 10, adding_collateral: 0 })
         await act("setstandby", { oracle: "oracle1", standby: false })
@@ -58,6 +59,7 @@ async function main() {
         chain.createAccount("oracle3")
         chain.createAccount("oracle4")
         addRounds(34)
+        // @ts-ignore
         chain.addTime(TimePointSec.fromInteger(111111))
         await act("oracleset", { account: "oracle1", weight: 10, adding_collateral: 0 })
         await act("setstandby", { oracle: "oracle1", standby: false })
@@ -94,6 +96,7 @@ async function main() {
         chain.createAccount("oracle3")
         chain.createAccount("oracle4")
         addRounds(34)
+        // @ts-ignore
         chain.addTime(TimePointSec.fromInteger(111111))
         await act("oracleset", { account: "oracle1", weight: 10, adding_collateral: 0 })
         await act("setstandby", { oracle: "oracle1", standby: false })
