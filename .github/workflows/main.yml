@@ -16,6 +16,10 @@ jobs:
       - uses: DerYeger/yarn-setup-action@master
         with:
           node-version: 16
+      - uses: actions/cache@v3
+        with:
+          path: build
+          key: build
       - run: cd src && yarn && yarn build  
   test-merge:
     needs: build
@@ -24,6 +28,10 @@ jobs:
       - uses: DerYeger/yarn-setup-action@master
         with:
           node-version: 16
+      - uses: actions/cache@v3
+        with:
+          path: build
+          key: build
       - run: cd tests && yarn && yarn test:merge
   test-oracle:
     needs: build
@@ -32,5 +40,9 @@ jobs:
       - uses: DerYeger/yarn-setup-action@master
         with:
           node-version: 16
+      - uses: actions/cache@v3
+        with:
+          path: build
+          key: build
       - run: cd tests && yarn && yarn test:oracle
   
