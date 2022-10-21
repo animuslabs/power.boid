@@ -18,8 +18,7 @@ export class PwrReport {
 export class PwrReportRow extends Table {
   constructor(
     // unique report_id, generated from metadata
-    // TODO this does not need to be stored in a column it can be removed as it's already stored as the index
-    // the logic to generate the report_id could be moved to the primary() index function
+    // TODO: remove this field after clearing PwrReportRow table
     public report_id:u64 = 0,
     // the oracle that originally proposed this report
     public proposer:Name = EMPTY_NAME,
@@ -38,9 +37,20 @@ export class PwrReportRow extends Table {
     super()
   }
 
+  /**
+  * calculates a unique report ID based on the report metadata
+  * @todo move to the pwreports primary index function
+  * @param {PwrReport} report
+  * @return {*}  {u64}
+  * @memberof PwrReportActions
+  */
+  static getReportId(report:PwrReport):u64 {
+    return (u64(report.protocol_id) << 48) + (u64(report.round) << 32) + u64(report.units)
+  }
+
   @primary
   get primary():u64 {
-    return this.report_id
+    return PwrReportRow.getReportId(this.report)
   }
 
   @secondary
