@@ -3,10 +3,12 @@ import { Asset, Table, Name, TimePoint } from "proton-tsc"
 @packer
 export class ConfigAccount {
   purchase_price:u32 = 0
+  premium_purchase_price:u32 = 0
+  max_premium_prefix:u8 = 0
   max_owners:u8 = 0
   max_sponsors:u8 = 0
   max_pwrmods:u8 = 0
-  suffix_whitelist:string[] = []
+  suffix_whitelist:Name[] = []
   remove_sponsor_price:u32 = 0
 }
 
@@ -18,6 +20,8 @@ export class ConfigPower {
   powered_stake_mult:f32 = 0
   powered_stake_pwr:f32 = 0
   claim_maximum_elapsed_rounds:u16 = 0
+  soft_max_pwr_add:u16 = 0
+  dev_fund_tax_mult:f32 = 0
 }
 
 @packer
@@ -31,6 +35,7 @@ export class ConfigAutoAdjust {
   power_mult_max_adjust:f32 = 0 // max the round_power_mult may be adjusted each adjustment action
   powered_stake_mult_max_adjust:f32 = 0 // max the round_powered_stake_mult may be adjusted each adjustment action
   adjustment_interval_rounds:u16 = 0 // how often can the adjust action be called to update inflation
+  max_check_rounds:u16 // the maximum number of rows to check from the stats table when calculating inflation
 }
 @packer
 export class ConfigTeam {
@@ -83,6 +88,7 @@ export class MintLog {
   team:u32 = 0
   team_owner:u32 = 0
   overstake:u32 = 0
+  fundstake:u32 = 0
   total:u32 = 0
 }
 

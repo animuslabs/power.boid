@@ -1,8 +1,9 @@
 {
   "scripts": {
-    "test:all": "yarn test:oracle && yarn test:merge",
+    "test:all": "yarn test:oracle && yarn test:merge && yarn test:slash",
     "test:merge": "mocha -b ./merge.spec.js",
-    "test:oracle": "mocha -b ./oracle.spec.js"
+    "test:oracle": "mocha -b ./oracle.spec.js",
+    "test:slash": "mocha -b ./slash.spec.js"
   },
   "type": "module",
   "devDependencies": {

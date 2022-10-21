@@ -45,4 +45,16 @@ jobs:
           path: build
           key: build
       - run: cd tests && yarn && yarn test:oracle
+  test-slash:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: DerYeger/yarn-setup-action@master
+        with:
+          node-version: 16
+      - uses: actions/cache@v3
+        with:
+          path: build
+          key: build
+      - run: cd tests && yarn && yarn test:slash
   
