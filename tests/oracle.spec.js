@@ -3,7 +3,7 @@ import { expect } from "chai"
 import { beforeEach, describe, it, before } from "mocha"
 import { Asset, Name, TimePoint, PrivateKey, PublicKey, Action, Bytes, ABI, ABIDecoder, Authority, PermissionLevel, UInt32, Serializer, TimePointSec } from "@greymass/eosio"
 import { Blockchain, nameToBigInt, symbolCodeToBigInt, protonAssert, expectToThrow, nameTypeToBigInt } from "@proton/vert"
-import { init, chain, act, oracles, global, contract, reports, boid, addRounds, tkn, config, wait, setupOracle, oracleStats, stats, logActions, getReportId } from "./util.js"
+import { init, chain, act, oracles, global, contract, reports, boid, addRounds, tkn, config, wait, setupOracle, oracleStats, stats, logActions, getReportId, boid_id } from "./util.js"
 
 const report = { protocol_id: 0, round: 10, units: 100 }
 const report2 = { protocol_id: 0, round: 11, units: 100 }
@@ -34,24 +34,22 @@ describe("reports", async() => {
     await setupOracle("oracle1")    
     addRounds(10)
     await expectToThrow(
-      act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report }, "oracle1"),
+      act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1"),
       "eosio_assert: report round must target a past round")
     addRounds(1)
     // await expectToThrow(
-    //   act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report }, "oracle1"),
+    //   act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1"),
     //   "eosio_assert: oracle is in standby mode, disable standby first to start making reports")
     // await act("setstandby", { oracle: "oracle1", standby: false })
     await expectToThrow(
-      act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report }, "oracle1"),
+      act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1"),
       "eosio_assert: invalid protocol_id")
     await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
-    // @ts-ignore
-    chain.addTime(TimePointSec.fromInteger(10000))
-    await act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report }, "oracle1")
+    await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1")
     // console.log(await act("thisround"));
     // return
-    // console.log(reports("testaccount"))
-    const rRow = reports("testaccount")[0]
+    // console.log(reports(boid_id))
+    const rRow = reports(boid_id)[0]
     console.log(chain.console);
     console.log(rRow);
     expect(rRow.proposer).eq("oracle1")
@@ -65,51 +63,45 @@ describe("reports", async() => {
   // add more oracles that make early reports, then move time forward and finalize the report
   it("accumulate early reports", async() => {
     addRounds(11)
-    // @ts-ignore
-    chain.addTime(TimePointSec.fromInteger(10000))
     await setupOracle("oracle1")
     await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
-    await act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report }, "oracle1")
+    await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1")
     await expectToThrow(
-      act("finishreport", { boid_id_scope: "testaccount", pwrreport_id: getReportId(report) }),
+      act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) }),
       "eosio_assert: report can't be finalized yet, too early in the round")
     // console.log(oraclestats("oracle1"))
     // console.log("Global:", global())
     await setupOracle("oracle3")
-    await act("pwrreport", { oracle: "oracle3", boid_id_scope: "testaccount", report }, "oracle3")
+    await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report }, "oracle3")
     await setupOracle("oracle4")
-    await act("pwrreport", { oracle: "oracle4", boid_id_scope: "testaccount", report }, "oracle4")
+    await act("pwrreport", { oracle: "oracle4", boid_id_scope: boid_id, report }, "oracle4")
     await setupOracle("oracle5")
-    await act("pwrreport", { oracle: "oracle5", boid_id_scope: "testaccount", report }, "oracle5")
+    await act("pwrreport", { oracle: "oracle5", boid_id_scope: boid_id, report }, "oracle5")
     await setupOracle("oracle2")
-    await act("pwrreport", { oracle: "oracle2", boid_id_scope: "testaccount", report }, "oracle2")
-    // @ts-ignore
-    chain.addTime(TimePointSec.fromInteger(80000))
-    await act("finishreport", { boid_id_scope: "testaccount", pwrreport_id: getReportId(report) })
+    await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report }, "oracle2")
+    addRounds(1)
+    await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
   })
   it("claimrewards", async() => {
     addRounds(11)
-    // @ts-ignore
-    chain.addTime(TimePointSec.fromInteger(10000))
     await setupOracle("oracle1")
     await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
-    await act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report }, "oracle1")
+    await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1")
     await expectToThrow(
-      act("finishreport", { boid_id_scope: "testaccount", pwrreport_id: getReportId(report) }),
+      act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) }),
       "eosio_assert: report can't be finalized yet, too early in the round")
     // console.log(oraclestats("oracle1"))
     // console.log("Global:", global())
     await setupOracle("oracle3")
-    await act("pwrreport", { oracle: "oracle3", boid_id_scope: "testaccount", report }, "oracle3")
+    await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report }, "oracle3")
     await setupOracle("oracle4")
-    await act("pwrreport", { oracle: "oracle4", boid_id_scope: "testaccount", report }, "oracle4")
+    await act("pwrreport", { oracle: "oracle4", boid_id_scope: boid_id, report }, "oracle4")
     await setupOracle("oracle5")
-    await act("pwrreport", { oracle: "oracle5", boid_id_scope: "testaccount", report }, "oracle5")
+    await act("pwrreport", { oracle: "oracle5", boid_id_scope: boid_id, report }, "oracle5")
     await setupOracle("oracle2")
-    await act("pwrreport", { oracle: "oracle2", boid_id_scope: "testaccount", report }, "oracle2")
-    // @ts-ignore
-    chain.addTime(TimePointSec.fromInteger(80000))
-    await act("finishreport", { boid_id_scope: "testaccount", pwrreport_id: getReportId(report) })
+    await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report }, "oracle2")
+    addRounds(1)
+    await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
     // console.log(oraclestats("oracle1"))
     // console.log(oraclestats("oracle2"))
     // console.log(stats())
@@ -119,21 +111,21 @@ describe("reports", async() => {
     )
     await act("roundstats")
     addRounds(1)
-    await act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report: report2 }, "oracle1")
+    await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: report2 }, "oracle1")
     addRounds(1)
-    await act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report: report3 }, "oracle1")
+    await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: report3 }, "oracle1")
     addRounds(1)
     report2.round = 13
-    await act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report: report2 }, "oracle1")
+    await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: report2 }, "oracle1")
     addRounds(1)
     report2.round = 14
-    await act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report: report2 }, "oracle1")
+    await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: report2 }, "oracle1")
     addRounds(1)
     report2.round = 15
-    await act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report: report2 }, "oracle1")
+    await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: report2 }, "oracle1")
     addRounds(1)
     report2.round = 16
-    await act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report: report2 }, "oracle1")
+    await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: report2 }, "oracle1")
     console.log(chain.console);
     // await act("thisround")
     await act("handleostat", { oracle: "oracle1", round: 11 }).catch(err => {
@@ -167,19 +159,19 @@ describe("slashing", async() => {
     // await act("thisround")
     const goodReport = { round: 15, units: 100, protocol_id: 0 }
     const badReport = { round: 15, units: 20, protocol_id: 0 }
-    await act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report: badReport }, "oracle1")
+    await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: badReport }, "oracle1")
     console.log(oracles()[0])
-    await act("pwrreport", { oracle: "oracle2", boid_id_scope: "testaccount", report: badReport }, "oracle2")
+    await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: badReport }, "oracle2")
     // await act("thisround")
-    await act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report: goodReport }, "oracle1")
-    await act("pwrreport", { oracle: "oracle3", boid_id_scope: "testaccount", report: goodReport }, "oracle3")
-    await act("pwrreport", { oracle: "oracle4", boid_id_scope: "testaccount", report: goodReport }, "oracle4")
-    await act("pwrreport", { oracle: "oracle5", boid_id_scope: "testaccount", report: goodReport }, "oracle5")
-    // console.log(reports("testaccount").filter(el => el.report.round == 15))
+    await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: goodReport }, "oracle1")
+    await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: goodReport }, "oracle3")
+    await act("pwrreport", { oracle: "oracle4", boid_id_scope: boid_id, report: goodReport }, "oracle4")
+    await act("pwrreport", { oracle: "oracle5", boid_id_scope: boid_id, report: goodReport }, "oracle5")
+    // console.log(reports(boid_id).filter(el => el.report.round == 15))
     // await act("handleostat", { oracle: "oracle1", round: 15 })
     // console.log(global())
-    await act("slashmulti", { oracle: "oracle1", boid_id_scope: "testaccount", pwrreport_ids: [getReportId(badReport), getReportId(goodReport)], round: 15, protocol_id: 0 })
-    // console.log(reports("testaccount").filter(el => el.report.round == 15))
+    await act("slashmulti", { oracle: "oracle1", boid_id_scope: boid_id, pwrreport_ids: [getReportId(badReport), getReportId(goodReport)], round: 15, protocol_id: 0 })
+    // console.log(reports(boid_id).filter(el => el.report.round == 15))
     // console.log(oracles()[0])
     // console.log(global())
     expect(oracles()[0].standby).false
@@ -209,11 +201,12 @@ describe("slashing", async() => {
     await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
     addRounds(16)
     const goodReport = { round: 15, units: 100, protocol_id: 0 }
-    await act("pwrreport", { oracle: "oracle1", boid_id_scope: "testaccount", report: goodReport }, "oracle1")
+    await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: goodReport }, "oracle1")
     // console.log(oracles()[1])
     //await act("slashabsent", { oracle: "oracle2", round: 14 })
     // console.log(oracles()[1])
     // console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
+    addRounds(3)
     await act("slashabsent", { oracle: "oracle2", round: 15 })
     // console.log(oracles()[1])
     // console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
@@ -221,20 +214,35 @@ describe("slashing", async() => {
     // console.log(oracles()[1])
     // console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
     //await act("slashabsent", { oracle: "oracle2", round: 18 })
-    addRounds(3)
-    await expectToThrow(
-      act("slashabsent", { oracle: "oracle2", round: 19 }),
-      "eosio_assert: invalid round specified, must be before the finalized round: 13"
-    )
+    // addRounds(3)
+    // await expectToThrow(
+    //   act("slashabsent", { oracle: "oracle2", round: 19 }),
+    //   "eosio_assert: invalid round specified, must be before the finalized round: 19"
+    // )
     // await act("thisround")
   })
 })
 describe("funds", async() => {
   it("withdrawinit", async() => {
+    await setupOracle("oracle1")
+    await setupOracle("oracle2")
+    await setupOracle("oracle3")
+    await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
+    addRounds(16)
+    report.round = 15
+    await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: report }, "oracle1")
+    await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: report }, "oracle2")
+    await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: report }, "oracle3")
+    addRounds(1)
+    await act("roundstats")
+    await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
+    addRounds(3)
+    await act("handleostat", { oracle: "oracle1", round: 16 })
     const unclaimed = oracles()[0].funds.unclaimed
+
     await act("withdrawinit", { oracle: "oracle1" }, "oracle1")
     expect(oracles()[0].funds.withdrawing).eq(unclaimed)
-    expect(oracles()[0].funds.withdrawable_after_round).eq(42)
+    expect(oracles()[0].funds.withdrawable_after_round).eq(40)
     addRounds(5)
     await expectToThrow(
       act("withdrawinit", { oracle: "oracle1" }, "oracle1"),
@@ -242,13 +250,28 @@ describe("funds", async() => {
     )
   })
   it("withdraw", async() => {
-    addRounds(15)
+    await setupOracle("oracle1")
+    await setupOracle("oracle2")
+    await setupOracle("oracle3")
+    await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
+    addRounds(16)
+    report.round = 15
+    await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: report }, "oracle1")
+    await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: report }, "oracle2")
+    await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: report }, "oracle3")
+    addRounds(1)
+    await act("roundstats")
+    await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
+    addRounds(3)
+    await act("handleostat", { oracle: "oracle1", round: 16 })
+
+    await act("withdrawinit", { oracle: "oracle1" }, "oracle1")
     await expectToThrow(
       act("withdraw", { oracle: "oracle1" }, "oracle1"),
       "eosio_assert: can't withdraw funds yet"
     )
     const withdrawing = oracles()[0].funds.withdrawing
-    addRounds(1)
+    addRounds(40)
     await act("withdraw", { oracle: "oracle1" }, "oracle1")
     expect(oracles()[0].funds.withdrawing).eq(0)
     expect(oracles()[0].funds.claimed).eq(withdrawing)
@@ -262,33 +285,38 @@ describe("funds", async() => {
 })
 describe("unlocking", async() => {
   it("unlockinit", async() => {
+    await setupOracle("oracle1")
+    await setupOracle("oracle2")
     const oracle = oracles()[0]
     const validCollateral = oracle.collateral.locked - oracle.collateral.slashed
+    addRounds(21)
+    await act("setstandby", { oracle: "oracle1", standby: true })
     await act("unlockinit", { oracle: "oracle1" }, "oracle1")
-    expect(oracles()[0].collateral.unlocking).eq(validCollateral)
+    expect(oracles()[0].collateral.unlocking).eq(validCollateral)    
     await expectToThrow(
       act("unlockinit", { oracle: "oracle2" }, "oracle2"),
       "eosio_assert: oracle must be in standby to be unlocked"
     )
     await act("setstandby", { oracle: "oracle2", standby: true })
     await act("unlockinit", { oracle: "oracle2" }, "oracle2")
-    // console.log(oracles()[1].collateral)
-
-    // logActions()
   })
   it("unlock", async() => {
+    await setupOracle("oracle1")
+    addRounds(21)
+    await act("setstandby", { oracle: "oracle1", standby: true })
+    await act("unlockinit", { oracle: "oracle1" }, "oracle1")
     await expectToThrow(
       act("unlock", { oracle: "oracle1" }),
       "eosio_assert: unlock is still under progress"
     )
     addRounds(40)
-    // console.log(oracles()[0].collateral)
+    await tkn("transfer", { from: "token.boid", to: "oracle1", quantity: "10000000.0000 BOID", memo: "" })
     await expectToThrow(
       tkn("transfer", { from: "oracle1", to: "power.boid", quantity: "1000000.0000 BOID", memo: "collateral" }, "oracle1"),
       "eosio_assert: can't deposit funds into an oracle that is unlocking"
     )
     await act("unlock", { oracle: "oracle1" })
     expect(oracles()[0].collateral.locked).eq(0)
-    await act("unlock", { oracle: "oracle2" })
+    await tkn("transfer", { from: "oracle1", to: "power.boid", quantity: "10000000.0000 BOID", memo: "collateral" }, "oracle1")    
   })
 })

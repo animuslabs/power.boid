@@ -227,16 +227,15 @@ export class OracleActions extends GlobalActions {
    */
   @action("unlockinit")
   unlockInit(oracle:Name):void {
-    if (hasAuth(this.receiver)) requireAuth(oracle)
+    if (!hasAuth(this.receiver)) requireAuth(oracle)
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
-    const existingStats = this.oracleStatsT(oracle).isEmpty()
     const config = this.getConfig()
     const coll = oracleRow.collateral
 
     //check that unlock can be initiated
     check(this.currentRound() > coll.min_unlock_start_round, "can't start unlock yet")
     check(coll.unlocking == 0, "account is already unlocking, must wait for existing unlock to finish")
-    check(!existingStats, "oracle still has rows in the oraclestats table, must wait for rows to be cleared")
+    check(this.oracleStatsT(oracle).isEmpty(), "oracle still has rows in the oraclestats table, must wait for rows to be cleared")
     check(oracleRow.standby, "oracle must be in standby to be unlocked")
     check(oracleRow.trueCollateral > 0, "no valid collateral to unlock (locked - slashed)")
 
