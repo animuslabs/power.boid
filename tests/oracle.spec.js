@@ -134,17 +134,11 @@ describe("reports", async() => {
     })
     // console.log(chain.console)
     // console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
-    await act("handleostat", { oracle: "oracle2", round: 11 })
-    await act("handleostat", { oracle: "oracle3", round: 11 })
-    await act("handleostat", { oracle: "oracle4", round: 11 })
-    await act("handleostat", { oracle: "oracle5", round: 11 })
-    // await act("handleostat", { oracle: "oracle5", round: 11 })
-
-    // console.log(chain.console)
-    // console.log(oracles().map(el => el.funds))
-    // console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
-
-    // expect(oracles()[0].funds.unclaimed).eq(230000)
+    
+    await act("handleostat", { oracle: "oracle2", round: 10 })
+    await act("handleostat", { oracle: "oracle3", round: 10 })
+    await act("handleostat", { oracle: "oracle4", round: 10 })
+    await act("handleostat", { oracle: "oracle5", round: 10 })
   })
 })
 describe("funds", async() => {
@@ -162,7 +156,7 @@ describe("funds", async() => {
     await act("roundstats")
     await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
     addRounds(3)
-    await act("handleostat", { oracle: "oracle1", round: 16 })
+    await act("handleostat", { oracle: "oracle1", round: 15 })
     const unclaimed = oracles()[0].funds.unclaimed
 
     await act("withdrawinit", { oracle: "oracle1" }, "oracle1")
@@ -188,7 +182,7 @@ describe("funds", async() => {
     await act("roundstats")
     await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
     addRounds(3)
-    await act("handleostat", { oracle: "oracle1", round: 16 })
+    await act("handleostat", { oracle: "oracle1", round: 15 })
 
     await act("withdrawinit", { oracle: "oracle1" }, "oracle1")
     await expectToThrow(
