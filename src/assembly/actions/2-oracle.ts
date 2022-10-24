@@ -101,6 +101,7 @@ export class OracleActions extends GlobalActions {
       check(oracleIndex > -1, "problem setting oracle standby")
       global.expected_active_oracles.splice(oracleIndex, 1)
     } else {
+      check(oracleRow.weight > 0, "oracle must have positive weight. add more collateral")
       oracleRow.standby = standby
       oracleRow.expected_active_after_round = this.currentRound() + 2
       global.expected_active_weight += oracleRow.weight

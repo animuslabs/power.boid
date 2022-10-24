@@ -117,11 +117,11 @@ export class PwrReportActions extends OracleActions {
         if (oracleName == oracle) row = oracleRow
         else row = this.oraclesT.get(oracleName.value)
         if (!row) continue
-        else this.updateOracleStats(row, reportSent, false)
+        else this.updateOracleStats(row, reportSent, false, report.round)
       }
     } else {
       // otherwise we just need to update our own oracle stats
-      this.updateOracleStats(oracleRow, reportSent, reportCreated)
+      this.updateOracleStats(oracleRow, reportSent, reportCreated, report.round)
     }
   }
 
@@ -131,11 +131,12 @@ export class PwrReportActions extends OracleActions {
    * @param {Oracle} oracleRow reference to the oracle row to be edited
    * @param {boolean} reportSent was the report finalized or not
    * @param {boolean} proposed did the oracle propose the report or just adding to an existing one
+   * @param {u16} targetRound target round to update oracle stats
    * @memberof PwrReportActions
    */
-  updateOracleStats(oracleRow:Oracle, reportSent:boolean, proposed:boolean):void {
+  updateOracleStats(oracleRow:Oracle, reportSent:boolean, proposed:boolean, targetRound:u16):void {
     const oStatsT = this.oracleStatsT(oracleRow.account)
-    const existingOStats = oStatsT.get(u64(this.currentRound()))
+    const existingOStats = oStatsT.get(u64(targetRound))
     if (existingOStats) {
       if (reportSent) {
         existingOStats.reports.reported_merged++
@@ -144,7 +145,7 @@ export class PwrReportActions extends OracleActions {
       if (proposed) existingOStats.reports.proposed++
       oStatsT.update(existingOStats, this.receiver)
     } else {
-      const oracleStatsRow = new OracleStat(this.currentRound(), oracleRow.weight, { proposed: proposed ? 1 : 0, reported_merged: reportSent ? 1 : 0, unreported_unmerged: reportSent ? 0 : 1 })
+      const oracleStatsRow = new OracleStat(targetRound, oracleRow.weight, { proposed: proposed ? 1 : 0, reported_merged: reportSent ? 1 : 0, unreported_unmerged: reportSent ? 0 : 1 })
       oStatsT.store(oracleStatsRow, this.receiver)
     }
   }
@@ -178,7 +179,7 @@ export class PwrReportActions extends OracleActions {
       const oracleName = existing.approvals[i]
       let row = this.oraclesT.get(oracleName.value)
       if (!row) continue
-      else this.updateOracleStats(row, true, false)
+      else this.updateOracleStats(row, true, false, existing.report.round)
     }
   }
 

@@ -54,6 +54,7 @@ export class SlashActions extends TableCleanActions {
     check(!oracleRow.standby, "can't slash an oracle in standby")
     check(quantity > 0, "quantity must be higher than zero")
     oracleRow.collateral.slashed += quantity
+    check(oracleRow.collateral.slashed >= quantity, "max collateral slashed reached")
     const weightBefore = oracleRow.weight
 
     // if all the collateral is slashed, or weight is zero, set the oracle to standby
