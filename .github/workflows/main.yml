@@ -19,7 +19,7 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: build
-          key: build
+          key: build-${{ github.run_id }}
       - run: cd src && yarn && yarn build  
   test-merge:
     needs: build
@@ -31,7 +31,7 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: build
-          key: build
+          key: build-${{ github.run_id }}
       - run: cd tests && yarn && yarn test:merge
   test-oracle:
     needs: build
@@ -43,7 +43,7 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: build
-          key: build
+          key: build-${{ github.run_id }}
       - run: cd tests && yarn && yarn test:oracle
   test-slash:
     needs: build
@@ -55,6 +55,6 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: build
-          key: build
+          key: build-${{ github.run_id }}
       - run: cd tests && yarn && yarn test:slash
   
