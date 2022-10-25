@@ -142,7 +142,8 @@ export class GlobalActions extends Contract {
     // check(false, (this.currentRoundFloat() % f32(this.currentRound())).toString())
   }
 
-  shouldFinalizeReports(config:Config = this.getConfig()):boolean {
+  shouldFinalizeReports(round:u16, config:Config = this.getConfig()):boolean {
+    if (round < this.currentRound() - 1) return true
     const roundProgress = (this.currentRoundFloat() % f32(this.currentRound()))
     print("\n currentRoundFloat: " + this.currentRoundFloat().toString())
     print("\n currentRound: " + this.currentRound().toString())

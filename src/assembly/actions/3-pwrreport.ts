@@ -76,10 +76,9 @@ export class PwrReportActions extends OracleActions {
       check(!existing.merged, "report already merged")
       existing.approval_weight += oracleRow.weight
       existing.approvals.push(oracle)
-      const checkFinalize = existing.report.round == this.currentRound() - 1
 
       // if we can finalize, go ahead and do it now
-      if (existing.approval_weight >= this.minWeightThreshold(config, global) && (checkFinalize ? this.shouldFinalizeReports(config) : true)) {
+      if (existing.approval_weight >= this.minWeightThreshold(config, global) && this.shouldFinalizeReports(existing.report.round, config)) {
         this.sendReport(boid_id_scope, report)
         reportSent = true
         existing.reported = true
@@ -90,12 +89,9 @@ export class PwrReportActions extends OracleActions {
     } else {
       // we are the first to make this report so this oracle is the proposer
       reportCreated = true
-      const checkFinalize = report.round == this.currentRound() - 1
       print("\n minThreshold: " + u16(this.minWeightThreshold()).toString())
-      print("\n checkFinalize: " + checkFinalize.toString())
-      print("\n shouldFinalize: " + this.shouldFinalizeReports(config).toString())
       print("\n weightEnough? " + (oracleRow.weight >= u16(this.minWeightThreshold())).toString())
-      const reported = oracleRow.weight >= u16(this.minWeightThreshold()) && (checkFinalize ? this.shouldFinalizeReports(config) : true)
+      const reported = oracleRow.weight >= u16(this.minWeightThreshold()) && this.shouldFinalizeReports(report.round, config)
       print("\n reported: " + reported.toString())
       const row = new PwrReportRow(reportId, oracle, report, [oracle], oracleRow.weight, reported)
       global.reports.proposed++
@@ -164,7 +160,7 @@ export class PwrReportActions extends OracleActions {
     const existing = pwrReportsT.requireGet(pwrreport_id, "invalid report id or scope")
     const config = this.getConfig()
     const global = this.globalT.get()
-    if (existing.report.round == this.currentRound() - 1) check(this.shouldFinalizeReports(config), "report can't be finalized yet, too early in the round")
+    check(this.shouldFinalizeReports(existing.report.round, config), "report can't be finalized yet, too early in the round")
     check(existing.approval_weight >= this.minWeightThreshold(), "report can't be finalized yet, minimum weight threshold not met")
     check(!existing.merged && !existing.reported, "report already merged or reported")
     this.sendReport(boid_id_scope, existing.report)
@@ -197,7 +193,6 @@ export class PwrReportActions extends OracleActions {
     const config = this.getConfig()
     const global = this.globalT.get()
     this.updateStats(global)
-    check(this.shouldFinalizeReports(config), "can't finalize/merge reports this early in a round")
     const targetReports:PwrReportRow[] = []
     let targetProtocol:i16 = -1
     let targetRound:i32 = -1
@@ -216,6 +211,8 @@ export class PwrReportActions extends OracleActions {
       check(!pwrReport.merged, "can't merge reports already merged")
       targetReports.push(pwrReport)
     }
+
+    check(this.shouldFinalizeReports(u16(targetRound), config), "can't finalize/merge reports this early in a round")
 
     // find the median
     targetReports.sort((a:PwrReportRow, b:PwrReportRow) => a.report.units - b.report.units)
