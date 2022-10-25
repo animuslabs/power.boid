@@ -28,6 +28,7 @@ export class SlashActions extends TableCleanActions {
     // verify that the oracle was absent in a round when they should be active
     check(!oracleRow.standby, "oracle is in standby, can't be slashed for inactivity")
     check(oracleRow.expected_active_after_round < round, "oracle is not expected to be active this round")
+    check(this.currentRound() >= config.reports_finalized_after_rounds, "chain is too recent to generate reports")
     const finalizedRound = this.currentRound() - config.reports_finalized_after_rounds
     check(round < finalizedRound, "invalid round specified, must be before the finalized round: " + finalizedRound.toString())
 

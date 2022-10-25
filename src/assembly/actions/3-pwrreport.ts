@@ -42,6 +42,7 @@ export class PwrReportActions extends OracleActions {
     const config = this.getConfig()
 
     // ensure the report is for a round that is valid
+    check(this.currentRound() >= config.reports_finalized_after_rounds, "chain is too recent to generate reports")
     check(report.round >= this.currentRound() - config.reports_finalized_after_rounds, "round is too far in the past")
     check(report.round < this.currentRound(), "report round must target a past round")
 
