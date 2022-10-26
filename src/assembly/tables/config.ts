@@ -38,7 +38,9 @@ export class Config extends Table {
     // percentage of the round (starting from beginning of the round) when reports accumulate weight but don't finalize, the purpose is to give all oracles a chance to make a report
     public reports_accumulate_weight_round_pct:f32 = 0,
     // for calculating weight from collateral
-    public weight_collateral_divisor:f32 = 0
+    public weight_collateral_divisor:f32 = 0,
+    // for calculating median acceptable deviation
+    public merge_deviation_pct:f32 = 0
   ) {
     super()
   }

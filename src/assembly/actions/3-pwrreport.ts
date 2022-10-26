@@ -223,9 +223,10 @@ export class PwrReportActions extends OracleActions {
     else medianUnits = u32((targetReports[half - 1].report.units + targetReports[half].report.units) / 2)
 
     //find safe min/max values
-    const safeAmount = Math.max((medianUnits * 0.25) + 1, medianUnits)
+    const safeAmount = Math.max(f32(medianUnits) * config.merge_deviation_pct, 1)
     const safeMax = u32(medianUnits + safeAmount)
-    const safeMin = u32(Math.min(f32(medianUnits) - safeAmount, 1))
+    check(safeMax >= medianUnits, "safeMax max reached")
+    const safeMin = u32(Math.max(f32(medianUnits) - safeAmount, 1))
 
     // ensure each report is a safe range from the median
     for (let i = 0; i < targetReports.length; i++) {

@@ -120,6 +120,8 @@ export class GlobalActions extends Contract {
     check(config.collateral_pct_pay_per_round >= 0, "collateral_pct_pay_per_round must be higher or equal zero")
     check(config.min_consensus_pct >= 0, "min_consensus_pct must be higher or equal zero")
     check(config.min_consensus_pct <= f32(1), "min_consensus_pct must be less or equal to 100%")
+    check(config.merge_deviation_pct >= 0, "merge_deviation_pct must be higher or equal zero")
+    check(config.merge_deviation_pct <= f32(1), "merge_deviation_pct must be less or equal to 100%")
 
     this.configT.set(config, this.receiver)
   }

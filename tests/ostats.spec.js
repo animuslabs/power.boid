@@ -73,8 +73,74 @@ describe("reports", async() => {
             await act("handleostat", { oracle: "oracle4", round: 10 })
             await act("handleostat", { oracle: "oracle5", round: 10 })
         })
+        it("stats", async() => {
+            await setupOracle("oracle1")
+            await setupOracle("oracle2")
+            await setupOracle("oracle3")
+            addRounds(11)
+            await act("roundstats")
+            addRounds(1)
+            await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
+            await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1")
+            await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report }, "oracle2")
+            await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report }, "oracle3")
+            addRounds(1)
+            await act("roundstats")
+            addRounds(3)
+            await act("handleostat", { oracle: "oracle1", round: 10 })
+            //console.log(chain.console)
+        })
         describe("validate handleostat checks", async() => {
-            
+            it("Chain is too recent to generate reports", async() => {
+                await expectToThrow(
+                    act("handleostat", { oracle: "oracle1", round: 10 }),
+                    "eosio_assert: chain is too recent to generate reports")
+            })
+            it("Can't process this round yet, not yet finalized", async() => {
+                addRounds(3)
+                await expectToThrow(
+                    act("handleostat", { oracle: "oracle1", round: 3 }),
+                    "eosio_assert: can't process this round yet, not yet finalized")
+            })
+            it("OStats round doesn't exist", async() => {
+                addRounds(7)
+                await expectToThrow(
+                    act("handleostat", { oracle: "oracle1", round: 2 }),
+                    "eosio_assert: oStats round doesn't exist")
+            })
+            it("Round stats not yet available", async() => {
+                addRounds(12)
+                await setupOracle("oracle1")
+                await setupOracle("oracle2")
+                await setupOracle("oracle3")
+                await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
+                await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1")
+                await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report }, "oracle2")
+                await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report }, "oracle3")
+                addRounds(3)
+                await expectToThrow(
+                    act("handleostat", { oracle: "oracle1", round: 10 }),
+                    "eosio_assert: round stats not yet available")
+            })
+            it("Round stats is already processed", async() => {
+                await setupOracle("oracle1")
+                await setupOracle("oracle2")
+                await setupOracle("oracle3")
+                addRounds(11)
+                await act("roundstats")
+                addRounds(1)
+                await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
+                await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1")
+                await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report }, "oracle2")
+                await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report }, "oracle3")
+                addRounds(1)
+                await act("roundstats")
+                addRounds(3)
+                act("handleostat", { oracle: "oracle1", round: 10 })
+                await expectToThrow(
+                    act("handleostat", { oracle: "oracle1", round: 10 }),
+                    "eosio_assert: round stats is already processed")
+            })
         })
     })
 })

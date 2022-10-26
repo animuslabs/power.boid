@@ -250,7 +250,7 @@ describe("reports", async() => {
               { protocol_id: 0, round: 33, units: 7 },
               { protocol_id: 0, round: 33, units: 8 },
               { protocol_id: 0, round: 33, units: 10 },
-              { protocol_id: 0, round: 33, units: 13 }
+              { protocol_id: 0, round: 33, units: 11 }
             ]
           
             await act("protoset", { protocol: { protocol_id: 0, protocol_name: "fah", unitPowerMult: 1,active:true } })
@@ -349,7 +349,7 @@ describe("reports", async() => {
         // console.log(reports("testaccount"))
         await expectToThrow(
             act("mergereports", { boid_id_scope: "testaccount", pwrreport_ids: reportsArray.map(r => getReportId(r)) }),
-            "eosio_assert: report units 20 above maximum: 16"
+            "eosio_assert: report units 20 above maximum: 10"
         )
         
         // console.log(reports("testaccount"))
@@ -433,7 +433,6 @@ describe("reports", async() => {
                     act("mergereports", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2)]}),
                     "eosio_assert: can't finalize/merge reports this early in a round")
             })
-
             it("Report units above maximum", async() => {
                 await setupOracle("oracle1")
                 await setupOracle("oracle2")
@@ -449,9 +448,8 @@ describe("reports", async() => {
                 console.log(chain.console)
                 await expectToThrow(
                     act("mergereports", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2), getReportId(r3)]}),
-                    "eosio_assert: report units 220 above maximum: 210")
+                    "eosio_assert: report units 220 above maximum: 131")
             })
-
             it("Aggregate approval_weight isn't high enough", async() => {
                 await setupOracle("oracle1")
                 const r1 = { protocol_id: 0, round: 10, units: 100 }
