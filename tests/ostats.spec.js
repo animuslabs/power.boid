@@ -136,7 +136,7 @@ describe("reports", async() => {
                 addRounds(1)
                 await act("roundstats")
                 addRounds(3)
-                act("handleostat", { oracle: "oracle1", round: 10 })
+                await act("handleostat", { oracle: "oracle1", round: 10 })
                 await expectToThrow(
                     act("handleostat", { oracle: "oracle1", round: 10 }),
                     "eosio_assert: round stats is already processed")
