@@ -190,6 +190,7 @@ export class PwrReportActions extends OracleActions {
    */
   @action("mergereports")
   mergeReports(boid_id_scope:Name, pwrreport_ids:u64[]):void {
+    check(pwrreport_ids.length > 1, "need atleast two reports to merge")
     const config = this.getConfig()
     const global = this.globalT.get()
     this.updateStats(global)
