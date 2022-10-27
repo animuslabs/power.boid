@@ -1,4 +1,4 @@
-import { Action, ActionData, check, Contract, EMPTY_NAME, hasAuth, isAccount, Name, requireAuth } from "proton-tsc"
+import { Action, ActionData, check, Contract, EMPTY_NAME, hasAuth, isAccount, Name, print, requireAuth } from "proton-tsc"
 import { Oracle, OracleCollateral, OracleFunds } from "../tables/oracles"
 import { Stat } from "../tables/stats"
 import { GlobalActions } from "./1-global"
@@ -52,6 +52,7 @@ export class OracleActions extends GlobalActions {
 
     // add the new collateral and push the next available unlock time into the future
     oracleRow.collateral.locked += depositQuantity
+    check(oracleRow.collateral.locked >= depositQuantity, "collateral locked max reached")
     oracleRow.collateral.min_unlock_start_round = this.currentRound() + config.unlock_wait_rounds
 
     // save the current weight and calculate the new weight
@@ -63,6 +64,7 @@ export class OracleActions extends GlobalActions {
       const difference = newWeight - weightBefore
       const global = this.globalT.get()
       global.expected_active_weight += difference
+      check(global.expected_active_weight >= difference, "global expected_active_weight max reached")
       this.globalT.set(global, this.receiver)
     }
 
@@ -97,14 +99,16 @@ export class OracleActions extends GlobalActions {
       oracleRow.last_standby_toggle_round = this.currentRound()
       global.expected_active_weight -= oracleRow.weight
       global.standby_oracles++
+      check(global.standby_oracles >= 1, "max standy_oracles reached")
       const oracleIndex = global.expected_active_oracles.indexOf(oracle)
       check(oracleIndex > -1, "problem setting oracle standby")
       global.expected_active_oracles.splice(oracleIndex, 1)
     } else {
       check(oracleRow.weight > 0, "oracle must have positive weight. add more collateral")
       oracleRow.standby = standby
-      oracleRow.expected_active_after_round = this.currentRound() + 2
+      oracleRow.expected_active_after_round = this.currentRound() + config.oracle_expected_active_after_rounds
       global.expected_active_weight += oracleRow.weight
+      check(global.expected_active_weight >= oracleRow.weight, "global expected_active_weight max reached")
       global.expected_active_oracles.push(oracle)
       global.standby_oracles--
     }
@@ -135,6 +139,7 @@ export class OracleActions extends GlobalActions {
     const existing = this.oraclesT.get(account.value)
     const global = this.globalT.get()
     const config = this.getConfig()
+
     if (existing) {
       check(weight != existing.weight, "data is the same, nothing to update")
       check(existing.collateral.unlocking == 0, "can't modify oracle during unlocking")
@@ -145,7 +150,9 @@ export class OracleActions extends GlobalActions {
       // update globals with new weight change
       if (weight > existing.weight) {
         global.expected_active_weight += (weight - existing.weight)
+        check(global.expected_active_weight >= (weight - existing.weight), "global expected_active_weight max reached")
       } else {
+        check(global.expected_active_weight >= (existing.weight - weight), "global expected_active_weight cannot be negative")
         global.expected_active_weight -= (existing.weight - weight)
       }
       existing.weight = weight
@@ -155,7 +162,7 @@ export class OracleActions extends GlobalActions {
       check(isAccount(account), "oracle must be existing account")
       const collateralData:OracleCollateral = {
         locked: adding_collateral,
-        min_unlock_start_round: this.currentRound() + 20,
+        min_unlock_start_round: this.currentRound() + config.first_unlock_wait_rounds,
         slashed: 0,
         unlock_finished_round: 0,
         unlocking: 0
@@ -170,6 +177,7 @@ export class OracleActions extends GlobalActions {
       this.oraclesT.store(row, this.receiver)
       //  global.total_weight += weight
       global.standby_oracles++
+      check(global.standby_oracles >= 1, "max standy_oracles reached")
     }
     this.globalT.set(global, this.receiver)
   }

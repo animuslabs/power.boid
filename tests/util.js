@@ -252,23 +252,26 @@ export const config = {
   keep_finalized_stats_rows: 2000,
   reports_finalized_after_rounds: 3,
   unlock_wait_rounds: 40,
+  first_unlock_wait_rounds: 20,
   standby_toggle_interval_rounds: 20,
   weight_collateral_pwr: 1.1,
   oracle_collateral_deposit_increment: 1000000,
   reports_accumulate_weight_round_pct: 0.20,
   weight_collateral_divisor:1000000,
-  merge_deviation_pct: 0.25
+  merge_deviation_pct: 0.25,
+  oracle_expected_active_after_rounds: 2
 }
 export function addRounds(numRounds = 0) {
   // @ts-ignore
   chain.addTime(TimePoint.fromMilliseconds(roundLengthSec * 1000 * numRounds))
 }
 
-export async function setupOracle(name = "oraclename") {
+export async function setupOracle(name = "oraclename", quantity = "10000000.0000 BOID", standby = false) {
   chain.createAccount(name)
-  await tkn("transfer", { from: "token.boid", to: name, quantity: "10000000.0000 BOID", memo: "" })
-  await tkn("transfer", { from: name, to: "power.boid", quantity: "10000000.0000 BOID", memo: "collateral" }, name)
-  await act("setstandby", { oracle: name, standby: false })
+  await tkn("transfer", { from: "token.boid", to: name, quantity, memo: "" })
+  await tkn("transfer", { from: name, to: "power.boid", quantity, memo: "collateral" }, name)
+  if(!standby)
+    await act("setstandby", { oracle: name, standby: false })
 }
 
 export async function init() {

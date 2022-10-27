@@ -34,6 +34,7 @@ export class DepositActions extends ProtoActions {
       const depositType = params.memo.split(" ")[0]
       if (depositType == "collateral") {
         const config = this.getConfig()
+        check(params.quantity.amount <= i64(u32.MAX_VALUE) * i64(1e4), "max deposit collateral amount reached")
         const quantity = u32(params.quantity.amount / u32(1e4))
         check(quantity % config.oracle_collateral_deposit_increment == 0, "must deposit collateral in correct increments")
 
