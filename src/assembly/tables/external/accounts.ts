@@ -1,5 +1,5 @@
 
-import { Asset, Table, Name, PublicKey } from "proton-tsc"
+import { Asset, Table, Name, PublicKey, check } from "proton-tsc"
 
 @packer
 export class TokenUnstake {
@@ -58,13 +58,23 @@ export class Account extends Table {
     public team:AccountTeam = new AccountTeam(),
     public social_ipfs_json:string = "",
     public balance:u32 = 0,
-    public nft_balance:u16 = 0
+    public nft_balance:u16 = 0,
+    public created_utc_sec:u32 = 0
   ) {
     super()
   }
 
-    @primary
+  @primary
   get primary():u64 {
     return this.boid_id.value
+  }
+
+  @secondary
+  get byCreatedTime():u64 {
+    return u64(this.created_utc_sec)
+  }
+
+  set byCreatedTime(value:u64) {
+    this.created_utc_sec = u32(value)
   }
 }

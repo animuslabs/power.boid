@@ -19,9 +19,9 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: build
-          key: build
+          key: build-${{ github.run_id }}
       - run: cd src && yarn && yarn build  
-  test-merge:
+  test-deposit:
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -31,8 +31,8 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: build
-          key: build
-      - run: cd tests && yarn && yarn test:merge
+          key: build-${{ github.run_id }}
+      - run: cd tests && yarn && yarn test:deposit
   test-oracle:
     needs: build
     runs-on: ubuntu-latest
@@ -43,6 +43,42 @@ jobs:
       - uses: actions/cache@v3
         with:
           path: build
-          key: build
+          key: build-${{ github.run_id }}
       - run: cd tests && yarn && yarn test:oracle
+  test-ostats:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: DerYeger/yarn-setup-action@master
+        with:
+          node-version: 16
+      - uses: actions/cache@v3
+        with:
+          path: build
+          key: build-${{ github.run_id }}
+      - run: cd tests && yarn && yarn test:ostats
+  test-pwrreport:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: DerYeger/yarn-setup-action@master
+        with:
+          node-version: 16
+      - uses: actions/cache@v3
+        with:
+          path: build
+          key: build-${{ github.run_id }}
+      - run: cd tests && yarn && yarn test:pwrreport
+  test-slash:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: DerYeger/yarn-setup-action@master
+        with:
+          node-version: 16
+      - uses: actions/cache@v3
+        with:
+          path: build
+          key: build-${{ github.run_id }}
+      - run: cd tests && yarn && yarn test:slash
   

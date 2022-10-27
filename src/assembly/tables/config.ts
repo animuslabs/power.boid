@@ -29,6 +29,8 @@ export class Config extends Table {
     public reports_finalized_after_rounds:u8 = 0,
     // when the oracle is unlocking their locked collateral they must wait this many rounds to receive their funds
     public unlock_wait_rounds:u16 = 0,
+    //when the oracle is unlocking first deposited collateral they must wait this many rounds to receive their funds
+    public first_unlock_wait_rounds:u16 = 0,
     // when an oracle is toggling standby, they must wait this many rounds before they can do it again
     public standby_toggle_interval_rounds:u16 = 0,
     // raise collateral to this power to calculate oracle weight
@@ -38,7 +40,11 @@ export class Config extends Table {
     // percentage of the round (starting from beginning of the round) when reports accumulate weight but don't finalize, the purpose is to give all oracles a chance to make a report
     public reports_accumulate_weight_round_pct:f32 = 0,
     // for calculating weight from collateral
-    public weight_collateral_divisor:f32 = 0
+    public weight_collateral_divisor:f32 = 0,
+    // for calculating median acceptable deviation
+    public merge_deviation_pct:f32 = 0,
+    // active oracle expected active after rounds
+    public oracle_expected_active_after_rounds:u16 = 0
   ) {
     super()
   }

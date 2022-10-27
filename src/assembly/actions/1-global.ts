@@ -67,6 +67,7 @@ export class GlobalActions extends Contract {
     if (!global.active_oracles.includes(oracleRow.account)) {
       global.active_oracles.push(oracleRow.account)
       global.active_weight += oracleRow.weight
+      check(global.active_weight >= oracleRow.weight, "global active_weight max reached")
     }
   }
 
@@ -111,7 +112,17 @@ export class GlobalActions extends Contract {
   @action("configset")
   configSet(config:Config):void {
     requireAuth(this.receiver)
-    // check(config.)
+    check(config.slash_quantity_collateral_pct >= 0, "slash_quantity_collateral_pct must be higher or equal zero")
+    check(config.slash_quantity_collateral_pct <= f32(1), "slash_quantity_collateral_pct must be less or equal to 100%")
+    check(config.weight_collateral_divisor > 0, "weight_collateral_divisor must be higher than zero")
+    check(config.reports_accumulate_weight_round_pct >= 0, "reports_accumulate_weight_round_pct must be higher or equal zero")
+    check(config.reports_accumulate_weight_round_pct <= f32(1), "reports_accumulate_weight_round_pct must be less or equal to 100%")
+    check(config.collateral_pct_pay_per_round >= 0, "collateral_pct_pay_per_round must be higher or equal zero")
+    check(config.min_consensus_pct >= 0, "min_consensus_pct must be higher or equal zero")
+    check(config.min_consensus_pct <= f32(1), "min_consensus_pct must be less or equal to 100%")
+    check(config.merge_deviation_pct >= 0, "merge_deviation_pct must be higher or equal zero")
+    check(config.merge_deviation_pct <= f32(1), "merge_deviation_pct must be less or equal to 100%")
+
     this.configT.set(config, this.receiver)
   }
 
@@ -133,7 +144,8 @@ export class GlobalActions extends Contract {
     // check(false, (this.currentRoundFloat() % f32(this.currentRound())).toString())
   }
 
-  shouldFinalizeReports(config:Config = this.getConfig()):boolean {
+  shouldFinalizeReports(round:u16, config:Config = this.getConfig()):boolean {
+    if (round < this.currentRound() - 1) return true
     const roundProgress = (this.currentRoundFloat() % f32(this.currentRound()))
     print("\n currentRoundFloat: " + this.currentRoundFloat().toString())
     print("\n currentRound: " + this.currentRound().toString())

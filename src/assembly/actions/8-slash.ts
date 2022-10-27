@@ -28,12 +28,14 @@ export class SlashActions extends TableCleanActions {
     // verify that the oracle was absent in a round when they should be active
     check(!oracleRow.standby, "oracle is in standby, can't be slashed for inactivity")
     check(oracleRow.expected_active_after_round < round, "oracle is not expected to be active this round")
+    check(this.currentRound() >= config.reports_finalized_after_rounds, "chain is too recent to generate reports")
     const finalizedRound = this.currentRound() - config.reports_finalized_after_rounds
     check(round < finalizedRound, "invalid round specified, must be before the finalized round: " + finalizedRound.toString())
 
     // finally, if the row doesn't exist, send the slash action
-    if (oStatsRow) check(false, "stats row exists for this oracle on this round, no slashing needed")
-    else this.sendSlashOracle(oracle, this.findSlashQuantity(oracleRow, config))
+    check(!oStatsRow, "stats row exists for this oracle on this round, no slashing needed")
+
+    this.sendSlashOracle(oracle, this.findSlashQuantity(oracleRow, config))
 
     // write an empty row so the account can't be slashed twice
     const newRow:OracleStat = new OracleStat(round, 0, { proposed: 0, reported_merged: 0, unreported_unmerged: 0 }, true)
@@ -51,7 +53,9 @@ export class SlashActions extends TableCleanActions {
     requireAuth(this.receiver)
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
     check(!oracleRow.standby, "can't slash an oracle in standby")
+    check(quantity > 0, "quantity must be higher than zero")
     oracleRow.collateral.slashed += quantity
+    check(oracleRow.collateral.slashed >= quantity, "max collateral slashed reached")
     const weightBefore = oracleRow.weight
 
     // if all the collateral is slashed, or weight is zero, set the oracle to standby
@@ -75,25 +79,35 @@ export class SlashActions extends TableCleanActions {
     this.oraclesT.update(oracleRow, this.receiver)
   }
 
-    /**
-     * Oracles can be slashed if they make multiple reports for the same protocol+boid_id+round
-     *
-     * @param {Name} oracle
-     * @param {Name} boid_id_scope
-     * @param {u64[]} pwrreport_ids
-     * @param {u8} protocol_id
-     * @param {u16} round
-     */
-    @action("slashmulti")
-  slashMulti(oracle:Name, boid_id_scope:Name, pwrreport_ids:u64[], protocol_id:u8, round:u16):void {
+  /**
+   * Oracles can be slashed if they make multiple reports for the same protocol+boid_id+round
+   *
+   * @param {Name} oracle
+   * @param {Name} boid_id_scope
+   * @param {u64[]} pwrreport_ids
+   * @param {u8} protocol_id
+   * @param {u16} round
+   */
+  @action("slashmulti")
+  slashMulti(oracle:Name, boid_id_scope:Name, pwrreport_ids:u64[]):void {
     check(pwrreport_ids.length > 1, "must include at least two pwrreport_ids")
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
     const config = this.getConfig()
     const pwrReportsT = this.pwrReportsT(boid_id_scope)
+    let protocol_id:u8 = 0
+    let round:u16 = 0
+    let first:bool = true
     for (let i = 0; i < pwrreport_ids.length; i++) {
       const reportId = pwrreport_ids[i]
       const reportRow = pwrReportsT.requireGet(reportId, "invalid reportId: " + reportId.toString())
       const oracleIndex:i32 = reportRow.approvals.indexOf(oracle)
+
+      // use first report protocol and round to compare
+      if (first) {
+        protocol_id = reportRow.report.protocol_id
+        round = reportRow.report.round
+        first = false
+      }
 
       // verify the row is problematic
       check(oracleIndex > -1, "This report wasn't approved by the target oracle: " + reportId.toString())

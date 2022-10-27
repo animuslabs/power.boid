@@ -11,6 +11,7 @@ export class ProtoActions extends PwrReportActions {
   @action("protoset")
   protoSet(protocol:Protocol):void {
     requireAuth(this.receiver)
+    check(protocol.unitPowerMult > 0, "unitPowerMult must be higher than zero")
     let existing = this.protocolsT.get(protocol.protocol_id)
     if (existing) {
       existing = protocol
