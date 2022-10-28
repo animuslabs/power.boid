@@ -18,8 +18,8 @@ export class PwrReport {
 export class PwrReportRow extends Table {
   constructor(
     // unique report_id, generated from metadata
-    // TODO: remove this field after clearing PwrReportRow table
-    public report_id:u64 = 0,
+    // // TODO: remove this field after clearing PwrReportRow table
+    // public report_id:u64 = 0,
     // the oracle that originally proposed this report
     public proposer:Name = EMPTY_NAME,
     // report details

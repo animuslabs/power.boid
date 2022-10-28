@@ -166,6 +166,10 @@
           "type": "uint16"
         },
         {
+          "name": "first_unlock_wait_rounds",
+          "type": "uint16"
+        },
+        {
           "name": "standby_toggle_interval_rounds",
           "type": "uint16"
         },
@@ -184,6 +188,14 @@
         {
           "name": "weight_collateral_divisor",
           "type": "float32"
+        },
+        {
+          "name": "merge_deviation_pct",
+          "type": "float32"
+        },
+        {
+          "name": "oracle_expected_active_after_rounds",
+          "type": "uint16"
         }
       ]
     },
@@ -194,6 +206,14 @@
         {
           "name": "purchase_price",
           "type": "uint32"
+        },
+        {
+          "name": "premium_purchase_price",
+          "type": "uint32"
+        },
+        {
+          "name": "max_premium_prefix",
+          "type": "uint8"
         },
         {
           "name": "max_owners",
@@ -209,7 +229,7 @@
         },
         {
           "name": "suffix_whitelist",
-          "type": "string[]"
+          "type": "name[]"
         },
         {
           "name": "remove_sponsor_price",
@@ -261,6 +281,10 @@
         },
         {
           "name": "adjustment_interval_rounds",
+          "type": "uint16"
+        },
+        {
+          "name": "max_check_rounds",
           "type": "uint16"
         }
       ]
@@ -316,6 +340,14 @@
         {
           "name": "claim_maximum_elapsed_rounds",
           "type": "uint16"
+        },
+        {
+          "name": "soft_max_pwr_add",
+          "type": "uint16"
+        },
+        {
+          "name": "dev_fund_tax_mult",
+          "type": "float32"
         }
       ]
     },
@@ -595,10 +627,6 @@
       "name": "PwrReportRow",
       "base": "",
       "fields": [
-        {
-          "name": "report_id",
-          "type": "uint64"
-        },
         {
           "name": "proposer",
           "type": "name"
@@ -924,14 +952,6 @@
         {
           "name": "pwrreport_ids",
           "type": "uint64[]"
-        },
-        {
-          "name": "protocol_id",
-          "type": "uint8"
-        },
-        {
-          "name": "round",
-          "type": "uint16"
         }
       ]
     },

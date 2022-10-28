@@ -93,7 +93,7 @@ export class PwrReportActions extends OracleActions {
       print("\n weightEnough? " + (oracleRow.weight >= u16(this.minWeightThreshold())).toString())
       const reported = oracleRow.weight >= u16(this.minWeightThreshold()) && this.shouldFinalizeReports(report.round, config)
       print("\n reported: " + reported.toString())
-      const row = new PwrReportRow(reportId, oracle, report, [oracle], oracleRow.weight, reported)
+      const row = new PwrReportRow(oracle, report, [oracle], oracleRow.weight, reported)
       global.reports.proposed++
       pwrReportsT.store(row, this.receiver)
       if (reported) {
@@ -249,7 +249,7 @@ export class PwrReportActions extends OracleActions {
     } else {
       const newReport:PwrReport = { protocol_id: u8(targetProtocol), round: u16(targetRound), units: medianUnits }
       const report_id = PwrReportRow.getReportId(newReport)
-      mergedRow = new PwrReportRow(report_id, Name.fromString("merged.boid"), newReport, [Name.fromString("merged.boid")], aggregateWeight, true, false)
+      mergedRow = new PwrReportRow(Name.fromString("merged.boid"), newReport, [Name.fromString("merged.boid")], aggregateWeight, true, false)
       this.pwrReportsT(boid_id_scope).store(mergedRow, this.receiver)
     }
     this.sendReport(boid_id_scope, mergedRow.report)

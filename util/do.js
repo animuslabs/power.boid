@@ -12,7 +12,7 @@ const config = {
   round_bonus_pay_proposed: 1000,
   slash_threshold_pct: 0.9,
   slash_quantity_static: 1,
-  slash_quantity_collateral_pct: 0.001,
+  slash_quantity_collateral_pct: 0.01,
   withdraw_rounds_wait: 20,
   keep_finalized_stats_rows: 3,
   reports_finalized_after_rounds: 3,
@@ -21,7 +21,10 @@ const config = {
   weight_collateral_pwr: 1.1,
   oracle_collateral_deposit_increment: 1000,
   reports_accumulate_weight_round_pct: 1,
-  weight_collateral_divisor:1000
+  weight_collateral_divisor: 1000,
+  first_unlock_wait_rounds: 1,
+  merge_deviation_pct: 0.25,
+  oracle_expected_active_after_rounds:2
 }
 
 const methods = {
