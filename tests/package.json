@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "test:all": "mocha './{,!(node_modules)/**}/*.spec.js'",
+    "test:all": "find ./ -name '*.spec.js' -not -path \"*node_modules*\" -exec ./node_modules/.bin/mocha \\{} \\;",
     "test:deposit": "mocha -b ./deposit.spec.js",
     "test:oracle": "mocha -b ./oracle.spec.js",
     "test:ostats": "mocha -b ./ostats.spec.js",
