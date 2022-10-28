@@ -11,7 +11,7 @@
         },
         {
           "name": "nonce",
-          "type": "uint32"
+          "type": "uint8"
         }
       ]
     },
@@ -204,7 +204,7 @@
       "base": "",
       "fields": [
         {
-          "name": "purchase_price",
+          "name": "invite_price",
           "type": "uint32"
         },
         {
@@ -234,6 +234,14 @@
         {
           "name": "remove_sponsor_price",
           "type": "uint32"
+        },
+        {
+          "name": "sponsor_max_invite_codes",
+          "type": "uint8"
+        },
+        {
+          "name": "invite_code_expire_rounds",
+          "type": "uint16"
         }
       ]
     },
@@ -300,6 +308,10 @@
         {
           "name": "round_power_mult",
           "type": "float32"
+        },
+        {
+          "name": "dev_fund_tax_mult",
+          "type": "float32"
         }
       ]
     },
@@ -310,6 +322,10 @@
         {
           "name": "boid_id_maximum_nfts",
           "type": "uint16"
+        },
+        {
+          "name": "whitelist_collections",
+          "type": "name[]"
         }
       ]
     },
@@ -344,10 +360,6 @@
         {
           "name": "soft_max_pwr_add",
           "type": "uint16"
-        },
-        {
-          "name": "dev_fund_tax_mult",
-          "type": "float32"
         }
       ]
     },

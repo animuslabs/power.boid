@@ -8,7 +8,7 @@ module.exports = {
     waxTest: ['https://testnet.waxsweden.org']
   },
   accountName: {
-    telosTest: "power2.boid",
+    telosTest: "power.boid",
   },
   explorer: {
     waxTest: "https://wax-test.bloks.io",
