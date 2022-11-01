@@ -44,7 +44,9 @@ export class Config extends Table {
     // for calculating median acceptable deviation
     public merge_deviation_pct:f32 = 0,
     // active oracle expected active after rounds
-    public oracle_expected_active_after_rounds:u16 = 0
+    public oracle_expected_active_after_rounds:u16 = 0,
+    // min report share threshold to receive pay
+    public min_pay_report_share_threshold:f32 = 0
   ) {
     super()
   }

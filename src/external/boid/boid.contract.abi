@@ -1018,6 +1018,11 @@
       ]
     },
     {
+      "name": "accounts.clr",
+      "base": "",
+      "fields": []
+    },
+    {
       "name": "auth",
       "base": "",
       "fields": [
@@ -1606,6 +1611,11 @@
     {
       "name": "account.free",
       "type": "account.free",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "accounts.clr",
+      "type": "accounts.clr",
       "ricardian_contract": ""
     },
     {

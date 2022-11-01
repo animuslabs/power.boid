@@ -259,7 +259,8 @@ export const config = {
   reports_accumulate_weight_round_pct: 0.20,
   weight_collateral_divisor:1000000,
   merge_deviation_pct: 0.25,
-  oracle_expected_active_after_rounds: 2
+  oracle_expected_active_after_rounds: 2,
+  min_pay_report_share_threshold: 0.01
 }
 export function addRounds(numRounds = 0) {
   // @ts-ignore

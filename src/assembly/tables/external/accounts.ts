@@ -1,16 +1,5 @@
 
-import { Asset, Table, Name, PublicKey, check, ActionData, EMPTY_NAME } from "proton-tsc"
-
-@packer
-export class AccountCreate extends ActionData {
-  constructor(
-    public boid_id:Name = EMPTY_NAME,
-    public keys:PublicKey[] = [],
-    public owners:Name[] = []
-  ) {
-    super()
-  }
-}
+import { Asset, Table, Name, PublicKey, check } from "proton-tsc"
 
 @packer
 export class TokenUnstake {
@@ -53,7 +42,7 @@ export class AccountTeam {
 @packer
 export class AccountAuth {
   keys:PublicKey[] = [] // pubkeys that can be used to control this boid account
-  nonce:u8 = 0 // incremented by the auth action when a pubkey is used to prevent replays
+  nonce:u32 = 0 // incremented by the auth action when a pubkey is used to prevent replays
 }
 
 @table("accounts", noabigen)
@@ -67,9 +56,10 @@ export class Account extends Table {
     public stake:AccountStake = new AccountStake(),
     public power:AccountPower = new AccountPower(),
     public team:AccountTeam = new AccountTeam(),
+    public social_ipfs_json:string = "",
     public balance:u32 = 0,
     public nft_balance:u16 = 0,
-    public recoverable:bool = true
+    public created_utc_sec:u32 = 0
   ) {
     super()
   }
@@ -77,5 +67,14 @@ export class Account extends Table {
   @primary
   get primary():u64 {
     return this.boid_id.value
+  }
+
+  @secondary
+  get byCreatedTime():u64 {
+    return u64(this.created_utc_sec)
+  }
+
+  set byCreatedTime(value:u64) {
+    this.created_utc_sec = u32(value)
   }
 }

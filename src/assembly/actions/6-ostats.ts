@@ -60,11 +60,14 @@ export class OStatsActions extends DepositActions {
     print("\n oracleBonusReportedPayout: " + oracleBonusReportedPayout.toString())
     print("\n oracleBonusProposedPayout: " + oracleBonusProposedPayout.toString())
 
+    let minGlobalActiveWeight:bool = globalData.starting_global.active_weight >= this.minWeightThreshold(config, globalData.starting_global)
+
     // calculate the final pay
     const oracleRow = this.oraclesT.requireGet(oracle.value, "can't find oracle in oracles table")
-    if (unReportedShare > config.slash_threshold_pct && !oracleRow.standby) this.sendSlashOracle(oracle, this.findSlashQuantity(oracleRow, config))
+    if (minGlobalActiveWeight && unReportedShare > config.slash_threshold_pct && !oracleRow.standby) this.sendSlashOracle(oracle, this.findSlashQuantity(oracleRow, config))
     let basePay:u32 = 0
-    if (reportedShare >= 0.01 || proposedShare >= 0.01) basePay = u32(f32(oracleRow.trueCollateral) * config.collateral_pct_pay_per_round)
+
+    if (reportedShare >= config.min_pay_report_share_threshold || proposedShare >= config.min_pay_report_share_threshold) basePay = u32(f32(oracleRow.trueCollateral) * config.collateral_pct_pay_per_round)
     const bonusPay:u32 = u32(oracleBonusProposedPayout + oracleBonusReportedPayout)
 
     // return

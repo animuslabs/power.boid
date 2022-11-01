@@ -19,14 +19,24 @@ describe("slash", async() => {
     it("Success", async() => {
       await setupOracle("oracle1")
       await setupOracle("oracle2")
+      await setupOracle("oracle3")
+      await setupOracle("oracle4")
+      await setupOracle("oracle5")
       await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
-      addRounds(16)
+      addRounds(16)      
       const goodReport = { round: 15, units: 100, protocol_id: 0 }
       await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: goodReport }, "oracle1")
+      await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: goodReport }, "oracle2")
+      await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: goodReport }, "oracle3")
+      await act("pwrreport", { oracle: "oracle4", boid_id_scope: boid_id, report: goodReport }, "oracle4")
+      addRounds(1)
+      goodReport.round = 16
+      await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: goodReport }, "oracle1")
+      await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: goodReport }, "oracle2")
+      await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: goodReport }, "oracle3")
+      await act("pwrreport", { oracle: "oracle4", boid_id_scope: boid_id, report: goodReport }, "oracle4")
       addRounds(3)
-      await act("slashabsent", { oracle: "oracle2", round: 15 })
-      // console.log(oracles()[1])
-      // console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
+      await act("slashabsent", { oracle: "oracle5", round: 16 })
     })
     describe("validate slashabsent checks", async() => {
       it("Oracle not found", async() => {
@@ -76,48 +86,81 @@ describe("slash", async() => {
       it("Oracle is in standby, can't be slashed for inactivity", async() => {
         await setupOracle("oracle1")
         await setupOracle("oracle2")
+        await setupOracle("oracle3")
+        await setupOracle("oracle4")
+        await setupOracle("oracle5")
         await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         // report at end of round 15 (n+1)
         addRounds(16)
         const goodReport = { round: 15, units: 100, protocol_id: 0 }
         await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: goodReport }, "oracle1")
         await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: goodReport }, "oracle2")
-        await act("setstandby", { oracle: "oracle2", standby: true })
+        await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: goodReport }, "oracle3")
+        await act("pwrreport", { oracle: "oracle4", boid_id_scope: boid_id, report: goodReport }, "oracle4")
+        addRounds(1)
+        goodReport.round = 16
+        await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: goodReport }, "oracle1")
+        await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: goodReport }, "oracle2")
+        await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: goodReport }, "oracle3")
+        await act("pwrreport", { oracle: "oracle4", boid_id_scope: boid_id, report: goodReport }, "oracle4")
+        await act("setstandby", { oracle: "oracle5", standby: true })
         addRounds(3)
         await expectToThrow(
-          act("slashabsent", { oracle: "oracle2", round: 15 }),
+          act("slashabsent", { oracle: "oracle5", round: 16 }),
           "eosio_assert: oracle is in standby, can't be slashed for inactivity")
       })
       it("Oracle is not expected to be active this round", async() => {
         await setupOracle("oracle1")
         await setupOracle("oracle2")
+        await setupOracle("oracle3")
+        await setupOracle("oracle4")
+        await setupOracle("oracle5")
         await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         // report at end of round 15 (n+1)
         addRounds(16)
         const goodReport = { round: 15, units: 100, protocol_id: 0 }
         await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: goodReport }, "oracle1")
         await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: goodReport }, "oracle2")
-        await act("setstandby", { oracle: "oracle2", standby: true })
-        await act("setstandby", { oracle: "oracle2", standby: false })
+        await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: goodReport }, "oracle3")
+        await act("pwrreport", { oracle: "oracle4", boid_id_scope: boid_id, report: goodReport }, "oracle4")
+        addRounds(1)
+        goodReport.round = 16
+        await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: goodReport }, "oracle1")
+        await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: goodReport }, "oracle2")
+        await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: goodReport }, "oracle3")
+        await act("pwrreport", { oracle: "oracle4", boid_id_scope: boid_id, report: goodReport }, "oracle4")
+        await act("setstandby", { oracle: "oracle5", standby: true })
+        await act("setstandby", { oracle: "oracle5", standby: false })
         addRounds(3)
         await expectToThrow(
-          act("slashabsent", { oracle: "oracle2", round: 15 }),
+          act("slashabsent", { oracle: "oracle5", round: 16 }),
           "eosio_assert: oracle is not expected to be active this round")
       })
       it("Invalid round specified, must be before the finalized round", async() => {
         await setupOracle("oracle1")
         await setupOracle("oracle2")
+        await setupOracle("oracle3")
+        await setupOracle("oracle4")
+        await setupOracle("oracle5")
         await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         // report at end of round 15 (n+1)
         addRounds(16)
         const goodReport = { round: 15, units: 100, protocol_id: 0 }
         await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: goodReport }, "oracle1")
         await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: goodReport }, "oracle2")
+        await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: goodReport }, "oracle3")
+        await act("pwrreport", { oracle: "oracle4", boid_id_scope: boid_id, report: goodReport }, "oracle4")
+        addRounds(1)
+        goodReport.round = 16
+        await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: goodReport }, "oracle1")
+        await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: goodReport }, "oracle2")
+        await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: goodReport }, "oracle3")
+        await act("pwrreport", { oracle: "oracle4", boid_id_scope: boid_id, report: goodReport }, "oracle4")
         await expectToThrow(
-          act("slashabsent", { oracle: "oracle2", round: 15 }),
-          "eosio_assert: invalid round specified, must be before the finalized round: 13")
+          act("slashabsent", { oracle: "oracle5", round: 16 }),
+          "eosio_assert: invalid round specified, must be before the finalized round: 14")
       })
-      it("Stats row exists for this oracle on this round, no slashing needed", async() => {
+      it("There must be a min global weight consensus to slash absent oracles", async() => {
         await setupOracle("oracle1")
         await setupOracle("oracle2")
         await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
@@ -125,11 +168,10 @@ describe("slash", async() => {
         addRounds(16)
         const goodReport = { round: 15, units: 100, protocol_id: 0 }
         await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: goodReport }, "oracle1")
-        await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: goodReport }, "oracle2")
         addRounds(3)
         await expectToThrow(
           act("slashabsent", { oracle: "oracle2", round: 15 }),
-          "eosio_assert: stats row exists for this oracle on this round, no slashing needed")
+          "eosio_assert: there must be a min global weight consensus to slash absent oracles")
       })
     })
   })

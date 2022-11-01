@@ -1,8 +1,8 @@
-import { Asset, Table, Name, TimePoint, EMPTY_NAME } from "proton-tsc"
+import { Asset, Table, Name, TimePoint } from "proton-tsc"
 
 @packer
 export class ConfigAccount {
-  invite_price:u32 = 0
+  purchase_price:u32 = 0
   premium_purchase_price:u32 = 0
   max_premium_prefix:u8 = 0
   max_owners:u8 = 0
@@ -10,8 +10,6 @@ export class ConfigAccount {
   max_pwrmods:u8 = 0
   suffix_whitelist:Name[] = []
   remove_sponsor_price:u32 = 0
-  sponsor_max_invite_codes:u8 = 0
-  invite_code_expire_rounds:u16 = 0
 }
 
 @packer
@@ -23,13 +21,13 @@ export class ConfigPower {
   powered_stake_pwr:f32 = 0
   claim_maximum_elapsed_rounds:u16 = 0
   soft_max_pwr_add:u16 = 0
+  dev_fund_tax_mult:f32 = 0
 }
 
 @packer
 export class ConfigMint {
   round_powered_stake_mult:f32 = 0 // inflation from powered stake
   round_power_mult:f32 = 0 // determines inflation from boid power
-  dev_fund_tax_mult:f32 = 0 // cut of inflation that goes to the dev fund
 }
 @packer
 export class ConfigAutoAdjust {
@@ -97,7 +95,6 @@ export class MintLog {
 @packer
 export class ConfigNft {
   boid_id_maximum_nfts:u16 = 0
-  whitelist_collections:Name[] = []
 }
 
 @table("config", singleton, noabigen)
@@ -114,8 +111,7 @@ export class Config extends Table {
     public auto:ConfigAutoAdjust = new ConfigAutoAdjust(),
     public paused:boolean = true,
     public allow_deposits:boolean = false,
-    public allow_withdrawals:boolean = false,
-    public recovery_account:Name = EMPTY_NAME // this is an account secured by the DAO and other trusted accounts that can recover accounts of users who lost their keys if recoverable bool is enabled, the details to be figured out later
+    public allow_withdrawals:boolean = false
   ) {
     super()
   }
