@@ -15,6 +15,7 @@ beforeEach(async () => {
 })
 describe("deposit", async() => {
   it("mininmum deposit", async() => {
+    await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
     await setupOracle("oracle1")
     expect(oracles()[0].collateral.locked).eq(10000000)
     await tkn("transfer", { from: "token.boid", to: "oracle1", quantity: "10000000.0000 BOID", memo: "" })
@@ -22,6 +23,7 @@ describe("deposit", async() => {
     expect(oracles()[0].collateral.locked).eq(20000000)
   })
   it("invalid deposit", async() => {
+    await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
     await setupOracle("oracle1")
     await tkn("transfer", { from: "token.boid", to: "oracle1", quantity: "10000000.0000 BOID", memo: "" })
     await expectToThrow(

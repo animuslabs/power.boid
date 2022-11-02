@@ -62,6 +62,7 @@ export class OracleActions extends GlobalActions {
       const difference = newWeight - weightBefore
       // adjust global weight for all protocols
       let next = this.protocolsT.first()
+      check(next != null, "need atleast one protocol")
       while (next) {
         let proto = next
         let global = this.globalT.requireGet(proto.protocol_id, "global row not found for protocol")
@@ -110,6 +111,7 @@ export class OracleActions extends GlobalActions {
 
     // adjust global standby for all protocols
     let next = this.protocolsT.first()
+    check(next != null, "need atleast one protocol")
     while (next) {
       let proto = next
       let global = this.globalT.requireGet(proto.protocol_id, "global row not found for protocol")
@@ -186,6 +188,7 @@ export class OracleActions extends GlobalActions {
 
     // adjust global weight for all protocols
     let next = this.protocolsT.first()
+    check(next != null, "need atleast one protocol")
     while (next) {
       let proto = next
       let global = this.globalT.requireGet(proto.protocol_id, "global row not found for protocol")

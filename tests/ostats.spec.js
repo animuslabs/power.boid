@@ -16,13 +16,13 @@ beforeEach(async () => {
 describe("reports", async() => {
     describe("handleostat", async() => {
         it("Success", async() => {
+            await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
             addRounds(11)
             await setupOracle("oracle1")
-            await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
             await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1")
             await expectToThrow(
-            act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) }),
-            "eosio_assert: report can't be finalized yet, too early in the round")
+                act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] }),
+                "eosio_assert: can't finalize/merge reports this early in a round")
             // console.log(oraclestats("oracle1"))
             // console.log("Global:", global())
             await setupOracle("oracle3")
@@ -34,15 +34,14 @@ describe("reports", async() => {
             await setupOracle("oracle2")
             await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report }, "oracle2")
             addRounds(1)
-            await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
+            await act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] })
             // console.log(oraclestats("oracle1"))
             // console.log(oraclestats("oracle2"))
             // console.log(stats())
             await expectToThrow(
-            act("handleostat", { oracle: "oracle1", round: 10 }),
-            "eosio_assert: can't process this round yet, not yet finalized"
+                act("handleostat", { oracle: "oracle1", protocol_id: 0, round: 10 }),
+                "eosio_assert: can't process this round yet, not yet finalized"
             )
-            await act("roundstats")
             addRounds(1)
             await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: report2 }, "oracle1")
             addRounds(1)
@@ -59,86 +58,86 @@ describe("reports", async() => {
             addRounds(1)
             report2.round = 16
             await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: report2 }, "oracle1")
-            console.log(chain.console);
+            //console.log(chain.console);
             // await act("thisround")
-            await act("handleostat", { oracle: "oracle1", round: 11 }).catch(err => {
-            console.log(err.toString())
-            console.log(chain.console)
+            await act("handleostat", { oracle: "oracle1", protocol_id: 0, round: 11 }).catch(err => {
+                console.log(err.toString())
+                console.log(chain.console)
             })
             // console.log(chain.console)
             // console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
             
-            await act("handleostat", { oracle: "oracle2", round: 10 })
-            await act("handleostat", { oracle: "oracle3", round: 10 })
-            await act("handleostat", { oracle: "oracle4", round: 10 })
-            await act("handleostat", { oracle: "oracle5", round: 10 })
+            await act("handleostat", { oracle: "oracle2", protocol_id: 0, round: 10 })
+            await act("handleostat", { oracle: "oracle3", protocol_id: 0, round: 10 })
+            await act("handleostat", { oracle: "oracle4", protocol_id: 0, round: 10 })
+            await act("handleostat", { oracle: "oracle5", protocol_id: 0, round: 10 })
         })
         it("stats", async() => {
+            await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
             await setupOracle("oracle1")
             await setupOracle("oracle2")
             await setupOracle("oracle3")
             addRounds(11)
-            await act("roundstats")
+            await act("roundstats", { protocol_id: 0 })
             addRounds(1)
-            await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
             await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1")
             await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report }, "oracle2")
             await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report }, "oracle3")
             addRounds(1)
-            await act("roundstats")
+            await act("roundstats", { protocol_id: 0 })
             addRounds(3)
-            await act("handleostat", { oracle: "oracle1", round: 10 })
+            await act("handleostat", { oracle: "oracle1", protocol_id: 0, round: 10 })
             //console.log(chain.console)
         })
         describe("validate handleostat checks", async() => {
             it("Chain is too recent to generate reports", async() => {
                 await expectToThrow(
-                    act("handleostat", { oracle: "oracle1", round: 10 }),
+                    act("handleostat", { oracle: "oracle1", protocol_id: 0, round: 10 }),
                     "eosio_assert: chain is too recent to generate reports")
             })
             it("Can't process this round yet, not yet finalized", async() => {
                 addRounds(3)
                 await expectToThrow(
-                    act("handleostat", { oracle: "oracle1", round: 3 }),
+                    act("handleostat", { oracle: "oracle1", protocol_id: 0, round: 3 }),
                     "eosio_assert: can't process this round yet, not yet finalized")
             })
             it("OStats round doesn't exist", async() => {
                 addRounds(7)
                 await expectToThrow(
-                    act("handleostat", { oracle: "oracle1", round: 2 }),
+                    act("handleostat", { oracle: "oracle1", protocol_id: 0, round: 2 }),
                     "eosio_assert: oStats round doesn't exist")
             })
             it("Round stats not yet available", async() => {
+                await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
                 addRounds(12)
                 await setupOracle("oracle1")
                 await setupOracle("oracle2")
                 await setupOracle("oracle3")
-                await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
                 await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1")
                 await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report }, "oracle2")
                 await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report }, "oracle3")
                 addRounds(3)
                 await expectToThrow(
-                    act("handleostat", { oracle: "oracle1", round: 10 }),
+                    act("handleostat", { oracle: "oracle1", protocol_id: 0, round: 10 }),
                     "eosio_assert: round stats not yet available")
             })
             it("Round stats is already processed", async() => {
+                await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
                 await setupOracle("oracle1")
                 await setupOracle("oracle2")
                 await setupOracle("oracle3")
                 addRounds(11)
-                await act("roundstats")
+                await act("roundstats", { protocol_id: 0 })
                 addRounds(1)
-                await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
                 await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1")
                 await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report }, "oracle2")
                 await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report }, "oracle3")
                 addRounds(1)
-                await act("roundstats")
+                await act("roundstats", { protocol_id: 0 })
                 addRounds(3)
-                await act("handleostat", { oracle: "oracle1", round: 10 })
+                await act("handleostat", { oracle: "oracle1", protocol_id: 0, round: 10 })
                 await expectToThrow(
-                    act("handleostat", { oracle: "oracle1", round: 10 }),
+                    act("handleostat", { oracle: "oracle1", protocol_id: 0, round: 10 }),
                     "eosio_assert: round stats is already processed")
             })
         })

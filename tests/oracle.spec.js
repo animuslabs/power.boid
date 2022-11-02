@@ -14,6 +14,7 @@ beforeEach(async () => {
 describe("oracle", async() => {
   describe("oracldeposit", async() => {
     it("Success", async() => {
+      await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
       chain.createAccount("oracle1")
       await act("oracleset", { account: "oracle1", weight: 0, adding_collateral:0 })
       await act("oracldeposit", { oracle: "oracle1", depositQuantity: 10 })
@@ -30,6 +31,7 @@ describe("oracle", async() => {
             "eosio_assert: oracle doesn't exist")
       })
       it("Can't deposit funds into an oracle that is unlocking", async() => {
+        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         await setupOracle("oracle1")
         addRounds(21)
         await act("setstandby", { oracle: "oracle1", standby: true })
@@ -46,6 +48,7 @@ describe("oracle", async() => {
         )
       })
       it("Collateral locked max reached", async() => {
+        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         chain.createAccount("oracle1")
 
         await tkn("transfer", { from: "token.boid", to: "oracle1", quantity: "5000000000.0000 BOID", memo: "" })
@@ -60,6 +63,7 @@ describe("oracle", async() => {
           "eosio_assert: collateral locked max reached")
       })
       it("Max standy_oracles reached", async() => {
+        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         let oracle = ""
         for(let i=0; i < 255; i++) {
           oracle = new Name(UInt64.random()).toString()
@@ -74,20 +78,20 @@ describe("oracle", async() => {
   })
   describe("withdrawinit", async() => {
     it("Success", async() => {
+      await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
       await setupOracle("oracle1")
       await setupOracle("oracle2")
       await setupOracle("oracle3")
-      await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
       addRounds(16)
       report.round = 15
       await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: report }, "oracle1")
       await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: report }, "oracle2")
       await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: report }, "oracle3")
       addRounds(1)
-      await act("roundstats")
-      await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
+      await act("roundstats", { protocol_id: 0 })
+      await act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] })
       addRounds(3)
-      await act("handleostat", { oracle: "oracle1", round: 15 })
+      await act("handleostat", { oracle: "oracle1", protocol_id: 0, round: 15 })
       const unclaimed = oracles()[0].funds.unclaimed
   
       await act("withdrawinit", { oracle: "oracle1" }, "oracle1")
@@ -101,20 +105,20 @@ describe("oracle", async() => {
             "missing required authority oracle1")
       })
       it("Currently withdrawing, must wait for current withdraw to finish.", async() => {
+        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         await setupOracle("oracle1")
         await setupOracle("oracle2")
         await setupOracle("oracle3")
-        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         addRounds(16)
         report.round = 15
         await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: report }, "oracle1")
         await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: report }, "oracle2")
         await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: report }, "oracle3")
         addRounds(1)
-        await act("roundstats")
-        await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
+        await act("roundstats", { protocol_id: 0 })
+        await act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] })
         addRounds(3)
-        await act("handleostat", { oracle: "oracle1", round: 15 })
+        await act("handleostat", { oracle: "oracle1", protocol_id: 0, round: 15 })
         const unclaimed = oracles()[0].funds.unclaimed
     
         await act("withdrawinit", { oracle: "oracle1" }, "oracle1")
@@ -127,6 +131,7 @@ describe("oracle", async() => {
         )
       })
       it("Unclaimed funds must be greater than zero", async() => {
+        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         await setupOracle("oracle1")
         await expectToThrow(
             act("withdrawinit", { oracle: "oracle1" }, "oracle1"),
@@ -136,20 +141,20 @@ describe("oracle", async() => {
   })
   describe("withdraw", async() => {
     it("Success", async() => {
+      await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
       await setupOracle("oracle1")
       await setupOracle("oracle2")
       await setupOracle("oracle3")
-      await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
       addRounds(16)
       report.round = 15
       await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: report }, "oracle1")
       await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: report }, "oracle2")
       await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: report }, "oracle3")
       addRounds(1)
-      await act("roundstats")
-      await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
+      await act("roundstats", { protocol_id: 0 })
+      await act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] })
       addRounds(3)
-      await act("handleostat", { oracle: "oracle1", round: 15 })
+      await act("handleostat", { oracle: "oracle1", protocol_id: 0, round: 15 })
   
       await act("withdrawinit", { oracle: "oracle1" }, "oracle1")
       await expectToThrow(
@@ -175,26 +180,27 @@ describe("oracle", async() => {
           "eosio_assert: oracle doesn't exist")
       })
       it("Call withdrawinit first", async() => {
+        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         await setupOracle("oracle1")
         await expectToThrow(
           act("withdraw", { oracle: "oracle1" }),
           "eosio_assert: call withdrawinit first")
       })
       it("Can't withdraw funds yet", async() => {
+        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         await setupOracle("oracle1")
         await setupOracle("oracle2")
         await setupOracle("oracle3")
-        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         addRounds(16)
         report.round = 15
         await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: report }, "oracle1")
         await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: report }, "oracle2")
         await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: report }, "oracle3")
         addRounds(1)
-        await act("roundstats")
-        await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
+        await act("roundstats", { protocol_id: 0 })
+        await act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] })
         addRounds(3)
-        await act("handleostat", { oracle: "oracle1", round: 15 })
+        await act("handleostat", { oracle: "oracle1", protocol_id: 0, round: 15 })
         await act("withdrawinit", { oracle: "oracle1" }, "oracle1")
         await expectToThrow(
           act("withdraw", { oracle: "oracle1" }, "oracle1"),
@@ -205,6 +211,7 @@ describe("oracle", async() => {
   })
   describe("unlockinit", async() => {
     it("Success", async() => {
+      await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
       await setupOracle("oracle1")
       await setupOracle("oracle2")
       const oracle = oracles()[0]
@@ -227,6 +234,7 @@ describe("oracle", async() => {
             "eosio_assert: oracle doesn't exist")
       })
       it("Can't start unlock yet", async() => {
+        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         await setupOracle("oracle1")
         await setupOracle("oracle2")
         await act("setstandby", { oracle: "oracle1", standby: true })
@@ -236,6 +244,7 @@ describe("oracle", async() => {
         )
       })
       it("Account is already unlocking, must wait for existing unlock to finish", async() => {
+        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         await setupOracle("oracle1")
         await setupOracle("oracle2")
         addRounds(21)
@@ -250,9 +259,9 @@ describe("oracle", async() => {
         )
       })
       it("Oracle still has rows in the oraclestats table, must wait for rows to be cleared", async() => {
+        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         await setupOracle("oracle1")
         addRounds(16)
-        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1")
         addRounds(10)
         await act("setstandby", { oracle: "oracle1", standby: true })
@@ -262,6 +271,7 @@ describe("oracle", async() => {
         )
       })      
       it("Oracle must be in standby to be unlocked", async() => {
+        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         await setupOracle("oracle1", "10000000.0000 BOID", false)
         addRounds(40)
         await expectToThrow(
@@ -270,6 +280,7 @@ describe("oracle", async() => {
         )
       })
       it("No valid collateral to unlock (locked - slashed)", async() => {
+        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         await setupOracle("oracle1", "10000000.0000 BOID", false)
         addRounds(40)
         await act("setstandby", { oracle: "oracle1", standby: true })
@@ -285,6 +296,7 @@ describe("oracle", async() => {
   })
   describe("unlock", async() => {
     it("Success", async() => {
+      await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
       await setupOracle("oracle1")
       addRounds(21)
       await act("setstandby", { oracle: "oracle1", standby: true })
@@ -310,6 +322,7 @@ describe("oracle", async() => {
             "eosio_assert: oracle doesn't exist")
       })
       it("Unlock is still under progress", async() => {
+        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         await setupOracle("oracle1")
         addRounds(21)
         await act("setstandby", { oracle: "oracle1", standby: true })
@@ -320,6 +333,7 @@ describe("oracle", async() => {
         )
       })
       it("not currently unlocking any funds", async() => {
+        await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
         await setupOracle("oracle1")
         await expectToThrow(
           act("unlock", { oracle: "oracle1" }),

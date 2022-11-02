@@ -43,9 +43,8 @@ export class PwrReportActions extends OracleActions {
     const config = this.getConfig()
 
     let oRoundCommit = this.roundCommitT(oracle)
-    let commitIndex:U128 = RoundCommit.getByRoundProtocolBoidId(boid_id_scope, report.protocol_id, report.round)
-    let commitExists = oRoundCommit.getBySecondaryU128(commitIndex, 0)
-    check(!commitExists, "oracle already commited report for this user and round")
+    let commitExists = oRoundCommit.getBySecondaryU128(RoundCommit.getByRoundProtocolBoidId(boid_id_scope, report.protocol_id, report.round), 1)
+    check(commitExists == null, "oracle already commited report for this user and round")
 
     // ensure the report is for a round that is valid
     check(this.currentRound() >= config.reports_finalized_after_rounds, "chain is too recent to generate reports")
@@ -77,7 +76,6 @@ export class PwrReportActions extends OracleActions {
 
     // if the report already exists, aggregate our weight with the existing weight and possibly finalize it
     if (existing) {
-      check(!existing.approvals.includes(oracle), "oracle already approved this report")
       check(!existing.reported, "report already reported")
       check(!existing.merged, "report already merged")
       existing.approval_weight += oracleRow.weight
