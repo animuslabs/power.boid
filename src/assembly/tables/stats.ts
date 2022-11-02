@@ -8,6 +8,8 @@ import { Global } from "./global"
 @table("stats")
 export class Stat extends Table {
   constructor(
+    // the protocol used when this row was created
+    public protocol_id:u8 = 0,
     // the round when this row was created
     public round:u16 = 0,
     // a copy of the global table when this row was created
@@ -26,8 +28,12 @@ export class Stat extends Table {
     super()
   }
 
+  static getStatId(protocol_id:u8, round:u16):u64 {
+    return (u64(protocol_id) << 16) + u64(round)
+  }
+
   @primary
   get primary():u64 {
-    return u64(this.round)
+    return Stat.getStatId(this.protocol_id, this.round)
   }
 }

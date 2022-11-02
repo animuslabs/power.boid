@@ -8,6 +8,7 @@ import { Stat } from "../tables/stats"
 import { OracleStat } from "../tables/oracleStats"
 import { Config } from "../tables/config"
 import { TokenTransfer } from "./5-deposit"
+import { RoundCommit } from "../tables/roundCommit"
 export const boidSym:u64 = 293287707140
 
 @contract
@@ -16,7 +17,7 @@ export class GlobalActions extends Contract {
   oraclesT:TableStore<Oracle> = new TableStore<Oracle>(this.receiver, this.receiver)
   protocolsT:TableStore<Protocol> = new TableStore<Protocol>(this.receiver, this.receiver)
   statsT:TableStore<Stat> = new TableStore<Stat>(this.receiver, this.receiver)
-  globalT:Singleton<Global> = new Singleton<Global>(this.receiver)
+  globalT:TableStore<Global> = new TableStore<Global>(this.receiver, this.receiver)
   configT:Singleton<Config> = new Singleton<Config>(this.receiver)
 
   round:u16 = 0
@@ -57,13 +58,17 @@ export class GlobalActions extends Contract {
     return new TableStore<OracleStat>(this.receiver, oracle_scope)
   }
 
+  roundCommitT(oracle_scope:Name):TableStore<RoundCommit> {
+    return new TableStore<RoundCommit>(this.receiver, oracle_scope)
+  }
+
   codePerm:PermissionLevel = new PermissionLevel(this.receiver, Name.fromString("active"))
 
-  minWeightThreshold(config:Config = this.getConfig(), global:Global = this.globalT.get()):u16 {
+  minWeightThreshold(global:Global, config:Config = this.getConfig()):u16 {
     return u16(Math.max(global.expected_active_weight * config.min_consensus_pct, config.min_consensus_weight))
   }
 
-  markOracleActive(oracleRow:Oracle, global:Global = this.globalT.get()):void {
+  markOracleActive(oracleRow:Oracle, global:Global):void {
     if (!global.active_oracles.includes(oracleRow.account)) {
       global.active_oracles.push(oracleRow.account)
       global.active_weight += oracleRow.weight
@@ -78,11 +83,11 @@ export class GlobalActions extends Contract {
    * @param Global if you don't provide a Global reference it will create one
    * @param Config if you don't provide a Config reference it will create one
    */
-  updateStats(currentGlobal:Global = this.globalT.get(), config:Config = this.getConfig()):boolean {
-    const existing = this.statsT.exists(u64(this.currentRound()))
+  updateStats(protocol_id:u8, currentGlobal:Global, config:Config = this.getConfig()):boolean {
+    const existing = this.statsT.exists(Stat.getStatId(protocol_id, this.currentRound()))
     if (existing) return false
-    const statsBefore = this.statsT.get(this.currentRound() - 1)
-    if (!statsBefore) this.statsT.store(new Stat(this.currentRound(), this.globalT.get(), u32(currentGlobal.reports.reported), u32(currentGlobal.reports.unreported_and_unmerged), u32(currentGlobal.reports.proposed), u32(currentGlobal.rewards_paid), u32(currentGlobal.reports.proposed)), this.receiver)
+    const statsBefore = this.statsT.get(Stat.getStatId(protocol_id, this.currentRound() - 1))
+    if (!statsBefore) this.statsT.store(new Stat(protocol_id, this.currentRound(), currentGlobal, u32(currentGlobal.reports.reported), u32(currentGlobal.reports.unreported_and_unmerged), u32(currentGlobal.reports.proposed), u32(currentGlobal.rewards_paid), u32(currentGlobal.reports.proposed)), this.receiver)
     else {
       const unreported = currentGlobal.reports.unreported_and_unmerged
       const beforeUnreported = statsBefore.starting_global.reports.unreported_and_unmerged
@@ -91,7 +96,7 @@ export class GlobalActions extends Contract {
       const roundProposed = currentGlobal.reports.proposed - statsBefore.starting_global.reports.proposed
       const mintedSince = currentGlobal.rewards_paid - statsBefore.starting_global.rewards_paid
       const validProposed = currentGlobal.reports.proposed - statsBefore.starting_global.reports.unreported_and_unmerged
-      this.statsT.store(new Stat(this.currentRound(), this.globalT.get(), u32(roundReported), u32(roundUnreported), u32(roundProposed), u32(mintedSince), u32(validProposed)), this.receiver)
+      this.statsT.store(new Stat(protocol_id, this.currentRound(), currentGlobal, u32(roundReported), u32(roundUnreported), u32(roundProposed), u32(mintedSince), u32(validProposed)), this.receiver)
     }
     currentGlobal.active_oracles = []
     currentGlobal.active_weight = 0
@@ -166,12 +171,13 @@ export class GlobalActions extends Contract {
   }
 
   @action("roundstats")
-  roundStats():void {
-    check(this.updateStats(), "action already performed this round")
+  roundStats(protocol_id:u8):void {
+    let global = this.globalT.requireGet(protocol_id, "global row not found for protocol")
+    check(this.updateStats(protocol_id, global), "action already performed this round")
   }
 
-  sendSlashOracle(oracle:Name, quantity:u32):void {
-    const data = new SlashOracleParams(oracle, quantity)
+  sendSlashOracle(oracle:Name, protocol_id:u8, quantity:u32):void {
+    const data = new SlashOracleParams(oracle, protocol_id, quantity)
     const action = new Action(this.receiver, Name.fromString("slashoracle"), [this.codePerm], data.pack())
     action.send()
   }
@@ -185,6 +191,7 @@ export class GlobalActions extends Contract {
 export class SlashOracleParams extends ActionData {
   constructor(
     public oracle:Name = EMPTY_NAME,
+    public protocol_id:u8 = 0,
     public quantity:u32 = 0
   ) { super() }
 }

@@ -59,6 +59,6 @@ export class PwrReportRow extends Table {
   }
 
   set byRound(value:u64) {
-    this.report.round = value
+    this.report.round = u16(value)
   }
 }

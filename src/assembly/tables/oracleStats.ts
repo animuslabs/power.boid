@@ -19,6 +19,8 @@ export class Reports {
 @table("oraclestats")
 export class OracleStat extends Table {
   constructor(
+    // the protocol_id the stats are associated with
+    public protocol_id:u8 = 0,
     // the round the stats are associated with
     public round:u16 = 0,
     // the weight of the oracle this round
@@ -31,8 +33,12 @@ export class OracleStat extends Table {
     super()
   }
 
+  static getStatId(protocol_id:u8, round:u16):u64 {
+    return (u64(protocol_id) << 16) + u64(round)
+  }
+
   @primary
   get primary():u64 {
-    return u64(this.round)
+    return OracleStat.getStatId(this.protocol_id, this.round)
   }
 }

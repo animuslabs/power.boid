@@ -11,9 +11,16 @@ export class GlobalReports {
   // proposed reports (first time a unique report is made this is called a proposal)
   proposed:u64 = 0
 }
-@table("global", singleton)
+
+/**
+ * This table is scoped based on protocol_id
+ * @extends Table
+ */
+@table("global")
 export class Global extends Table {
   constructor(
+    // protocol we are storing global statistics
+    public protocol_id:u8 = 0,
     // this vector is cleared at the start of each round and the first time an oracle makes a report during the round they are added
     public active_oracles:Name[] = [],
     // this list is only modified when oracles go in/out of standby, if oracles are not in standby they are expected to be active each round.
@@ -30,5 +37,10 @@ export class Global extends Table {
     public active_weight:u16 = 0
   ) {
     super()
+  }
+
+  @primary
+  get primary():u64 {
+    return u64(this.protocol_id)
   }
 }

@@ -1,6 +1,5 @@
 import { Action, ActionData, check, Contract, EMPTY_NAME, hasAuth, isAccount, Name, print, requireAuth } from "proton-tsc"
 import { Oracle, OracleCollateral, OracleFunds } from "../tables/oracles"
-import { Stat } from "../tables/stats"
 import { GlobalActions } from "./1-global"
 
 @packer
@@ -46,7 +45,6 @@ export class OracleActions extends GlobalActions {
     requireAuth(this.receiver)
     check(depositQuantity > 0, "deposit must be greater than zero")
     const config = this.getConfig()
-    this.updateStats()
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
     check(oracleRow.collateral.unlocking == 0, "can't deposit funds into an oracle that is unlocking")
 
@@ -62,10 +60,17 @@ export class OracleActions extends GlobalActions {
     // if weight has increased, update the global totals
     if (newWeight > weightBefore) {
       const difference = newWeight - weightBefore
-      const global = this.globalT.get()
-      global.expected_active_weight += difference
-      check(global.expected_active_weight >= difference, "global expected_active_weight max reached")
-      this.globalT.set(global, this.receiver)
+      // adjust global weight for all protocols
+      let next = this.protocolsT.first()
+      while (next) {
+        let proto = next
+        let global = this.globalT.requireGet(proto.protocol_id, "global row not found for protocol")
+        this.updateStats(u8(proto.protocol_id), global)
+        global.expected_active_weight += difference
+        check(global.expected_active_weight >= difference, "global expected_active_weight max reached")
+        this.globalT.set(global, this.receiver)
+        next = this.protocolsT.next(proto)
+      }
     }
 
     // save the updated oracle row
@@ -89,30 +94,42 @@ export class OracleActions extends GlobalActions {
   setStandby(oracle:Name, standby:boolean):void {
     if (!hasAuth(this.receiver)) requireAuth(oracle)
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
-    const global = this.globalT.get()
     const config = this.getConfig()
     check(oracleRow.standby != standby, "nothing to change")
     if (!hasAuth(this.receiver)) check(this.currentRound() - oracleRow.last_standby_toggle_round > config.standby_toggle_interval_rounds, "can't toggle standby this quickly")
     check(oracleRow.collateral.unlocking == 0, "can't toggle standby during unlocking")
+
     if (standby) {
       oracleRow.standby = standby
       oracleRow.last_standby_toggle_round = this.currentRound()
-      global.expected_active_weight -= oracleRow.weight
-      global.standby_oracles++
-      check(global.standby_oracles >= 1, "max standy_oracles reached")
-      const oracleIndex = global.expected_active_oracles.indexOf(oracle)
-      check(oracleIndex > -1, "problem setting oracle standby")
-      global.expected_active_oracles.splice(oracleIndex, 1)
     } else {
       check(oracleRow.weight > 0, "oracle must have positive weight. add more collateral")
       oracleRow.standby = standby
       oracleRow.expected_active_after_round = this.currentRound() + config.oracle_expected_active_after_rounds
-      global.expected_active_weight += oracleRow.weight
-      check(global.expected_active_weight >= oracleRow.weight, "global expected_active_weight max reached")
-      global.expected_active_oracles.push(oracle)
-      global.standby_oracles--
     }
-    this.globalT.set(global, this.receiver)
+
+    // adjust global standby for all protocols
+    let next = this.protocolsT.first()
+    while (next) {
+      let proto = next
+      let global = this.globalT.requireGet(proto.protocol_id, "global row not found for protocol")
+      if (standby) {
+        global.expected_active_weight -= oracleRow.weight
+        global.standby_oracles++
+        check(global.standby_oracles >= 1, "max standy_oracles reached")
+        const oracleIndex = global.expected_active_oracles.indexOf(oracle)
+        check(oracleIndex > -1, "problem setting oracle standby")
+        global.expected_active_oracles.splice(oracleIndex, 1)
+      } else {
+        global.expected_active_weight += oracleRow.weight
+        check(global.expected_active_weight >= oracleRow.weight, "global expected_active_weight max reached")
+        global.expected_active_oracles.push(oracle)
+        global.standby_oracles--
+      }
+      this.globalT.set(global, this.receiver)
+      next = this.protocolsT.next(proto)
+    }
+
     this.oraclesT.update(oracleRow, this.receiver)
   }
 
@@ -137,7 +154,6 @@ export class OracleActions extends GlobalActions {
     // The original idea is that arbitrary weight could be added, like from the DAO or other sources of voting
     requireAuth(this.receiver)
     const existing = this.oraclesT.get(account.value)
-    const global = this.globalT.get()
     const config = this.getConfig()
 
     if (existing) {
@@ -146,15 +162,6 @@ export class OracleActions extends GlobalActions {
 
       existing.collateral.locked += adding_collateral
       existing.collateral.min_unlock_start_round = this.currentRound() + config.unlock_wait_rounds
-
-      // update globals with new weight change
-      if (weight > existing.weight) {
-        global.expected_active_weight += (weight - existing.weight)
-        check(global.expected_active_weight >= (weight - existing.weight), "global expected_active_weight max reached")
-      } else {
-        check(global.expected_active_weight >= (existing.weight - weight), "global expected_active_weight cannot be negative")
-        global.expected_active_weight -= (existing.weight - weight)
-      }
       existing.weight = weight
 
       this.oraclesT.update(existing, this.receiver)
@@ -175,11 +182,29 @@ export class OracleActions extends GlobalActions {
       }
       const row = new Oracle(account, weight, collateralData, fundsData, true)
       this.oraclesT.store(row, this.receiver)
-      //  global.total_weight += weight
-      global.standby_oracles++
-      check(global.standby_oracles >= 1, "max standy_oracles reached")
     }
-    this.globalT.set(global, this.receiver)
+
+    // adjust global weight for all protocols
+    let next = this.protocolsT.first()
+    while (next) {
+      let proto = next
+      let global = this.globalT.requireGet(proto.protocol_id, "global row not found for protocol")
+      if (existing) {
+        // update globals with new weight change
+        if (weight > existing.weight) {
+          global.expected_active_weight += (weight - existing.weight)
+          check(global.expected_active_weight >= (weight - existing.weight), "global expected_active_weight max reached")
+        } else {
+          check(global.expected_active_weight >= (existing.weight - weight), "global expected_active_weight cannot be negative")
+          global.expected_active_weight -= (existing.weight - weight)
+        }
+      } else {
+        global.standby_oracles++
+        check(global.standby_oracles >= 1, "max standy_oracles reached")
+      }
+      this.globalT.set(global, this.receiver)
+      next = this.protocolsT.next(proto)
+    }
   }
 
   /**
