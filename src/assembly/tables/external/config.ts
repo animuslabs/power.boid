@@ -100,7 +100,7 @@ export class ConfigNft {
   whitelist_collections:Name[] = []
 }
 
-@table("config", singleton)
+@table("config", singleton, noabigen)
 export class Config extends Table {
   constructor(
     public account:ConfigAccount = new ConfigAccount(),
