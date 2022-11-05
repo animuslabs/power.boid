@@ -24,6 +24,7 @@ export class SlashActions extends TableCleanActions {
     const global = statsRow.starting_global
     check(global.expected_active_oracles.includes(oracle), "oracle was not expected to be active this round")
     check(!global.active_oracles.includes(oracle), "oracle was active this round")
+    check(global.active_weight >= this.minWeightThreshold(config, global), "there must be a min global weight consensus to slash absent oracles")
 
     // verify that the oracle was absent in a round when they should be active
     check(!oracleRow.standby, "oracle is in standby, can't be slashed for inactivity")

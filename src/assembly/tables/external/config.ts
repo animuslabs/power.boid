@@ -23,13 +23,13 @@ export class ConfigPower {
   powered_stake_pwr:f32 = 0
   claim_maximum_elapsed_rounds:u16 = 0
   soft_max_pwr_add:u16 = 0
+  dev_fund_tax_mult:f32 = 0
 }
 
 @packer
 export class ConfigMint {
   round_powered_stake_mult:f32 = 0 // inflation from powered stake
   round_power_mult:f32 = 0 // determines inflation from boid power
-  dev_fund_tax_mult:f32 = 0 // cut of inflation that goes to the dev fund
 }
 @packer
 export class ConfigAutoAdjust {
@@ -115,7 +115,7 @@ export class Config extends Table {
     public paused:boolean = true,
     public allow_deposits:boolean = false,
     public allow_withdrawals:boolean = false,
-    public recovery_account:Name = EMPTY_NAME // this is an account secured by the DAO and other trusted accounts that can recover accounts of users who lost their keys if recoverable bool is enabled, the details to be figured out later
+    public recoveryAccount:Name = EMPTY_NAME // this is an account secured by the DAO and other trusted accounts that can recover accounts of users who lost their keys if recoverable bool is enabled, the details to be figured out later
   ) {
     super()
   }

@@ -172,7 +172,7 @@ export const roundStartTime = TimePoint.fromMilliseconds(Date.now())
 console.log(roundStartTime.toString())
 const defaultConfig = {
   paused: false,
-  account: { purchase_price: 1000, premium_purchase_price: 1000, max_premium_prefix: 3, max_owners: 4, max_sponsors: 1, max_pwrmods: 4, suffix_whitelist: ["oid"], remove_sponsor_price: 100000 },
+  account: { invite_price: 1000, premium_purchase_price: 1000, max_premium_prefix: 3, max_owners: 4, max_sponsors: 1, max_pwrmods: 4, suffix_whitelist: ["oid"], remove_sponsor_price: 100000, sponsor_max_invite_codes: 255, invite_code_expire_rounds: 20 },
   power: { round_decay_constant: 10, round_decay_mult: 0.05, sponsor_tax_mult: 0.1, powered_stake_mult: 1, powered_stake_pwr: 0.95, claim_maximum_elapsed_rounds: 10, soft_max_pwr_add: 65000, dev_fund_tax_mult: 0.01 },
   mint: { round_powered_stake_mult: 0.3, round_power_mult: 0.09 },
   team: { change_min_rounds: 42, edit_team_min_rounds: 48, team_edit_max_pct_change: 1, buy_team_cost: 5e6, owner_stake_required: 2e7, owner_future_stake_lock_rounds_required: 80 },
@@ -185,7 +185,7 @@ const defaultConfig = {
     account_max_keys: 6,
     worker_max_bill_per_action: 100
   },
-  nft: { boid_id_maximum_nfts: 6 },
+  nft: { boid_id_maximum_nfts: 6, whitelist_collections: ["mint.boid"] },
   auto: {
     target_inflation_per_round: 10000,
     power_mult_max_adjust: 1,
@@ -194,7 +194,8 @@ const defaultConfig = {
     max_check_rounds: 20
   },
   allow_deposits: true,
-  allow_withdrawals: true
+  allow_withdrawals: true,
+  recoveryAccount: "recover.boid"
 }
 
 export async function wait(ms) {
@@ -259,7 +260,8 @@ export const config = {
   reports_accumulate_weight_round_pct: 0.20,
   weight_collateral_divisor:1000000,
   merge_deviation_pct: 0.25,
-  oracle_expected_active_after_rounds: 2
+  oracle_expected_active_after_rounds: 2,
+  min_pay_report_share_threshold: 0.01
 }
 export function addRounds(numRounds = 0) {
   // @ts-ignore
