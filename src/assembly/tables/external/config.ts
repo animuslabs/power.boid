@@ -1,8 +1,8 @@
-import { Asset, Table, Name, TimePoint } from "proton-tsc"
+import { Asset, Table, Name, TimePoint, EMPTY_NAME } from "proton-tsc"
 
 @packer
 export class ConfigAccount {
-  purchase_price:u32 = 0
+  invite_price:u32 = 0
   premium_purchase_price:u32 = 0
   max_premium_prefix:u8 = 0
   max_owners:u8 = 0
@@ -10,6 +10,8 @@ export class ConfigAccount {
   max_pwrmods:u8 = 0
   suffix_whitelist:Name[] = []
   remove_sponsor_price:u32 = 0
+  sponsor_max_invite_codes:u8 = 0
+  invite_code_expire_rounds:u16 = 0
 }
 
 @packer
@@ -95,9 +97,10 @@ export class MintLog {
 @packer
 export class ConfigNft {
   boid_id_maximum_nfts:u16 = 0
+  whitelist_collections:Name[] = []
 }
 
-@table("config", singleton, noabigen)
+@table("config", singleton)
 export class Config extends Table {
   constructor(
     public account:ConfigAccount = new ConfigAccount(),
@@ -111,7 +114,8 @@ export class Config extends Table {
     public auto:ConfigAutoAdjust = new ConfigAutoAdjust(),
     public paused:boolean = true,
     public allow_deposits:boolean = false,
-    public allow_withdrawals:boolean = false
+    public allow_withdrawals:boolean = false,
+    public recoveryAccount:Name = EMPTY_NAME // this is an account secured by the DAO and other trusted accounts that can recover accounts of users who lost their keys if recoverable bool is enabled, the details to be figured out later
   ) {
     super()
   }
