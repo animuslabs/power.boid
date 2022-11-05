@@ -34,10 +34,6 @@
           "type": "AccountTeam"
         },
         {
-          "name": "social_ipfs_json",
-          "type": "string"
-        },
-        {
           "name": "balance",
           "type": "uint32"
         },
@@ -46,8 +42,8 @@
           "type": "uint16"
         },
         {
-          "name": "created_utc_sec",
-          "type": "uint32"
+          "name": "recoverable",
+          "type": "bool"
         }
       ]
     },
@@ -61,7 +57,25 @@
         },
         {
           "name": "nonce",
-          "type": "uint32"
+          "type": "uint8"
+        }
+      ]
+    },
+    {
+      "name": "AccountCreate",
+      "base": "",
+      "fields": [
+        {
+          "name": "boid_id",
+          "type": "name"
+        },
+        {
+          "name": "keys",
+          "type": "public_key[]"
+        },
+        {
+          "name": "owners",
+          "type": "name[]"
         }
       ]
     },
@@ -256,6 +270,10 @@
         {
           "name": "allow_withdrawals",
           "type": "bool"
+        },
+        {
+          "name": "recoveryAccount",
+          "type": "name"
         }
       ]
     },
@@ -264,7 +282,7 @@
       "base": "",
       "fields": [
         {
-          "name": "purchase_price",
+          "name": "invite_price",
           "type": "uint32"
         },
         {
@@ -294,6 +312,14 @@
         {
           "name": "remove_sponsor_price",
           "type": "uint32"
+        },
+        {
+          "name": "sponsor_max_invite_codes",
+          "type": "uint8"
+        },
+        {
+          "name": "invite_code_expire_rounds",
+          "type": "uint16"
         }
       ]
     },
@@ -370,6 +396,10 @@
         {
           "name": "boid_id_maximum_nfts",
           "type": "uint16"
+        },
+        {
+          "name": "whitelist_collections",
+          "type": "name[]"
         }
       ]
     },
@@ -470,20 +500,6 @@
       ]
     },
     {
-      "name": "Deposits",
-      "base": "",
-      "fields": [
-        {
-          "name": "boid_id",
-          "type": "name"
-        },
-        {
-          "name": "boid_quantity",
-          "type": "uint32"
-        }
-      ]
-    },
-    {
       "name": "ExtendedSymbol",
       "base": "",
       "fields": [
@@ -501,6 +517,10 @@
       "name": "Global",
       "base": "",
       "fields": [
+        {
+          "name": "chain_name",
+          "type": "name"
+        },
         {
           "name": "total_accounts",
           "type": "uint64"
@@ -520,9 +540,23 @@
         {
           "name": "last_inflation_adjust_round",
           "type": "uint16"
+        }
+      ]
+    },
+    {
+      "name": "Invite",
+      "base": "",
+      "fields": [
+        {
+          "name": "invite_code",
+          "type": "uint64"
         },
         {
-          "name": "last_rebalance_round",
+          "name": "key",
+          "type": "public_key"
+        },
+        {
+          "name": "created_round",
           "type": "uint16"
         }
       ]
@@ -834,6 +868,36 @@
       ]
     },
     {
+      "name": "Sponsor",
+      "base": "",
+      "fields": [
+        {
+          "name": "sponsor_boid_id",
+          "type": "name"
+        },
+        {
+          "name": "invites_balance",
+          "type": "uint16"
+        },
+        {
+          "name": "invite_codes_unclaimed",
+          "type": "uint16"
+        },
+        {
+          "name": "invite_codes_claimed",
+          "type": "uint32"
+        },
+        {
+          "name": "sponsored_upgrades",
+          "type": "uint32"
+        },
+        {
+          "name": "upgrades_total_earned",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
       "name": "Stake",
       "base": "",
       "fields": [
@@ -923,7 +987,7 @@
         },
         {
           "name": "power",
-          "type": "uint32"
+          "type": "uint64"
         },
         {
           "name": "members",
@@ -976,20 +1040,12 @@
       "base": "",
       "fields": [
         {
-          "name": "boid_id",
+          "name": "payer_boid_id",
           "type": "name"
         },
         {
-          "name": "owners",
-          "type": "name[]"
-        },
-        {
-          "name": "keys",
-          "type": "public_key[]"
-        },
-        {
-          "name": "sponsor",
-          "type": "name"
+          "name": "new_account",
+          "type": "AccountCreate"
         }
       ]
     },
@@ -1003,7 +1059,7 @@
         },
         {
           "name": "social_ipfs_json",
-          "type": "string"
+          "type": "bytes"
         }
       ]
     },
@@ -1041,6 +1097,10 @@
         {
           "name": "keyIndex",
           "type": "int32"
+        },
+        {
+          "name": "expires_utc_sec",
+          "type": "uint32"
         }
       ]
     },
@@ -1093,6 +1153,16 @@
       ]
     },
     {
+      "name": "global.chain",
+      "base": "",
+      "fields": [
+        {
+          "name": "chain_name",
+          "type": "name"
+        }
+      ]
+    },
+    {
       "name": "global.clear",
       "base": "",
       "fields": []
@@ -1126,6 +1196,74 @@
         {
           "name": "memo",
           "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "invite.add",
+      "base": "",
+      "fields": [
+        {
+          "name": "boid_id",
+          "type": "name"
+        },
+        {
+          "name": "invite_code",
+          "type": "uint64"
+        },
+        {
+          "name": "key",
+          "type": "public_key"
+        }
+      ]
+    },
+    {
+      "name": "invite.buy",
+      "base": "",
+      "fields": [
+        {
+          "name": "boid_id",
+          "type": "name"
+        },
+        {
+          "name": "quantity",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "name": "invite.claim",
+      "base": "",
+      "fields": [
+        {
+          "name": "sponsor_boid_id",
+          "type": "name"
+        },
+        {
+          "name": "invite_code",
+          "type": "uint64"
+        },
+        {
+          "name": "sig",
+          "type": "signature"
+        },
+        {
+          "name": "new_account",
+          "type": "AccountCreate"
+        }
+      ]
+    },
+    {
+      "name": "invite.rm",
+      "base": "",
+      "fields": [
+        {
+          "name": "sponsor_boid_id",
+          "type": "name"
+        },
+        {
+          "name": "invite_code",
+          "type": "uint64"
         }
       ]
     },
@@ -1386,11 +1524,6 @@
       ]
     },
     {
-      "name": "rebalance",
-      "base": "",
-      "fields": []
-    },
-    {
       "name": "stake",
       "base": "",
       "fields": [
@@ -1649,6 +1782,11 @@
       "ricardian_contract": ""
     },
     {
+      "name": "global.chain",
+      "type": "global.chain",
+      "ricardian_contract": ""
+    },
+    {
       "name": "global.clear",
       "type": "global.clear",
       "ricardian_contract": ""
@@ -1661,6 +1799,26 @@
     {
       "name": "internalxfer",
       "type": "internalxfer",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "invite.add",
+      "type": "invite.add",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "invite.buy",
+      "type": "invite.buy",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "invite.claim",
+      "type": "invite.claim",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "invite.rm",
+      "type": "invite.rm",
       "ricardian_contract": ""
     },
     {
@@ -1741,11 +1899,6 @@
     {
       "name": "pwrmod.rm",
       "type": "pwrmod.rm",
-      "ricardian_contract": ""
-    },
-    {
-      "name": "rebalance",
-      "type": "rebalance",
       "ricardian_contract": ""
     },
     {
@@ -1837,15 +1990,15 @@
       "key_types": []
     },
     {
-      "name": "deposits",
-      "type": "Deposits",
+      "name": "global",
+      "type": "Global",
       "index_type": "i64",
       "key_names": [],
       "key_types": []
     },
     {
-      "name": "global",
-      "type": "Global",
+      "name": "invites",
+      "type": "Invite",
       "index_type": "i64",
       "key_names": [],
       "key_types": []
@@ -1874,6 +2027,13 @@
     {
       "name": "pwrmods",
       "type": "PwrMod",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+    },
+    {
+      "name": "sponsors",
+      "type": "Sponsor",
       "index_type": "i64",
       "key_names": [],
       "key_types": []
