@@ -61,6 +61,23 @@ export class TableCleanActions extends OStatsActions {
     }
   }
 
+  loopRoundCommitsCleanup(scope:Name, olderThan:u32):void {
+    const tbl = this.roundCommitT(scope)
+    let next = tbl.getBySecondaryU64(u64(olderThan - 1), 0)
+    if (!next) {
+      check(false, "no rows to clean")
+      return
+    }
+    check(next && next.round < olderThan, "no rows to clean" + next.round.toString())
+    for (let i = 0; i < 50; i++) {
+      let row = next
+      if (row && row.round < olderThan) {
+        next = tbl.previousBySecondaryU64(row, 0)
+        tbl.remove(row)
+      } else break
+    }
+  }
+
   loopOstatsCleanup(scope:Name, olderThan:u32):void {
     const tbl = this.oracleStatsT(scope)
     let next = tbl.first()
@@ -130,6 +147,16 @@ export class TableCleanActions extends OStatsActions {
     const cleanupOlder = u32(Math.max(i32(this.currentRound()) - minRetain - config.keep_finalized_stats_rows, 0))
     check(cleanupOlder != 0, "can't cleanup reports yet")
     this.loopReportsCleanup(scope, cleanupOlder)
+  }
+
+  @action("commitsclean")
+  roundCommitsCleanup(scope:Name):void {
+    const config = this.getConfig()
+    this.statsClean(config)
+    const minRetain = Math.max(config.reports_finalized_after_rounds, config.standby_toggle_interval_rounds)
+    const cleanupOlder = u32(Math.max(i32(this.currentRound()) - minRetain - config.keep_finalized_stats_rows, 0))
+    check(cleanupOlder != 0, "can't cleanup commits yet")
+    this.loopRoundCommitsCleanup(scope, cleanupOlder)
   }
 
   @action("ostatsclean")
