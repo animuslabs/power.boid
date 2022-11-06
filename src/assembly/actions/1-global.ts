@@ -8,7 +8,7 @@ import { Stat } from "../tables/stats"
 import { OracleStat } from "../tables/oracleStats"
 import { Config } from "../tables/config"
 import { TokenTransfer } from "./5-deposit"
-import { RoundCommit } from "assembly/tables/roundCommit"
+import { RoundCommit } from "../tables/roundCommit"
 export const boidSym:u64 = 293287707140
 
 @contract
@@ -127,6 +127,8 @@ export class GlobalActions extends Contract {
     check(config.min_consensus_pct <= f32(1), "min_consensus_pct must be less or equal to 100%")
     check(config.merge_deviation_pct >= 0, "merge_deviation_pct must be higher or equal zero")
     check(config.merge_deviation_pct <= f32(1), "merge_deviation_pct must be less or equal to 100%")
+    check(config.min_pay_report_share_threshold >= 0, "min_pay_report_share_threshold must be higher or equal zero")
+    check(config.min_pay_report_share_threshold <= f32(1), "min_pay_report_share_threshold must be less or equal to 100%")
 
     this.configT.set(config, this.receiver)
   }
