@@ -85,7 +85,7 @@ describe("oracle", async() => {
       await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: report }, "oracle3")
       addRounds(1)
       await act("roundstats")
-      await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
+      await act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] })
       addRounds(3)
       await act("handleostat", { oracle: "oracle1", round: 15 })
       const unclaimed = oracles()[0].funds.unclaimed
@@ -112,7 +112,7 @@ describe("oracle", async() => {
         await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: report }, "oracle3")
         addRounds(1)
         await act("roundstats")
-        await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
+        await act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] })
         addRounds(3)
         await act("handleostat", { oracle: "oracle1", round: 15 })
         const unclaimed = oracles()[0].funds.unclaimed
@@ -147,7 +147,7 @@ describe("oracle", async() => {
       await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: report }, "oracle3")
       addRounds(1)
       await act("roundstats")
-      await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
+      await act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] })
       addRounds(3)
       await act("handleostat", { oracle: "oracle1", round: 15 })
   
@@ -192,7 +192,7 @@ describe("oracle", async() => {
         await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: report }, "oracle3")
         addRounds(1)
         await act("roundstats")
-        await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
+        await act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] })
         addRounds(3)
         await act("handleostat", { oracle: "oracle1", round: 15 })
         await act("withdrawinit", { oracle: "oracle1" }, "oracle1")
