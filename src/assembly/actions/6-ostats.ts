@@ -12,8 +12,6 @@ export class OStatsActions extends DepositActions {
    */
   @action("handleostat")
   handleOStat(oracle:Name, round:u16):void {
-    // TODO this action needs to be refined
-
     const config = this.getConfig()
     check(this.currentRound() >= config.reports_finalized_after_rounds, "chain is too recent to generate reports")
     check(round < this.currentRound() - config.reports_finalized_after_rounds, "can't process this round yet, not yet finalized")
@@ -60,11 +58,14 @@ export class OStatsActions extends DepositActions {
     print("\n oracleBonusReportedPayout: " + oracleBonusReportedPayout.toString())
     print("\n oracleBonusProposedPayout: " + oracleBonusProposedPayout.toString())
 
+    let minGlobalActiveWeight:bool = globalData.starting_global.active_weight >= this.minWeightThreshold(config, globalData.starting_global)
+
     // calculate the final pay
     const oracleRow = this.oraclesT.requireGet(oracle.value, "can't find oracle in oracles table")
-    if (unReportedShare > config.slash_threshold_pct && !oracleRow.standby) this.sendSlashOracle(oracle, this.findSlashQuantity(oracleRow, config))
+    if (minGlobalActiveWeight && unReportedShare > config.slash_threshold_pct && !oracleRow.standby) this.sendSlashOracle(oracle, this.findSlashQuantity(oracleRow, config))
     let basePay:u32 = 0
-    if (reportedShare >= 0.01 || proposedShare >= 0.01) basePay = u32(f32(oracleRow.trueCollateral) * config.collateral_pct_pay_per_round)
+
+    if (reportedShare >= config.min_pay_report_share_threshold || proposedShare >= config.min_pay_report_share_threshold) basePay = u32(f32(oracleRow.trueCollateral) * config.collateral_pct_pay_per_round)
     const bonusPay:u32 = u32(oracleBonusProposedPayout + oracleBonusReportedPayout)
 
     // return
@@ -100,6 +101,7 @@ export class OStatsActions extends DepositActions {
     this.oraclesT.update(oracleRow, this.receiver)
     const global = this.globalT.get()
     global.rewards_paid += payQuantity
+    this.globalT.set(global, this.receiver)
   }
 }
 @packer

@@ -8,6 +8,7 @@ import { Stat } from "../tables/stats"
 import { OracleStat } from "../tables/oracleStats"
 import { Config } from "../tables/config"
 import { TokenTransfer } from "./5-deposit"
+import { RoundCommit } from "assembly/tables/roundCommit"
 export const boidSym:u64 = 293287707140
 
 @contract
@@ -55,6 +56,10 @@ export class GlobalActions extends Contract {
 
   oracleStatsT(oracle_scope:Name):TableStore<OracleStat> {
     return new TableStore<OracleStat>(this.receiver, oracle_scope)
+  }
+
+  roundCommitT(oracle_scope:Name):TableStore<RoundCommit> {
+    return new TableStore<RoundCommit>(this.receiver, oracle_scope)
   }
 
   codePerm:PermissionLevel = new PermissionLevel(this.receiver, Name.fromString("active"))

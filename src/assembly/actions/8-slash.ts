@@ -24,6 +24,7 @@ export class SlashActions extends TableCleanActions {
     const global = statsRow.starting_global
     check(global.expected_active_oracles.includes(oracle), "oracle was not expected to be active this round")
     check(!global.active_oracles.includes(oracle), "oracle was active this round")
+    check(global.active_weight >= this.minWeightThreshold(config, global), "there must be a min global weight consensus to slash absent oracles")
 
     // verify that the oracle was absent in a round when they should be active
     check(!oracleRow.standby, "oracle is in standby, can't be slashed for inactivity")
@@ -77,53 +78,5 @@ export class SlashActions extends TableCleanActions {
 
     // save oracle row
     this.oraclesT.update(oracleRow, this.receiver)
-  }
-
-  /**
-   * Oracles can be slashed if they make multiple reports for the same protocol+boid_id+round
-   *
-   * @param {Name} oracle
-   * @param {Name} boid_id_scope
-   * @param {u64[]} pwrreport_ids
-   * @param {u8} protocol_id
-   * @param {u16} round
-   */
-  @action("slashmulti")
-  slashMulti(oracle:Name, boid_id_scope:Name, pwrreport_ids:u64[]):void {
-    check(pwrreport_ids.length > 1, "must include at least two pwrreport_ids")
-    const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
-    const config = this.getConfig()
-    const pwrReportsT = this.pwrReportsT(boid_id_scope)
-    let protocol_id:u8 = 0
-    let round:u16 = 0
-    let first:bool = true
-    for (let i = 0; i < pwrreport_ids.length; i++) {
-      const reportId = pwrreport_ids[i]
-      const reportRow = pwrReportsT.requireGet(reportId, "invalid reportId: " + reportId.toString())
-      const oracleIndex:i32 = reportRow.approvals.indexOf(oracle)
-
-      // use first report protocol and round to compare
-      if (first) {
-        protocol_id = reportRow.report.protocol_id
-        round = reportRow.report.round
-        first = false
-      }
-
-      // verify the row is problematic
-      check(oracleIndex > -1, "This report wasn't approved by the target oracle: " + reportId.toString())
-      check(reportRow.report.protocol_id == protocol_id, "protocol_ids must match")
-      check(reportRow.report.round == round, "rounds must match")
-      // check(!reportRow.merged && !reportRow.reported, "report was already reported or merged")
-
-      // remove the oracle aproval and weight from the row and save it
-      // TODO: check for overflow if the oracle weight has changed since the report was made this could be problematic
-      if (!reportRow.merged && !reportRow.reported) {
-        reportRow.approvals.splice(oracleIndex, 1)
-        if (oracleRow.weight < reportRow.approval_weight) reportRow.approval_weight -= oracleRow.weight
-        else reportRow.approval_weight = 0
-        pwrReportsT.update(reportRow, this.receiver)
-      }
-    }
-    this.sendSlashOracle(oracle, this.findSlashQuantity(oracleRow, config) * pwrreport_ids.length)
   }
 }
