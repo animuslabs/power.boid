@@ -262,7 +262,7 @@ export class PwrReportActions extends OracleActions {
       } else {
         const oracleData = this.oraclesT.get(oracle.value)
         if (!oracleData) continue
-        const oracleStatsRow = new OracleStat(targetRound, oracleData.weight, { reported_merged: 1, unreported_unmerged: 0, proposed: 0 })
+        const oracleStatsRow = new OracleStat(u16(targetRound), oracleData.weight, { reported_merged: 1, unreported_unmerged: 0, proposed: 0 })
         oStatsT.store(oracleStatsRow, this.receiver)
       }
     }
