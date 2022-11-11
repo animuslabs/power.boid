@@ -1,4 +1,5 @@
-import { Action, ActionData, check, EMPTY_NAME, Encoder, Name, PermissionLevel, print, requireAuth, TableStore } from "proton-tsc"
+import { RoundCommit } from "../tables/roundCommit"
+import { Action, ActionData, check, EMPTY_NAME, Encoder, Name, PermissionLevel, print, requireAuth, SAME_PAYER, TableStore, U128 } from "proton-tsc"
 import { Account } from "../tables/external/accounts"
 import { Oracle } from "../tables/oracles"
 import { OracleStat } from "../tables/oracleStats"
@@ -41,6 +42,10 @@ export class PwrReportActions extends OracleActions {
     const reportId = PwrReportRow.getReportId(report)
     const config = this.getConfig()
 
+    let oRoundCommit = this.roundCommitT(oracle)
+    let commitExists = oRoundCommit.getBySecondaryU128(RoundCommit.getByRoundProtocolBoidId(boid_id_scope, report.protocol_id, report.round), 1)
+    check(commitExists == null, "oracle already commited report for this user and round")
+
     // ensure the report is for a round that is valid
     check(this.currentRound() >= config.reports_finalized_after_rounds, "chain is too recent to generate reports")
     check(report.round >= this.currentRound() - config.reports_finalized_after_rounds, "round is too far in the past")
@@ -71,7 +76,6 @@ export class PwrReportActions extends OracleActions {
 
     // if the report already exists, aggregate our weight with the existing weight and possibly finalize it
     if (existing) {
-      check(!existing.approvals.includes(oracle), "oracle already approved this report")
       check(!existing.reported, "report already reported")
       check(!existing.merged, "report already merged")
       existing.approval_weight += oracleRow.weight
@@ -120,6 +124,7 @@ export class PwrReportActions extends OracleActions {
       // otherwise we just need to update our own oracle stats
       this.updateOracleStats(oracleRow, reportSent, reportCreated, report.round)
     }
+    oRoundCommit.store(new RoundCommit(oRoundCommit.availablePrimaryKey, report.protocol_id, report.round, boid_id_scope), this.receiver)
   }
 
   /**
@@ -148,39 +153,8 @@ export class PwrReportActions extends OracleActions {
   }
 
   /**
+   * Finish report
    * Since reports can't always be finalized when receiving reports, sometimes we need to finalize the report seperately.
-   * This action doesn't require any authentication as it is only possible when the target report has already receive sufficient consensus.
-   *
-   * @param {Name} boid_id_scope the scope of the pwrreports table where we can find the report
-   * @param {u64} pwrreport_id the id of the target report to finalize
-   */
-  @action("finishreport")
-  finishReport(boid_id_scope:Name, pwrreport_id:u64):void {
-    const pwrReportsT = this.pwrReportsT(boid_id_scope)
-    const existing = pwrReportsT.requireGet(pwrreport_id, "invalid report id or scope")
-    const config = this.getConfig()
-    const global = this.globalT.get()
-    check(this.shouldFinalizeReports(existing.report.round, config), "report can't be finalized yet, too early in the round")
-    check(existing.approval_weight >= this.minWeightThreshold(), "report can't be finalized yet, minimum weight threshold not met")
-    check(!existing.merged && !existing.reported, "report already merged or reported")
-    this.sendReport(boid_id_scope, existing.report)
-    existing.reported = true
-    global.reports.reported++
-    global.reports.unreported_and_unmerged--
-
-    pwrReportsT.update(existing, this.receiver)
-    this.globalT.set(global, this.receiver)
-
-    // update the stats of all the oracles that participated
-    for (let i = 0; i < existing.approvals.length; i++) {
-      const oracleName = existing.approvals[i]
-      let row = this.oraclesT.get(oracleName.value)
-      if (!row) continue
-      else this.updateOracleStats(row, true, false, existing.report.round)
-    }
-  }
-
-  /**
    * Sometimes oracles may make slightly different reports based on fuzzy data.
    * In this case, multiple reports that are within a range can be combined and finalized as one report.
    * does not require any authentication
@@ -188,12 +162,9 @@ export class PwrReportActions extends OracleActions {
    * @param {Name} boid_id_scope the scope of pwrreports table where the reports can be find
    * @param {u64[]} pwrreport_ids a vector of reports that could be combined
    */
-  @action("mergereports")
-  mergeReports(boid_id_scope:Name, pwrreport_ids:u64[]):void {
-    check(pwrreport_ids.length > 1, "need atleast two reports to merge")
+  @action("finishreport")
+  finishReport(boid_id_scope:Name, pwrreport_ids:u64[]):void {
     const config = this.getConfig()
-    const global = this.globalT.get()
-    this.updateStats(global)
     const targetReports:PwrReportRow[] = []
     let targetProtocol:i16 = -1
     let targetRound:i32 = -1
@@ -215,24 +186,32 @@ export class PwrReportActions extends OracleActions {
 
     check(this.shouldFinalizeReports(u16(targetRound), config), "can't finalize/merge reports this early in a round")
 
-    // find the median
-    targetReports.sort((a:PwrReportRow, b:PwrReportRow) => a.report.units - b.report.units)
-    let half = i32(Math.floor(targetReports.length / 2))
-    let medianUnits:u32 = 0
-    if (targetReports.length % 2) medianUnits = targetReports[half].report.units
-    else medianUnits = u32((targetReports[half - 1].report.units + targetReports[half].report.units) / 2)
+    const global = this.globalT.get()
+    this.updateStats(global)
 
-    //find safe min/max values
-    const safeAmount = Math.max(f32(medianUnits) * config.merge_deviation_pct, 1)
-    const safeMax = u32(medianUnits + safeAmount)
-    check(safeMax >= medianUnits, "safeMax max reached")
-    const safeMin = u32(Math.max(f32(medianUnits) - safeAmount, 1))
+    let mergedRow = targetReports[0]
+    let medianUnits:u32 = targetReports[0].report.units
+    if (targetReports.length > 1) {
+      // find the median
+      targetReports.sort((a:PwrReportRow, b:PwrReportRow) => a.report.units - b.report.units)
+      let half = i32(Math.floor(targetReports.length / 2))
 
-    // ensure each report is a safe range from the median
-    for (let i = 0; i < targetReports.length; i++) {
-      const pwrReport = targetReports[i]
-      check(pwrReport.report.units <= safeMax, "report units " + pwrReport.report.units.toString() + " above maximum: " + safeMax.toString())
-      check(pwrReport.report.units >= safeMin, "report units " + pwrReport.report.units.toString() + " below required minimum: " + safeMin.toString())
+      if (targetReports.length % 2) medianUnits = targetReports[half].report.units
+      else medianUnits = u32((targetReports[half - 1].report.units + targetReports[half].report.units) / 2)
+
+      //find safe min/max values
+      const safeAmount = Math.max(f32(medianUnits) * config.merge_deviation_pct, 1)
+      const safeMax = u32(medianUnits + safeAmount)
+      check(safeMax >= medianUnits, "safeMax max reached")
+      const safeMin = u32(Math.max(f32(medianUnits) - safeAmount, 1))
+
+      // ensure each report is a safe range from the median
+      for (let i = 0; i < targetReports.length; i++) {
+        const pwrReport = targetReports[i]
+        check(pwrReport.report.units <= safeMax, "report units " + pwrReport.report.units.toString() + " above maximum: " + safeMax.toString())
+        check(pwrReport.report.units >= safeMin, "report units " + pwrReport.report.units.toString() + " below required minimum: " + safeMin.toString())
+      }
+      mergedRow = targetReports[half]
     }
 
     // aggregate weights and see if it's above the minimum
@@ -242,13 +221,13 @@ export class PwrReportActions extends OracleActions {
     check(aggregateWeight >= this.minWeightThreshold(config, global), "aggregate approval_weight isn't high enough " + this.minWeightThreshold(config, global).toString() + " " + aggregateWeight.toString())
 
     // create or update merged report
-    let mergedRow = targetReports[half]
     if (targetReports.length % 2) {
       mergedRow.reported = true
-      mergedRow.approvals.push(Name.fromString("merged.boid"))
+      if (targetReports.length > 1) {
+        mergedRow.approvals.push(Name.fromString("merged.boid"))
+      }
     } else {
       const newReport:PwrReport = { protocol_id: u8(targetProtocol), round: u16(targetRound), units: medianUnits }
-      const report_id = PwrReportRow.getReportId(newReport)
       mergedRow = new PwrReportRow(Name.fromString("merged.boid"), newReport, [Name.fromString("merged.boid")], aggregateWeight, true, false)
       this.pwrReportsT(boid_id_scope).store(mergedRow, this.receiver)
     }
@@ -266,9 +245,7 @@ export class PwrReportActions extends OracleActions {
         const exists = allOracles.indexOf(oracle)
         if (exists == -1) allOracles.push(oracle)
         else {
-          // TODO found an account with multiple reports, need to slash here
-          // allOracles.splice(exists, 1)
-          check(false, "can't merge multiple reports that share an oracle, should slash: " + oracle.toString())
+          check(false, "can't merge multiple reports that share same oracle: " + oracle.toString())
         }
       }
     }
@@ -277,7 +254,7 @@ export class PwrReportActions extends OracleActions {
     for (let i = 0; i < allOracles.length; i++) {
       const oracle = allOracles[i]
       const oStatsT = this.oracleStatsT(oracle)
-      const existing = oStatsT.get(u64(this.currentRound()))
+      const existing = oStatsT.get(u64(targetRound))
       if (existing) {
         existing.reports.reported_merged++
         existing.reports.unreported_unmerged--
@@ -285,7 +262,7 @@ export class PwrReportActions extends OracleActions {
       } else {
         const oracleData = this.oraclesT.get(oracle.value)
         if (!oracleData) continue
-        const oracleStatsRow = new OracleStat(this.currentRound(), oracleData.weight, { reported_merged: 1, unreported_unmerged: 0, proposed: 0 })
+        const oracleStatsRow = new OracleStat(u16(targetRound), oracleData.weight, { reported_merged: 1, unreported_unmerged: 0, proposed: 0 })
         oStatsT.store(oracleStatsRow, this.receiver)
       }
     }

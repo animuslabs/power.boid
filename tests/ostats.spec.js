@@ -21,8 +21,8 @@ describe("reports", async() => {
             await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
             await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1")
             await expectToThrow(
-            act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) }),
-            "eosio_assert: report can't be finalized yet, too early in the round")
+            act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] }),
+            "eosio_assert: can't finalize/merge reports this early in a round")
             // console.log(oraclestats("oracle1"))
             // console.log("Global:", global())
             await setupOracle("oracle3")
@@ -34,7 +34,7 @@ describe("reports", async() => {
             await setupOracle("oracle2")
             await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report }, "oracle2")
             addRounds(1)
-            await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
+            await act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] })
             // console.log(oraclestats("oracle1"))
             // console.log(oraclestats("oracle2"))
             // console.log(stats())
@@ -42,7 +42,6 @@ describe("reports", async() => {
             act("handleostat", { oracle: "oracle1", round: 10 }),
             "eosio_assert: can't process this round yet, not yet finalized"
             )
-            await act("roundstats")
             addRounds(1)
             await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: report2 }, "oracle1")
             addRounds(1)

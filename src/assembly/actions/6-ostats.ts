@@ -12,8 +12,6 @@ export class OStatsActions extends DepositActions {
    */
   @action("handleostat")
   handleOStat(oracle:Name, round:u16):void {
-    // TODO this action needs to be refined
-
     const config = this.getConfig()
     check(this.currentRound() >= config.reports_finalized_after_rounds, "chain is too recent to generate reports")
     check(round < this.currentRound() - config.reports_finalized_after_rounds, "can't process this round yet, not yet finalized")
@@ -103,6 +101,7 @@ export class OStatsActions extends DepositActions {
     this.oraclesT.update(oracleRow, this.receiver)
     const global = this.globalT.get()
     global.rewards_paid += payQuantity
+    this.globalT.set(global, this.receiver)
   }
 }
 @packer
