@@ -196,6 +196,10 @@
         {
           "name": "oracle_expected_active_after_rounds",
           "type": "uint16"
+        },
+        {
+          "name": "min_pay_report_share_threshold",
+          "type": "float32"
         }
       ]
     },
@@ -308,10 +312,6 @@
         {
           "name": "round_power_mult",
           "type": "float32"
-        },
-        {
-          "name": "dev_fund_tax_mult",
-          "type": "float32"
         }
       ]
     },
@@ -360,6 +360,10 @@
         {
           "name": "soft_max_pwr_add",
           "type": "uint16"
+        },
+        {
+          "name": "dev_fund_tax_mult",
+          "type": "float32"
         }
       ]
     },
@@ -684,6 +688,28 @@
       ]
     },
     {
+      "name": "RoundCommit",
+      "base": "",
+      "fields": [
+        {
+          "name": "round_commit_id",
+          "type": "uint64"
+        },
+        {
+          "name": "protocol_id",
+          "type": "uint8"
+        },
+        {
+          "name": "round",
+          "type": "uint16"
+        },
+        {
+          "name": "boid_id",
+          "type": "name"
+        }
+      ]
+    },
+    {
       "name": "Stat",
       "base": "",
       "fields": [
@@ -732,6 +758,16 @@
       ]
     },
     {
+      "name": "commitsclean",
+      "base": "",
+      "fields": [
+        {
+          "name": "scope",
+          "type": "name"
+        }
+      ]
+    },
+    {
       "name": "configclear",
       "base": "",
       "fields": []
@@ -760,8 +796,8 @@
           "type": "name"
         },
         {
-          "name": "pwrreport_id",
-          "type": "uint64"
+          "name": "pwrreport_ids",
+          "type": "uint64[]"
         }
       ]
     },
@@ -781,20 +817,6 @@
         {
           "name": "round",
           "type": "uint16"
-        }
-      ]
-    },
-    {
-      "name": "mergereports",
-      "base": "",
-      "fields": [
-        {
-          "name": "boid_id_scope",
-          "type": "name"
-        },
-        {
-          "name": "pwrreport_ids",
-          "type": "uint64[]"
         }
       ]
     },
@@ -950,24 +972,6 @@
       ]
     },
     {
-      "name": "slashmulti",
-      "base": "",
-      "fields": [
-        {
-          "name": "oracle",
-          "type": "name"
-        },
-        {
-          "name": "boid_id_scope",
-          "type": "name"
-        },
-        {
-          "name": "pwrreport_ids",
-          "type": "uint64[]"
-        }
-      ]
-    },
-    {
       "name": "slashoracle",
       "base": "",
       "fields": [
@@ -983,6 +987,11 @@
     },
     {
       "name": "statsclean",
+      "base": "",
+      "fields": []
+    },
+    {
+      "name": "statsclear",
       "base": "",
       "fields": []
     },
@@ -1035,6 +1044,11 @@
   "types": [],
   "actions": [
     {
+      "name": "commitsclean",
+      "type": "commitsclean",
+      "ricardian_contract": ""
+    },
+    {
       "name": "configclear",
       "type": "configclear",
       "ricardian_contract": ""
@@ -1062,11 +1076,6 @@
     {
       "name": "handleostat",
       "type": "handleostat",
-      "ricardian_contract": ""
-    },
-    {
-      "name": "mergereports",
-      "type": "mergereports",
       "ricardian_contract": ""
     },
     {
@@ -1135,11 +1144,6 @@
       "ricardian_contract": ""
     },
     {
-      "name": "slashmulti",
-      "type": "slashmulti",
-      "ricardian_contract": ""
-    },
-    {
       "name": "slashoracle",
       "type": "slashoracle",
       "ricardian_contract": ""
@@ -1147,6 +1151,11 @@
     {
       "name": "statsclean",
       "type": "statsclean",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "statsclear",
+      "type": "statsclear",
       "ricardian_contract": ""
     },
     {
@@ -1214,6 +1223,13 @@
     {
       "name": "pwrreports",
       "type": "PwrReportRow",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+    },
+    {
+      "name": "roundcommit",
+      "type": "RoundCommit",
       "index_type": "i64",
       "key_names": [],
       "key_types": []

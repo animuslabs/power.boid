@@ -127,6 +127,16 @@ export class TableCleanActions extends OStatsActions {
     this.globalT.remove()
   }
 
+  @action("statsclear")
+  statsClear():void {
+    requireAuth(this.receiver)
+    for (let i = 0; i < 100; i++) {
+      const row = this.statsT.first()
+      if (!row) continue
+      this.statsT.remove(row)
+    }
+  }
+
   // CLEAN Actions, removes based on round
 
   @action("statsclean")

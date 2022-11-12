@@ -58,6 +58,8 @@ export class SlashActions extends TableCleanActions {
     oracleRow.collateral.slashed += quantity
     check(oracleRow.collateral.slashed >= quantity, "max collateral slashed reached")
     const weightBefore = oracleRow.weight
+    // const global = this.globalT.get()
+    // global.expected_active_weight -= oracleRow.weight
 
     // if all the collateral is slashed, or weight is zero, set the oracle to standby
     if (oracleRow.collateral.slashed >= oracleRow.collateral.locked) {
@@ -65,7 +67,7 @@ export class SlashActions extends TableCleanActions {
       oracleRow.weight = 0
       this.sendOracleStandby(oracle, true)
     } else {
-      oracleRow.weight = this.getOracleWeight(oracleRow.trueCollateral, this.configT.get())
+      oracleRow.weight = this.getOracleWeight(oracleRow.trueCollateral)
       if (oracleRow.weight == 0) this.sendOracleStandby(oracle, true)
     }
 

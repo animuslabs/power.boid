@@ -3,7 +3,7 @@ import { expect } from "chai"
 import { beforeEach, describe, it, before } from "mocha"
 import { Asset, Name, TimePoint, PrivateKey, PublicKey, Action, Bytes, ABI, ABIDecoder, Authority, PermissionLevel, UInt32, Serializer, TimePointSec } from "@greymass/eosio"
 import { Blockchain, nameToBigInt, symbolCodeToBigInt, protonAssert, expectToThrow, nameTypeToBigInt } from "@proton/vert"
-import { init, chain, act, oracles, global, contract, reports, boid, addRounds, tkn, config, wait, setupOracle, oracleStats, stats, logActions, getReportId, boid_id } from "./util.js"
+import { init, chain, act, oracles, global, contract, reports, boid, addRounds, tkn, config, wait, setupOracle, oracleStats, stats, logActions, getReportId, boid_id, oracle } from "./util.js"
 
 const report = { protocol_id: 0, round: 10, units: 100 }
 const report2 = { protocol_id: 0, round: 11, units: 100 }
@@ -22,7 +22,7 @@ describe("slash", async() => {
       await setupOracle("oracle3")
       await setupOracle("oracle4")
       await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
-      addRounds(16)      
+      addRounds(16)
       const goodReport = { round: 15, units: 100, protocol_id: 0 }
       await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: goodReport }, "oracle1")
       await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: goodReport }, "oracle2")
@@ -100,7 +100,7 @@ describe("slash", async() => {
         await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: goodReport }, "oracle2")
         await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: goodReport }, "oracle3")
         await act("setstandby", { oracle: "oracle4", standby: true })
-        
+
         await expectToThrow(
           act("slashabsent", { oracle: "oracle4", round: 16 }),
           "eosio_assert: oracle is in standby, can't be slashed for inactivity")
@@ -153,10 +153,15 @@ describe("slash", async() => {
     })
   })
   describe("slashoracle", async() => {
-    it("Success", async() => {
+    it("Success", async () => {
       await setupOracle("oracle1")
       await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
-      await act("slashoracle", { oracle: "oracle1", quantity: 10 })
+      expect(oracle("oracle1").weight).eq(12)
+      expect(global().expected_active_weight).eq(12)
+      await act("slashoracle", { oracle: "oracle1", quantity: 6000000 })
+      expect(oracle("oracle1").weight).eq(4)
+      expect(global().expected_active_weight).eq(4)
+
     })
     describe("validate slashoracle checks", async() => {
       it("Oracle doesn't exist", async() => {

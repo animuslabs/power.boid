@@ -181,7 +181,7 @@ export class GlobalActions extends Contract {
     action.send()
   }
 
-  getOracleWeight(collateral:u32, config:Config):u8 {
+  getOracleWeight(collateral:u32, config:Config = this.getConfig()):u8 {
     return u8(Math.min((Math.pow(f32(collateral) / config.weight_collateral_divisor, config.weight_collateral_pwr)), u8.MAX_VALUE))
   }
 }

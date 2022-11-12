@@ -206,6 +206,15 @@ export async function wait(ms) {
 export function oracles() {
   return contract.tables.oracles().getTableRows()
 }
+
+/**
+ * @export
+ * @param {string} name
+ * @return {object|null}
+ */
+export function oracle(name) {
+  return contract.tables.oracles().getTableRows().filter(el=> el.account == name)[0]
+}
 export function stats() {
   return contract.tables.stats().getTableRows()
 }
@@ -282,7 +291,7 @@ export async function init() {
   await boid.actions["auth.init"]({ }).send()
   await boid.actions["config.set"]({ config: defaultConfig }).send()
   await boid.actions["account.add"]({ boid_id: "boid", owners: ["boid"], sponsors: [], keys: [] }).send()
-  await boid.actions["account.add"]({ boid_id, owners: ["boid"], sponsors: [], keys: [] }).send()  
+  await boid.actions["account.add"]({ boid_id, owners: ["boid"], sponsors: [], keys: [] }).send()
   await boid.actions["account.add"]({ boid_id: Name.from("teamownr"), owners: ["recover.boid"], sponsors: [], keys: [] }).send()
   await boid.actions["team.create"]({ owner: Name.from("teamownr"), min_pwr_tax_mult: 10, owner_cut_mult: 4, url_safe_name: "teamteam", info_json_ipfs: "" }).send()
   await initTokens()
