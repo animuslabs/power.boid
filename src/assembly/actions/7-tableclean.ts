@@ -1,6 +1,8 @@
-import { check, Name, requireAuth } from "proton-tsc"
+import { RoundCommit } from "../tables/roundCommit"
+import { check, Name, requireAuth, Table, TableStore } from "proton-tsc"
 import { Config } from "../tables/config"
 import { OStatsActions } from "./6-ostats"
+import { OracleStat } from "../tables/oracleStats"
 
 /**
  *These actions clear tables or clean them within some limits.
@@ -62,17 +64,17 @@ export class TableCleanActions extends OStatsActions {
   }
 
   loopRoundCommitsCleanup(scope:Name, olderThan:u32):void {
-    const tbl = this.roundCommitT(scope)
-    let next = tbl.getBySecondaryU64(u64(olderThan - 1), 0)
+    const tbl:TableStore<RoundCommit> = this.roundCommitT(scope)
+    let next = tbl.first()
     if (!next) {
       check(false, "no rows to clean")
       return
     }
-    check(next && next.round < olderThan, "no rows to clean" + next.round.toString())
+    check(next && next.round < olderThan, "no rows to clean")
     for (let i = 0; i < 50; i++) {
       let row = next
       if (row && row.round < olderThan) {
-        next = tbl.previousBySecondaryU64(row, 0)
+        next = tbl.next(row)
         tbl.remove(row)
       } else break
     }
@@ -161,7 +163,7 @@ export class TableCleanActions extends OStatsActions {
 
   @action("commitsclean")
   roundCommitsCleanup(scope:Name):void {
-    const config = this.getConfig()
+    const config:Config = this.getConfig()
     this.statsClean(config)
     const minRetain = Math.max(config.reports_finalized_after_rounds, config.standby_toggle_interval_rounds)
     const cleanupOlder = u32(Math.max(i32(this.currentRound()) - minRetain - config.keep_finalized_stats_rows, 0))

@@ -99,6 +99,9 @@ const methods = {
     // })
     console.log(stats.map(el => ({round:el.round,starting_global:el.starting_global})))
 
+  },
+  async cleanRoundCommits(scope) {
+    await doAction("commitsclean",{scope})
   }
 }
 
