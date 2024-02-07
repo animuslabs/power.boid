@@ -1,6 +1,5 @@
-import { Action, ActionData, check, Contract, EMPTY_NAME, hasAuth, isAccount, Name, print, requireAuth } from "proton-tsc"
+import { Action, ActionData, check, EMPTY_NAME, hasAuth, isAccount, Name, requireAuth } from "proton-tsc"
 import { Oracle, OracleCollateral, OracleFunds } from "../tables/oracles"
-import { Stat } from "../tables/stats"
 import { GlobalActions } from "./1-global"
 
 @packer
@@ -53,7 +52,7 @@ export class OracleActions extends GlobalActions {
     // add the new collateral and push the next available unlock time into the future
     oracleRow.collateral.locked += depositQuantity
     check(oracleRow.collateral.locked >= depositQuantity, "collateral locked max reached")
-    oracleRow.collateral.min_unlock_start_round = this.currentRound() + config.unlock_wait_rounds
+    oracleRow.collateral.min_unlock_start_round = this.currentRound() + config.waits.unlock_wait_rounds
 
     // save the current weight and calculate the new weight
     const weightBefore = oracleRow.weight

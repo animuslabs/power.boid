@@ -29,20 +29,18 @@ export class OracleFunds {
 @table("oracles")
 export class Oracle extends Table {
   constructor(
-    // the native chain account name of the oracle account
+    /** the native chain account na me of the oracle account */
     public account:Name = EMPTY_NAME,
-    // the weight of the oracle, determined by collateral
+    /** the weight of the oracle */
     public weight:u8 = 0,
-    // tracks various information about oracle collateral
+    /** tracks various information about oracle collateral */
     public collateral:OracleCollateral = new OracleCollateral(),
-    // tracks details about oracle rewards
+    /** tracks details about oracle rewards */
     public funds:OracleFunds = new OracleFunds(),
-    // determines the oracle standby state, oracles in standby can't be slashed or rewarded
+    /** determines the oracle standby state, oracles in standby can't be slashed or rewarded */
     public standby:boolean = true,
-    // last time the oracle standby was toggled, to prevent abuse by toggling too frequently
-    public last_standby_toggle_round:u16 = 0,
-    // when an oracle comes out of standby, there is a few rounds of grace period where they won't be slashed
-    public expected_active_after_round:u16 = 0
+    /** last time the oracle standby was toggled, to prevent abuse by toggling too frequently */
+    public last_standby_toggle_round:u16 = 0
   ) {
     super()
   }

@@ -6,8 +6,7 @@ export class ConfigAccount {
   premium_purchase_price:u32 = 0
   max_premium_prefix:u8 = 0
   max_owners:u8 = 0
-  max_sponsors:u8 = 0
-  max_pwrmods:u8 = 0
+  max_boosters:u8 = 0
   suffix_whitelist:Name[] = []
   remove_sponsor_price:u32 = 0
   sponsor_max_invite_codes:u8 = 0
@@ -16,14 +15,11 @@ export class ConfigAccount {
 
 @packer
 export class ConfigPower {
-  round_decay_constant:u16 = 0
-  round_decay_mult:f32 = 0
   sponsor_tax_mult:f32 = 0
   powered_stake_mult:f32 = 0
-  powered_stake_pwr:f32 = 0
   claim_maximum_elapsed_rounds:u16 = 0
   soft_max_pwr_add:u16 = 0
-  dev_fund_tax_mult:f32 = 0
+  history_slots_length:u8 = 0
 }
 
 @packer
@@ -31,14 +27,14 @@ export class ConfigMint {
   round_powered_stake_mult:f32 = 0 // inflation from powered stake
   round_power_mult:f32 = 0 // determines inflation from boid power
 }
-@packer
-export class ConfigAutoAdjust {
-  target_inflation_per_round:u32 = 0 // for the auto adjust to change inflation based on stats data
-  power_mult_max_adjust:f32 = 0 // max the round_power_mult may be adjusted each adjustment action
-  powered_stake_mult_max_adjust:f32 = 0 // max the round_powered_stake_mult may be adjusted each adjustment action
-  adjustment_interval_rounds:u16 = 0 // how often can the adjust action be called to update inflation
-  max_check_rounds:u16 // the maximum number of rows to check from the stats table when calculating inflation
-}
+// @packer
+// export class ConfigAutoAdjust {
+//   target_inflation_per_round:u32 = 0 // for the auto adjust to change inflation based on stats data
+//   power_mult_max_adjust:f32 = 0 // max the round_power_mult may be adjusted each adjustment action
+//   powered_stake_mult_max_adjust:f32 = 0 // max the round_powered_stake_mult may be adjusted each adjustment action
+//   adjustment_interval_rounds:u16 = 0 // how often can the adjust action be called to update inflation
+//   max_check_rounds:u16 // the maximum number of rows to check from the stats table when calculating inflation
+// }
 @packer
 export class ConfigTeam {
   change_min_rounds:u16 = 0 // minimum rounds an account must wait before changing teams
@@ -57,7 +53,7 @@ export class ConfigStake {
 
 @packer
 export class ConfigTime {
-  rounds_start:TimePoint = new TimePoint()
+  rounds_start_sec_since_epoch:u32 = 0
   round_length_sec:u32 = 0
 }
 
@@ -77,20 +73,20 @@ export class ConfigAuth {
 }
 @packer
 export class PowerClaimLog {
-  before:u16 = 0
-  after:u16 = 0
-  from_mods:u16 = 0
-  decayed:u16 = 0
-  rounds:u16 = 0
+  before:u32 = 0
+  after:u32 = 0
+  from_boosters:u32 = 0
+  elapsed_rounds:u16 = 0
 }
 
 @packer
 export class MintLog {
-  account:u32 = 0
-  team:u32 = 0
-  team_owner:u32 = 0
-  overstake:u32 = 0
-  fundstake:u32 = 0
+  power_mint:u32 = 0
+  powered_stake_mint:u32 = 0
+  account_earned:u32 = 0
+  team_cut:u32 = 0
+  team_owner_earned:u32 = 0
+  overstake_mint:u32 = 0
   total:u32 = 0
 }
 
@@ -100,7 +96,7 @@ export class ConfigNft {
   whitelist_collections:Name[] = []
 }
 
-@table("config", singleton, noabigen)
+@table("config", singleton)
 export class Config extends Table {
   constructor(
     public account:ConfigAccount = new ConfigAccount(),
@@ -111,7 +107,7 @@ export class Config extends Table {
     public time:ConfigTime = new ConfigTime(),
     public auth:ConfigAuth = new ConfigAuth(),
     public nft:ConfigNft = new ConfigNft(),
-    public auto:ConfigAutoAdjust = new ConfigAutoAdjust(),
+    // public auto:ConfigAutoAdjust = new ConfigAutoAdjust(),
     public paused:boolean = true,
     public allow_deposits:boolean = false,
     public allow_withdrawals:boolean = false,

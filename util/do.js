@@ -3,30 +3,67 @@ const env = require('./.env.js')
 const { api, tapos, doAction } = require('./lib/eosjs')()
 const activeChain = process.env.CHAIN || env.defaultChain
 const contractAccount = conf.accountName[activeChain]
+// const config = {
+//   paused: true,
+//   min_consensus_weight: 1,
+//   min_consensus_pct: 0.1,
+//   collateral_pct_pay_per_round: 0.01,
+//   round_bonus_pay_reports: 500,
+//   round_bonus_pay_proposed: 1000,
+//   slash_threshold_pct: 0.9,
+//   slash_quantity_static: 0,
+//   slash_quantity_collateral_pct: 0,
+//   withdraw_rounds_wait: 20,
+//   keep_finalized_stats_rows: 3,
+//   reports_finalized_after_rounds: 3,
+//   unlock_wait_rounds: 40,
+//   standby_toggle_interval_rounds: 3,
+//   weight_collateral_pwr: 1.1,
+//   oracle_collateral_deposit_increment: 1000,
+//   reports_accumulate_weight_round_pct: 1,
+//   weight_collateral_divisor: 1000,
+//   first_unlock_wait_rounds: 1,
+//   merge_deviation_pct: 0.25,
+//   oracle_expected_active_after_rounds: 2,
+//   min_pay_report_share_threshold:0.10
+// }
+
 const config = {
-  paused: false,
-  min_consensus_weight: 1,
-  min_consensus_pct: 0.1,
-  collateral_pct_pay_per_round: 0.01,
-  round_bonus_pay_reports: 500,
-  round_bonus_pay_proposed: 1000,
-  slash_threshold_pct: 0.9,
-  slash_quantity_static: 0,
-  slash_quantity_collateral_pct: 0,
-  withdraw_rounds_wait: 20,
-  keep_finalized_stats_rows: 3,
-  reports_finalized_after_rounds: 3,
-  unlock_wait_rounds: 40,
-  standby_toggle_interval_rounds: 3,
-  weight_collateral_pwr: 1.1,
-  oracle_collateral_deposit_increment: 1000,
-  reports_accumulate_weight_round_pct: 1,
-  weight_collateral_divisor: 1000,
-  first_unlock_wait_rounds: 1,
-  merge_deviation_pct: 0.25,
-  oracle_expected_active_after_rounds: 2,
-  min_pay_report_share_threshold:0.10
+  paused: true,
+  consensus: {
+    min_weight: 0,
+    min_pct: 0
+  },
+  payment: {
+    collateral_pct_pay_per_round: 0,
+    round_bonus_pay_reports: 0,
+    round_bonus_pay_proposed: 0
+  },
+  slash: {
+    slash_threshold_pct: 0,
+    slash_quantity_static: 0,
+    slash_quantity_collateral_pct: 0
+  },
+  waits: {
+    withdraw_rounds_wait: 0,
+    unlock_wait_rounds: 0,
+    first_unlock_wait_rounds: 0
+  },
+  collateral: {
+    weight_collateral_pwr: 0,
+    oracle_collateral_deposit_increment: 0,
+    reports_accumulate_weight_round_pct: 0,
+    weight_collateral_divisor: 0
+  },
+  keep_finalized_stats_rows: 0,
+  reports_finalized_after_rounds: 0,
+  merge_deviation_pct: 0,
+  standby_toggle_interval_rounds: 0,
+  oracle_expected_active_after_rounds: 0,
+  min_pay_report_share_threshold: 0,
 }
+
+
 
 const methods = {
   async configset() {
@@ -81,14 +118,22 @@ const methods = {
       await doAction('reportsclear',{scope})
     }
   },
+  async clearAllRoundCommits() {
+    const scopes = (await api.rpc.get_table_by_scope({ code: contractAccount, table: "roundcommit", limit: 1000 })).rows.map(el => el.scope)
+    console.log(scopes)
+    for (const scope of scopes) {
+      await doAction('commitsclean',{scope})
+    }
+  },
+  async clearAllOstats() {
+    const scopes = (await api.rpc.get_table_by_scope({ code: contractAccount, table: "oraclestats", limit: 1000 })).rows.map(el => el.scope)
+    console.log(scopes)
+    for (const scope of scopes) {
+      await doAction('ostatsclean',{scope})
+    }
+  },
   async slashabsent(oracle, round) {
     await doAction("slashabsent",{oracle,round})
-  },
-  async powerClaim(boid_id) {
-    await doAction("power.claim",{boid_id},"boid","boid")
-  },
-  async teamChange(boid_id, new_team_id, new_pwr_tax_mult) {
-    await doAction("team.change",{boid_id,new_team_id,new_pwr_tax_mult},"boid","boid")
   },
   async showStats() {
     const stats = (await api.rpc.get_table_rows({ code: contractAccount, table: "stats", limit: 1000, scope: contractAccount })).rows.reverse()

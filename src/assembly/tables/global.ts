@@ -14,19 +14,19 @@ export class GlobalReports {
 @table("global", singleton)
 export class Global extends Table {
   constructor(
-    // this vector is cleared at the start of each round and the first time an oracle makes a report during the round they are added
+    /** this vector is cleared at the start of each round and the first time an oracle makes a report during the round they are added */
     public active_oracles:Name[] = [],
-    // this list is only modified when oracles go in/out of standby, if oracles are not in standby they are expected to be active each round.
+    /** this list is only modified when oracles go in/out of standby, if oracles are not in standby they are expected to be active each round. */
     public expected_active_oracles:Name[] = [],
-    // the number of oracles in standby, can't earn rewards or be slashed
+    /** the number of oracles in standby, can't earn rewards or be slashed */
     public standby_oracles:u8 = 0,
-    // the cumulative consensus weight of the expected active oracles
+    /** the cumulative consensus weight of the expected active oracles */
     public expected_active_weight:u16 = 0,
-    // cumulative totals of reports made
+    /** cumulative totals of reports made */
     public reports:GlobalReports = new GlobalReports(),
-    // total BOID paid out as rewards
+    /** total BOID paid out as rewards */
     public rewards_paid:u64 = 0,
-    // the actual amount of active weight, reset at the start of each round and cumulated the first time a unique oracle makes a report
+    /** the actual amount of active weight, reset at the start of each round and cumulated the first time a unique oracle makes a report */
     public active_weight:u16 = 0
   ) {
     super()

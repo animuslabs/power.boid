@@ -19,8 +19,6 @@
     "types": [
       "assembly",
       "node",
-      "chai",
-      "mocha"
     ],
     "allowJs": false,
     "checkJs": false,

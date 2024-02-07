@@ -23,28 +23,23 @@ export class GlobalActions extends Contract {
   round:u16 = 0
   roundFloat:f32 = 0
 
-  /**
-   * for calculating the current round, copied logic from system contract
-   * @memberof GlobalActions
-   */
+  /** for calculating the current round, copied logic from system contract */
   currentRound():u16 {
     if (this.round == 0) {
       const config = new Singleton<boid.Config>(Name.fromString("boid")).getOrNull()
       if (!config) check(false, "boid system config not initialized")
-      else this.round = u16((currentTimeSec() - config.time.rounds_start.secSinceEpoch()) / config.time.round_length_sec)
+      else this.round = u16((currentTimeSec() - config.time.rounds_start_sec_since_epoch) / config.time.round_length_sec)
     }
     return this.round
   }
 
-  /**
-   * Determines the progress of the current round
-  */
+  /** Determines the progress of the current round as a f32 */
   currentRoundFloat():f32 {
     const config = new Singleton<boid.Config>(Name.fromString("boid")).getOrNull()
     if (!config) {
       check(false, "boid system config not initialized")
       return 0
-    } else return f32(currentTimeSec() - config.time.rounds_start.secSinceEpoch()) / f32(config.time.round_length_sec)
+    } else return f32(currentTimeSec() - config.time.rounds_start_sec_since_epoch) / f32(config.time.round_length_sec)
     // if (this.roundFloat == 0) {
     // }
     // return this.roundFloat
@@ -64,10 +59,12 @@ export class GlobalActions extends Contract {
 
   codePerm:PermissionLevel = new PermissionLevel(this.receiver, Name.fromString("active"))
 
+  /** Determine the minimum weight required for consensus */
   minWeightThreshold(config:Config = this.getConfig(), global:Global = this.globalT.get()):u16 {
-    return u16(Math.max(global.expected_active_weight * config.min_consensus_pct, config.min_consensus_weight))
+    return u16(Math.min(u32(Math.max(global.expected_active_weight * config.consensus.min_pct, config.consensus.min_weight)), u16.MAX_VALUE))
   }
 
+  /** Adds active oracle to global row, does not update table */
   markOracleActive(oracleRow:Oracle, global:Global = this.globalT.get()):void {
     if (!global.active_oracles.includes(oracleRow.account)) {
       global.active_oracles.push(oracleRow.account)
@@ -77,16 +74,15 @@ export class GlobalActions extends Contract {
   }
 
   /**
-   * update the stats table if an entry has not been written for the current round.
-   * reads data from the previous round and calculates differences
-   * the data is used when calculating rewards and slash actions
-   * @param Global if you don't provide a Global reference it will create one
-   * @param Config if you don't provide a Config reference it will create one
+   * Update the stats table if an entry has not been written for the current round.
+   * Reads data from the previous round and calculates differences.
+   * The data is used when calculating rewards and slash actions.
    */
   updateStats(currentGlobal:Global = this.globalT.get(), config:Config = this.getConfig()):boolean {
     const existing = this.statsT.exists(u64(this.currentRound()))
     if (existing) return false
     const statsBefore = this.statsT.get(this.currentRound() - 1)
+    // generates blank stats row for first round or if a round was missed
     if (!statsBefore) this.statsT.store(new Stat(this.currentRound(), this.globalT.get(), u32(currentGlobal.reports.reported), u32(currentGlobal.reports.unreported_and_unmerged), u32(currentGlobal.reports.proposed), u32(currentGlobal.rewards_paid), u32(currentGlobal.reports.proposed)), this.receiver)
     else {
       const unreported = currentGlobal.reports.unreported_and_unmerged
@@ -114,37 +110,40 @@ export class GlobalActions extends Contract {
     return true
   }
 
+  /** Does basic checks and sets the config row  */
   @action("configset")
   configSet(config:Config):void {
     requireAuth(this.receiver)
-    check(config.slash_quantity_collateral_pct >= 0, "slash_quantity_collateral_pct must be higher or equal zero")
-    check(config.slash_quantity_collateral_pct <= f32(1), "slash_quantity_collateral_pct must be less or equal to 100%")
-    check(config.weight_collateral_divisor > 0, "weight_collateral_divisor must be higher than zero")
+    check(config.slash.slash_quantity_collateral_pct >= 0, "slash_quantity_collateral_pct must be higher or equal zero")
+    check(config.slash.slash_quantity_collateral_pct <= f32(1), "slash_quantity_collateral_pct must be less or equal to 100%")
+    check(config.collateral.weight_collateral_divisor > 0, "weight_collateral_divisor must be higher than zero")
     check(config.reports_accumulate_weight_round_pct >= 0, "reports_accumulate_weight_round_pct must be higher or equal zero")
     check(config.reports_accumulate_weight_round_pct <= f32(1), "reports_accumulate_weight_round_pct must be less or equal to 100%")
-    check(config.collateral_pct_pay_per_round >= 0, "collateral_pct_pay_per_round must be higher or equal zero")
-    check(config.min_consensus_pct >= 0, "min_consensus_pct must be higher or equal zero")
-    check(config.min_consensus_pct <= f32(1), "min_consensus_pct must be less or equal to 100%")
+    check(config.payment.collateral_pct_pay_per_round >= 0, "collateral_pct_pay_per_round must be higher or equal zero")
+    check(config.consensus.min_pct >= 0, "min_consensus_pct must be higher or equal zero")
+    check(config.consensus.min_pct <= f32(1), "min_consensus_pct must be less or equal to 100%")
     check(config.merge_deviation_pct >= 0, "merge_deviation_pct must be higher or equal zero")
     check(config.merge_deviation_pct <= f32(1), "merge_deviation_pct must be less or equal to 100%")
     check(config.min_pay_report_share_threshold >= 0, "min_pay_report_share_threshold must be higher or equal zero")
     check(config.min_pay_report_share_threshold <= f32(1), "min_pay_report_share_threshold must be less or equal to 100%")
-
     this.configT.set(config, this.receiver)
   }
 
+  /** send whole quantities of BOID */
   sendWholeBoid(from:Name, to:Name, whole_quantity:u32, memo:string):void {
     const action = new InlineAction<TokenTransfer>("transfer").act(Name.fromString("token.boid"), new PermissionLevel(from))
     const actionParams = new TokenTransfer(from, to, new Asset(whole_quantity * u64(1e4), Symbol.fromU64(boidSym)), memo)
     action.send(actionParams)
   }
 
+  //DEBUG
   @action("thisround")
   thisRound():void {
     check(false, this.currentRoundFloat().toString())
     // check(false, (this.currentRoundFloat() % f32(this.currentRound())).toString())
   }
 
+  //DEBUG
   @action("finalround")
   finalRound():void {
     check(false, (this.currentRound() - (this.configT.get().reports_finalized_after_rounds + 1)).toString())
@@ -158,10 +157,6 @@ export class GlobalActions extends Contract {
     print("\n currentRound: " + this.currentRound().toString())
     print("\n roundProgress: " + roundProgress.toString())
     return roundProgress > config.reports_accumulate_weight_round_pct
-  }
-
-  findSlashQuantity(oracleRow:Oracle, config:Config = this.getConfig()):u32 {
-    return config.slash_quantity_static + u32(f32(oracleRow.trueCollateral) * config.slash_quantity_collateral_pct)
   }
 
   getConfig():Config {
@@ -179,10 +174,6 @@ export class GlobalActions extends Contract {
     const data = new SlashOracleParams(oracle, quantity)
     const action = new Action(this.receiver, Name.fromString("slashoracle"), [this.codePerm], data.pack())
     action.send()
-  }
-
-  getOracleWeight(collateral:u32, config:Config = this.getConfig()):u8 {
-    return u8(Math.min((Math.pow(f32(collateral) / config.weight_collateral_divisor, config.weight_collateral_pwr)), u8.MAX_VALUE))
   }
 }
 

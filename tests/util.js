@@ -7,7 +7,6 @@ export const chain = new Blockchain()
 
 export const contract = chain.createContract("power.boid", "../build/boid.contract")
 export const token = chain.createContract("token.boid", "../src/external/token/token.contract")
-export const aa = chain.createContract("atomicassets", "../src/external/atomicassets/atomicassets")
 export const boid = chain.createContract("boid", "../src/external/boid/boid.contract")
 
 const mint = chain.createAccount("mint.boid")
