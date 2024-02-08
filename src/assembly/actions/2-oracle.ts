@@ -52,23 +52,9 @@ export class OracleActions extends GlobalActions {
     // add the new collateral and push the next available unlock time into the future
     oracleRow.collateral.locked += depositQuantity
     check(oracleRow.collateral.locked >= depositQuantity, "collateral locked max reached")
-    oracleRow.collateral.min_unlock_start_round = this.currentRound() + config.waits.unlock_wait_rounds
-
-    // save the current weight and calculate the new weight
-    const weightBefore = oracleRow.weight
-    const newWeight = this.getOracleWeight(oracleRow.trueCollateral, config)
-
-    // if weight has increased, update the global totals
-    if (newWeight > weightBefore) {
-      const difference = newWeight - weightBefore
-      const global = this.globalT.get()
-      global.expected_active_weight += difference
-      check(global.expected_active_weight >= difference, "global expected_active_weight max reached")
-      this.globalT.set(global, this.receiver)
-    }
+    oracleRow.collateral.min_unlock_start_round = this.currentRound() + config.waits.collateral_unlock_wait_rounds
 
     // save the updated oracle row
-    oracleRow.weight = newWeight
     this.oraclesT.update(oracleRow, this.receiver)
   }
 
@@ -86,26 +72,25 @@ export class OracleActions extends GlobalActions {
    */
   @action("setstandby")
   setStandby(oracle:Name, standby:boolean):void {
-    if (!hasAuth(this.receiver)) requireAuth(oracle)
+    if (standby == false) requireAuth(this.receiver)
+    else if (!hasAuth(this.receiver)) requireAuth(oracle)
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
     const global = this.globalT.get()
     const config = this.getConfig()
     check(oracleRow.standby != standby, "nothing to change")
     if (!hasAuth(this.receiver)) check(this.currentRound() - oracleRow.last_standby_toggle_round > config.standby_toggle_interval_rounds, "can't toggle standby this quickly")
     check(oracleRow.collateral.unlocking == 0, "can't toggle standby during unlocking")
+    oracleRow.standby = standby
     if (standby) {
-      oracleRow.standby = standby
       oracleRow.last_standby_toggle_round = this.currentRound()
       global.expected_active_weight -= oracleRow.weight
       global.standby_oracles++
-      check(global.standby_oracles >= 1, "max standy_oracles reached")
+      check(global.standby_oracles >= 1, "max standby_oracles reached")
       const oracleIndex = global.expected_active_oracles.indexOf(oracle)
       check(oracleIndex > -1, "problem setting oracle standby")
       global.expected_active_oracles.splice(oracleIndex, 1)
     } else {
-      check(oracleRow.weight > 0, "oracle must have positive weight. add more collateral")
-      oracleRow.standby = standby
-      oracleRow.expected_active_after_round = this.currentRound() + config.oracle_expected_active_after_rounds
+      check(oracleRow.weight > 0, "oracle must have positive weight.")
       global.expected_active_weight += oracleRow.weight
       check(global.expected_active_weight >= oracleRow.weight, "global expected_active_weight max reached")
       global.expected_active_oracles.push(oracle)
@@ -124,18 +109,15 @@ export class OracleActions extends GlobalActions {
   /**
    * This action is triggered when a new oracle deposits collateral
    *
-   * @param {Name} account
+   * @param {Name} oracle
    * @param {u8} weight
    * @param {u32} adding_collateral
    * @memberof OracleActions
    */
   @action("oracleset")
-  oracleSet(account:Name, weight:u8, adding_collateral:u32):void {
-    // TODO, this action originally handled new and existing oracles but now it only needs to handle new oracles
-    // still thinking about the best way to organize the actions...
-    // The original idea is that arbitrary weight could be added, like from the DAO or other sources of voting
+  oracleSet(oracle:Name, weight:u8, adding_collateral:u32):void {
     requireAuth(this.receiver)
-    const existing = this.oraclesT.get(account.value)
+    const existing = this.oraclesT.get(oracle.value)
     const global = this.globalT.get()
     const config = this.getConfig()
 
@@ -144,24 +126,25 @@ export class OracleActions extends GlobalActions {
       check(existing.collateral.unlocking == 0, "can't modify oracle during unlocking")
 
       existing.collateral.locked += adding_collateral
-      existing.collateral.min_unlock_start_round = this.currentRound() + config.unlock_wait_rounds
+      existing.collateral.min_unlock_start_round = this.currentRound() + config.waits.collateral_unlock_wait_rounds
 
       // update globals with new weight change
-      if (weight > existing.weight) {
-        global.expected_active_weight += (weight - existing.weight)
-        check(global.expected_active_weight >= (weight - existing.weight), "global expected_active_weight max reached")
-      } else {
-        check(global.expected_active_weight >= (existing.weight - weight), "global expected_active_weight cannot be negative")
-        global.expected_active_weight -= (existing.weight - weight)
+      if (!existing.standby) {
+        if (weight > existing.weight) {
+          global.expected_active_weight += (weight - existing.weight)
+          check(global.expected_active_weight >= (weight - existing.weight), "global expected_active_weight max reached")
+        } else {
+          check(global.expected_active_weight >= (existing.weight - weight), "global expected_active_weight cannot be negative")
+          global.expected_active_weight -= (existing.weight - weight)
+        }
       }
       existing.weight = weight
-
       this.oraclesT.update(existing, this.receiver)
     } else {
-      check(isAccount(account), "oracle must be existing account")
+      check(isAccount(oracle), "oracle must be existing chain account")
       const collateralData:OracleCollateral = {
         locked: adding_collateral,
-        min_unlock_start_round: this.currentRound() + config.first_unlock_wait_rounds,
+        min_unlock_start_round: this.currentRound() + config.waits.collateral_unlock_wait_rounds,
         slashed: 0,
         unlock_finished_round: 0,
         unlocking: 0
@@ -172,9 +155,8 @@ export class OracleActions extends GlobalActions {
         withdrawing: 0,
         unclaimed: 0
       }
-      const row = new Oracle(account, weight, collateralData, fundsData, true)
+      const row = new Oracle(oracle, weight, collateralData, fundsData, true)
       this.oraclesT.store(row, this.receiver)
-      //  global.total_weight += weight
       global.standby_oracles++
       check(global.standby_oracles >= 1, "max standy_oracles reached")
     }
@@ -194,7 +176,7 @@ export class OracleActions extends GlobalActions {
     const config = this.getConfig()
     const funds = oracleRow.funds
     check(funds.unclaimed > 0, "unclaimed funds must be greater than zero")
-    funds.withdrawable_after_round = this.currentRound() + config.withdraw_rounds_wait
+    funds.withdrawable_after_round = this.currentRound() + config.waits.withdraw_rounds_wait
     funds.withdrawing = funds.unclaimed
     this.oraclesT.update(oracleRow, this.receiver)
   }
@@ -220,7 +202,7 @@ export class OracleActions extends GlobalActions {
     funds.unclaimed -= funds.withdrawing
 
     // mint tokens and then send to the oracle acct
-    this.sendWholeBoid(Name.fromString("mint.boid"), this.receiver, funds.withdrawing, "power.boid oracle reward mint for " + oracle.toString())
+    // this.sendWholeBoid(Name.fromString("tknmint.boid"), this.receiver, funds.withdrawing, "power.boid oracle reward mint for " + oracle.toString())
     this.sendWholeBoid(this.receiver, oracle, funds.withdrawing, "power.boid oracle reward")
 
     // update oracle row
@@ -250,7 +232,7 @@ export class OracleActions extends GlobalActions {
     // move locked to unlocking and set the future unlock round
     coll.unlocking = oracleRow.trueCollateral
     coll.locked = 0
-    coll.unlock_finished_round = this.currentRound() + config.unlock_wait_rounds
+    coll.unlock_finished_round = this.currentRound() + config.waits.collateral_unlock_wait_rounds
     oracleRow.weight = 0
 
     // update the row

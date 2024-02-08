@@ -147,7 +147,7 @@ export class TableCleanActions extends OStatsActions {
   }
 
   statsClean(config:Config = this.getConfig()):void {
-    const cleanupOlder = u32(Math.max(i32(this.currentRound()) - config.reports_finalized_after_rounds - config.keep_finalized_stats_rows, 0))
+    const cleanupOlder = u32(Math.max(i32(this.currentRound()) - config.keep_finalized_stats_rows, 0))
     this.loopStatsCleanup(cleanupOlder)
   }
 
@@ -155,8 +155,7 @@ export class TableCleanActions extends OStatsActions {
   reportsCleanup(scope:Name):void {
     const config = this.getConfig()
     this.statsClean(config)
-    const minRetain = Math.max(config.reports_finalized_after_rounds, config.standby_toggle_interval_rounds)
-    const cleanupOlder = u32(Math.max(i32(this.currentRound()) - minRetain - config.keep_finalized_stats_rows, 0))
+    const cleanupOlder = u32(Math.max(i32(this.currentRound()) - config.keep_finalized_stats_rows, 0))
     check(cleanupOlder != 0, "can't cleanup reports yet")
     this.loopReportsCleanup(scope, cleanupOlder)
   }
@@ -165,8 +164,7 @@ export class TableCleanActions extends OStatsActions {
   roundCommitsCleanup(scope:Name):void {
     const config:Config = this.getConfig()
     this.statsClean(config)
-    const minRetain = Math.max(config.reports_finalized_after_rounds, config.standby_toggle_interval_rounds)
-    const cleanupOlder = u32(Math.max(i32(this.currentRound()) - minRetain - config.keep_finalized_stats_rows, 0))
+    const cleanupOlder = u32(Math.max(i32(this.currentRound()) - config.keep_finalized_stats_rows, 0))
     check(cleanupOlder != 0, "can't cleanup commits yet")
     this.loopRoundCommitsCleanup(scope, cleanupOlder)
   }
@@ -175,8 +173,7 @@ export class TableCleanActions extends OStatsActions {
   oStatsClean(scope:Name):void {
     const config = this.getConfig()
     this.statsClean(config)
-    const minRetain = Math.max(config.reports_finalized_after_rounds, config.standby_toggle_interval_rounds)
-    const cleanupOlder = u32(Math.max(i32(this.currentRound()) - minRetain - config.keep_finalized_stats_rows, 0))
+    const cleanupOlder = u32(Math.max(i32(this.currentRound()) - config.keep_finalized_stats_rows, 0))
     check(cleanupOlder != 0, "can't cleanup oStats yet")
     this.loopOstatsCleanup(scope, cleanupOlder)
   }

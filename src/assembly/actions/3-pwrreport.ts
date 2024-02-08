@@ -47,9 +47,8 @@ export class PwrReportActions extends OracleActions {
     check(commitExists == null, "oracle already commited report for this user and round")
 
     // ensure the report is for a round that is valid
-    check(this.currentRound() >= config.reports_finalized_after_rounds, "chain is too recent to generate reports")
-    check(report.round >= this.currentRound() - config.reports_finalized_after_rounds, "round is too far in the past")
     check(report.round < this.currentRound(), "report round must target a past round")
+    check(report.round == this.currentRound() - 1, "round is too far in the past")
 
     // ensure the oracle can make reports
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle not registered")
@@ -141,13 +140,13 @@ export class PwrReportActions extends OracleActions {
     const existingOStats = oStatsT.get(u64(targetRound))
     if (existingOStats) {
       if (reportSent) {
-        existingOStats.reports.reported_merged++
+        existingOStats.reports.reported_or_merged++
         existingOStats.reports.unreported_unmerged--
       } else existingOStats.reports.unreported_unmerged++
       if (proposed) existingOStats.reports.proposed++
       oStatsT.update(existingOStats, this.receiver)
     } else {
-      const oracleStatsRow = new OracleStat(targetRound, oracleRow.weight, { proposed: proposed ? 1 : 0, reported_merged: reportSent ? 1 : 0, unreported_unmerged: reportSent ? 0 : 1 })
+      const oracleStatsRow = new OracleStat(targetRound, oracleRow.weight, { proposed: proposed ? 1 : 0, reported_or_merged: reportSent ? 1 : 0, unreported_unmerged: reportSent ? 0 : 1 })
       oStatsT.store(oracleStatsRow, this.receiver)
     }
   }
@@ -256,13 +255,13 @@ export class PwrReportActions extends OracleActions {
       const oStatsT = this.oracleStatsT(oracle)
       const existing = oStatsT.get(u64(targetRound))
       if (existing) {
-        existing.reports.reported_merged++
+        existing.reports.reported_or_merged++
         existing.reports.unreported_unmerged--
         oStatsT.update(existing, this.receiver)
       } else {
         const oracleData = this.oraclesT.get(oracle.value)
         if (!oracleData) continue
-        const oracleStatsRow = new OracleStat(u16(targetRound), oracleData.weight, { reported_merged: 1, unreported_unmerged: 0, proposed: 0 })
+        const oracleStatsRow = new OracleStat(u16(targetRound), oracleData.weight, { reported_or_merged: 1, unreported_unmerged: 0, proposed: 0 })
         oStatsT.store(oracleStatsRow, this.receiver)
       }
     }

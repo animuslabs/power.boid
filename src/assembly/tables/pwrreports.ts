@@ -2,11 +2,11 @@ import { Asset, Table, Name, EMPTY_NAME, ActionData } from "proton-tsc"
 
 @packer
 export class PwrReport {
-  // protocol associated with this report
+  /**  protocol associated with this report */
   protocol_id:u8 = 0
-  // round associated with this report
+  /** round associated with this report */
   round:u16 = 0
-  // the quantity of generic units for this report, has a different meaning for different protocols
+  /** the quantity of generic units for this report, has a different meaning for different protocols */
   units:u32 = 0
 }
 

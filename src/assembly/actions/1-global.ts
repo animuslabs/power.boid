@@ -40,9 +40,6 @@ export class GlobalActions extends Contract {
       check(false, "boid system config not initialized")
       return 0
     } else return f32(currentTimeSec() - config.time.rounds_start_sec_since_epoch) / f32(config.time.round_length_sec)
-    // if (this.roundFloat == 0) {
-    // }
-    // return this.roundFloat
   }
 
   pwrReportsT(boid_id:Name):TableStore<PwrReportRow> {
@@ -101,7 +98,7 @@ export class GlobalActions extends Contract {
     // delete old rows
     const firstRow = this.statsT.first()
     if (!firstRow) return true
-    const deleteBeforeRound = u16(Math.max(i32(this.currentRound()) - config.reports_finalized_after_rounds - config.keep_finalized_stats_rows, 0))
+    const deleteBeforeRound = u16(Math.max(i32(this.currentRound()) - i32(1) - config.keep_finalized_stats_rows, 0))
     print("\n DeleteBeforeRound: " + deleteBeforeRound.toString())
     if (firstRow.round < deleteBeforeRound) this.statsT.remove(firstRow)
     const nextRow = this.statsT.first()
@@ -114,9 +111,12 @@ export class GlobalActions extends Contract {
   @action("configset")
   configSet(config:Config):void {
     requireAuth(this.receiver)
-    check(config.slash.slash_quantity_collateral_pct >= 0, "slash_quantity_collateral_pct must be higher or equal zero")
-    check(config.slash.slash_quantity_collateral_pct <= f32(1), "slash_quantity_collateral_pct must be less or equal to 100%")
-    check(config.collateral.weight_collateral_divisor > 0, "weight_collateral_divisor must be higher than zero")
+    check(config.slashLow.slash_quantity_collateral_pct >= 0, "slash_quantity_collateral_pct must be greater than or equal zero")
+    check(config.slashLow.slash_quantity_collateral_pct <= f32(1), "slash_quantity_collateral_pct must be less or equal to 100%")
+    check(config.slashMed.slash_quantity_collateral_pct >= 0, "slash_quantity_collateral_pct must be greater than or equal zero")
+    check(config.slashMed.slash_quantity_collateral_pct <= f32(1), "slash_quantity_collateral_pct must be less or equal to 100%")
+    check(config.slashHigh.slash_quantity_collateral_pct >= 0, "slash_quantity_collateral_pct must be greater than or equal zero")
+    check(config.slashHigh.slash_quantity_collateral_pct <= f32(1), "slash_quantity_collateral_pct must be less or equal to 100%")
     check(config.reports_accumulate_weight_round_pct >= 0, "reports_accumulate_weight_round_pct must be higher or equal zero")
     check(config.reports_accumulate_weight_round_pct <= f32(1), "reports_accumulate_weight_round_pct must be less or equal to 100%")
     check(config.payment.collateral_pct_pay_per_round >= 0, "collateral_pct_pay_per_round must be higher or equal zero")
@@ -146,7 +146,7 @@ export class GlobalActions extends Contract {
   //DEBUG
   @action("finalround")
   finalRound():void {
-    check(false, (this.currentRound() - (this.configT.get().reports_finalized_after_rounds + 1)).toString())
+    check(false, (this.currentRound() - 1).toString())
     // check(false, (this.currentRoundFloat() % f32(this.currentRound())).toString())
   }
 

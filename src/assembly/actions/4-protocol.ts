@@ -1,11 +1,10 @@
-import { Action, ActionData, check, Contract, EMPTY_NAME, Encoder, isAccount, Name, requireAuth, TableStore } from "proton-tsc"
+import { check, requireAuth } from "proton-tsc"
 import { Protocol } from "../tables/protocols"
 import { PwrReportActions } from "./3-pwrreport"
 
 export class ProtoActions extends PwrReportActions {
   /**
    * requires contract authority, for adding/editing protocols
-   *
    * @param {Protocol} protocol
    */
   @action("protoset")

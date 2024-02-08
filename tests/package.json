@@ -12,9 +12,9 @@
     "mocha": "^10.0.0"
   },
   "dependencies": {
-    "@greymass/eosio": "^0.6.4",
     "@proton/vert": "^0.3.20",
     "@types/node": "^18.7.18",
+    "@wharfkit/antelope": "^1.0.7",
     "chai": "^4.3.6",
     "eslint": "^8.19.0",
     "eslint-config-standard": "^17.0.0",

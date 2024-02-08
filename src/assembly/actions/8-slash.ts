@@ -21,4 +21,19 @@ export class SlashActions extends TableCleanActions {
     // save oracle row
     this.oraclesT.update(oracleRow, this.receiver)
   }
+
+  @action("slashlow")
+  slashOracleLow(oracle:Name):void {
+    requireAuth(this.receiver)
+    const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
+    check(!oracleRow.standby, "can't slash an oracle in standby")
+    const config = this.getConfig()
+    const pctQuantity = oracleRow.trueCollateral * (config.slashLow.slash_quantity_collateral_pct / 100)
+    const quantity = pctQuantity + config.slashLow.slash_quantity_static
+    oracleRow.collateral.slashed += quantity
+    check(oracleRow.collateral.slashed >= quantity, "max collateral slashed reached")
+    const weightBefore = oracleRow.weight
+    // save oracle row
+    this.oraclesT.update(oracleRow, this.receiver)
+  }
 }

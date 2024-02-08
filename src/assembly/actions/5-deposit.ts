@@ -1,5 +1,4 @@
-import { check, Name, Asset, TableStore, print, SAME_PAYER, unpackActionData, ActionData } from "proton-tsc"
-import { Assets, TransferNfts, ATOMICASSETS_CONTRACT } from "../../external/atomicassets"
+import { ActionData, Asset, Name, check, unpackActionData } from "proton-tsc"
 import { ProtoActions } from "./4-protocol"
 
 const boidSym:u64 = 293287707140
@@ -26,7 +25,7 @@ export class DepositActions extends ProtoActions {
       let params = unpackActionData<TokenTransfer>()
       if (params.from == this.receiver) return
       if (params.from == Name.fromString("stake.boid")) return
-      if (params.from == Name.fromString("mint.boid")) return
+      if (params.from == Name.fromString("tknmint.boid")) return
       check(params.to == this.receiver, "Invalid Deposit")
       check(params.quantity.symbol.value == boidSym, "invalid token symbol")
       check(params.quantity.isValid(), "invalid quantity")
@@ -36,11 +35,10 @@ export class DepositActions extends ProtoActions {
         const config = this.getConfig()
         check(params.quantity.amount <= i64(u32.MAX_VALUE) * i64(1e4), "max deposit collateral amount reached")
         const quantity = u32(params.quantity.amount / u32(1e4))
-        check(quantity % config.oracle_collateral_deposit_increment == 0, "must deposit collateral in correct increments")
-
+        check(quantity % config.collateral.oracle_collateral_deposit_increment == 0, "must deposit collateral in correct increments")
         // if oracle exists call oracldeposit otherwise call oracleset
         if (this.oraclesT.exists(params.from.value)) this.sendOracleDeposit(params.from, quantity)
-        else this.sendOracleSet(params.from, this.getOracleWeight(quantity, config), quantity)
+        else this.sendOracleSet(params.from, 0, quantity)
       } else check(false, "if depositing oracle collateral must specify 'collateral' as memo")
     }
   }

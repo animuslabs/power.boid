@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
+import { Name, UInt64 } from "@greymass/eosio"
+import { expectToThrow } from "@proton/vert"
 import { expect } from "chai"
-import { beforeEach, describe, it, before } from "mocha"
-import { Asset, Name, TimePoint, PrivateKey, PublicKey, Action, Bytes, ABI, ABIDecoder, Authority, PermissionLevel, UInt32, Serializer, TimePointSec, UInt64 } from "@greymass/eosio"
-import { Blockchain, nameToBigInt, symbolCodeToBigInt, protonAssert, expectToThrow, nameTypeToBigInt } from "@proton/vert"
-import { init, chain, act, oracles, global, contract, reports, boid, addRounds, tkn, config, wait, setupOracle, oracleStats, stats, logActions, getReportId, boid_id } from "./util.js"
+import { beforeEach, describe, it } from "mocha"
+import { act, addRounds, boid_id, chain, getReportId, init, oracles, setupOracle, tkn } from "./util.js"
 
 const report = { protocol_id: 0, round: 10, units: 100 }
 
@@ -89,7 +89,7 @@ describe("oracle", async() => {
       addRounds(3)
       await act("handleostat", { oracle: "oracle1", round: 15 })
       const unclaimed = oracles()[0].funds.unclaimed
-  
+
       await act("withdrawinit", { oracle: "oracle1" }, "oracle1")
       expect(oracles()[0].funds.withdrawing).eq(unclaimed)
       expect(oracles()[0].funds.withdrawable_after_round).eq(40)
@@ -116,7 +116,7 @@ describe("oracle", async() => {
         addRounds(3)
         await act("handleostat", { oracle: "oracle1", round: 15 })
         const unclaimed = oracles()[0].funds.unclaimed
-    
+
         await act("withdrawinit", { oracle: "oracle1" }, "oracle1")
         expect(oracles()[0].funds.withdrawing).eq(unclaimed)
         expect(oracles()[0].funds.withdrawable_after_round).eq(40)
@@ -150,7 +150,7 @@ describe("oracle", async() => {
       await act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] })
       addRounds(3)
       await act("handleostat", { oracle: "oracle1", round: 15 })
-  
+
       await act("withdrawinit", { oracle: "oracle1" }, "oracle1")
       await expectToThrow(
         act("withdraw", { oracle: "oracle1" }, "oracle1"),
@@ -212,7 +212,7 @@ describe("oracle", async() => {
       addRounds(21)
       await act("setstandby", { oracle: "oracle1", standby: true })
       await act("unlockinit", { oracle: "oracle1" }, "oracle1")
-      expect(oracles()[0].collateral.unlocking).eq(validCollateral)    
+      expect(oracles()[0].collateral.unlocking).eq(validCollateral)
       await expectToThrow(
         act("unlockinit", { oracle: "oracle2" }, "oracle2"),
         "eosio_assert: oracle must be in standby to be unlocked"
@@ -260,7 +260,7 @@ describe("oracle", async() => {
           act("unlockinit", { oracle: "oracle1" }, "oracle1"),
           "eosio_assert: oracle still has rows in the oraclestats table, must wait for rows to be cleared"
         )
-      })      
+      })
       it("Oracle must be in standby to be unlocked", async() => {
         await setupOracle("oracle1", "10000000.0000 BOID", false)
         addRounds(40)
@@ -301,7 +301,7 @@ describe("oracle", async() => {
       )
       await act("unlock", { oracle: "oracle1" })
       expect(oracles()[0].collateral.locked).eq(0)
-      await tkn("transfer", { from: "oracle1", to: "power.boid", quantity: "10000000.0000 BOID", memo: "collateral" }, "oracle1")    
+      await tkn("transfer", { from: "oracle1", to: "power.boid", quantity: "10000000.0000 BOID", memo: "collateral" }, "oracle1")
     })
     describe("validate unlock checks", async() => {
       it("Oracle doesn't exist", async() => {
