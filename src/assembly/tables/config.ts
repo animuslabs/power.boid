@@ -6,17 +6,23 @@ export class ConsensusConfig {
   /**The minimum weight required to confirm a report, this is to help protect from and instance where many oracles may go into standby at once. */
   public min_weight:u32 = 0
   /** The minimum percentage of all weight required to confirm a report, overridden by min_consensus_weight */
-  public min_pct:f32 = 0
+  public min_weight_pct:f32 = 0
+  /** for calculating median acceptable deviation */
+  public merge_deviation_pct:f32 = 0
 }
 
 @packer
 export class PaymentConfig {
   /**  percentage of collateral is paid each round as long as the oracle was active that round */
-  public collateral_pct_pay_per_round:f32 = 0
-  /**  total paid each round based on reports made by each oracle, split proportionally */
+  public collateral_pct_pay_per_round_mult:f32 = 0
+  /**  total paid each round based on reports made  */
   public round_bonus_pay_reports:u32 = 0
-  /** total paid each round based on proposals made by each oracle, split proportionally */
+  /** total paid each round based on proposals made  */
   public round_bonus_pay_proposed:u32 = 0
+  /** reports and proposed are raised to this power, intended to reduce the payout per account as the userbase grows to help curb inflation, should be between .9 and .4 */
+  public reports_proposed_adjust_pwr:f32 = 0
+  /** causes the payout to decrease as more oracles join, should be between 1 - 1.1 */
+  public num_oracles_adjust_base:f32 = 0
 }
 
 @packer
@@ -47,22 +53,20 @@ export class Config extends Table {
   constructor(
     /**  pauses most contract actions, for use during contract upgrades */
     public paused:boolean = true,
-    public consensus = new ConsensusConfig(),
-    public payment = new PaymentConfig(),
-    public slashLow = new SlashConfig(),
-    public slashMed = new SlashConfig(),
-    public slashHigh = new SlashConfig(),
-    public waits = new WaitConfig(),
-    public collateral = new CollateralConfig(),
+    public consensus:ConsensusConfig = new ConsensusConfig(),
+    public payment:PaymentConfig = new PaymentConfig(),
+    public slashLow:SlashConfig = new SlashConfig(),
+    public slashMed:SlashConfig = new SlashConfig(),
+    public slashHigh:SlashConfig = new SlashConfig(),
+    public waits:WaitConfig = new WaitConfig(),
+    public collateral:CollateralConfig = new CollateralConfig(),
     /**  how many stats rows (counted after the finalization round) should always be kept when running the stats cleanup action */
     public keep_finalized_stats_rows:u32 = 0,
-    /** for calculating median acceptable deviation */
-    public merge_deviation_pct:f32 = 0,
-    /** when an oracle is toggling standby, they must wait this many rounds before they can do it again */
+    // /** when an oracle is toggling standby, they must wait this many rounds before they can do it again */
     public standby_toggle_interval_rounds:u16 = 0,
-    /** min report share threshold to receive pay */
+    // /** min report share threshold to receive pay */
     public min_pay_report_share_threshold:f32 = 0,
-    /** percentage of the round (starting from beginning of the round) when reports accumulate weight but don't finalize, the purpose is to give all oracles a chance to make a report */
+    // /** percentage of the round (starting from beginning of the round) when reports accumulate weight but don't finalize, the purpose is to give all oracles a chance to make a report */
     public reports_accumulate_weight_round_pct:f32 = 0
   ) {
     super()

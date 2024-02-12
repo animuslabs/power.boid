@@ -58,7 +58,7 @@ export class GlobalActions extends Contract {
 
   /** Determine the minimum weight required for consensus */
   minWeightThreshold(config:Config = this.getConfig(), global:Global = this.globalT.get()):u16 {
-    return u16(Math.min(u32(Math.max(global.expected_active_weight * config.consensus.min_pct, config.consensus.min_weight)), u16.MAX_VALUE))
+    return u16(Math.min(u32(Math.max(global.expected_active_weight * config.consensus.min_weight_pct, config.consensus.min_weight)), u16.MAX_VALUE))
   }
 
   /** Adds active oracle to global row, does not update table */
@@ -112,18 +112,19 @@ export class GlobalActions extends Contract {
   configSet(config:Config):void {
     requireAuth(this.receiver)
     check(config.slashLow.slash_quantity_collateral_pct >= 0, "slash_quantity_collateral_pct must be greater than or equal zero")
-    check(config.slashLow.slash_quantity_collateral_pct <= f32(1), "slash_quantity_collateral_pct must be less or equal to 100%")
+    check(config.slashLow.slash_quantity_collateral_pct <= f32(100), "slash_quantity_collateral_pct must be less or equal to 100%")
     check(config.slashMed.slash_quantity_collateral_pct >= 0, "slash_quantity_collateral_pct must be greater than or equal zero")
-    check(config.slashMed.slash_quantity_collateral_pct <= f32(1), "slash_quantity_collateral_pct must be less or equal to 100%")
+    check(config.slashMed.slash_quantity_collateral_pct <= f32(100), "slash_quantity_collateral_pct must be less or equal to 100%")
     check(config.slashHigh.slash_quantity_collateral_pct >= 0, "slash_quantity_collateral_pct must be greater than or equal zero")
-    check(config.slashHigh.slash_quantity_collateral_pct <= f32(1), "slash_quantity_collateral_pct must be less or equal to 100%")
+    check(config.slashHigh.slash_quantity_collateral_pct <= f32(100), "slash_quantity_collateral_pct must be less or equal to 100%")
     check(config.reports_accumulate_weight_round_pct >= 0, "reports_accumulate_weight_round_pct must be higher or equal zero")
     check(config.reports_accumulate_weight_round_pct <= f32(1), "reports_accumulate_weight_round_pct must be less or equal to 100%")
-    check(config.payment.collateral_pct_pay_per_round >= 0, "collateral_pct_pay_per_round must be higher or equal zero")
-    check(config.consensus.min_pct >= 0, "min_consensus_pct must be higher or equal zero")
-    check(config.consensus.min_pct <= f32(1), "min_consensus_pct must be less or equal to 100%")
-    check(config.merge_deviation_pct >= 0, "merge_deviation_pct must be higher or equal zero")
-    check(config.merge_deviation_pct <= f32(1), "merge_deviation_pct must be less or equal to 100%")
+    check(config.payment.collateral_pct_pay_per_round_mult >= 0, "collateral_pct_pay_per_round_mult must be higher or equal zero")
+    check(config.payment.collateral_pct_pay_per_round_mult <= 1, "collateral_pct_pay_per_round_mult must be less")
+    check(config.consensus.min_weight_pct >= 0, "min_consensus_pct must be higher or equal zero")
+    check(config.consensus.min_weight_pct <= f32(1), "min_consensus_pct must be less or equal to 100%")
+    check(config.consensus.merge_deviation_pct >= 0, "merge_deviation_pct must be higher or equal zero")
+    check(config.consensus.merge_deviation_pct <= f32(1), "merge_deviation_pct must be less or equal to 100%")
     check(config.min_pay_report_share_threshold >= 0, "min_pay_report_share_threshold must be higher or equal zero")
     check(config.min_pay_report_share_threshold <= f32(1), "min_pay_report_share_threshold must be less or equal to 100%")
     this.configT.set(config, this.receiver)

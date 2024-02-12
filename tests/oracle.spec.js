@@ -4,6 +4,8 @@ import { expectToThrow } from "@proton/vert"
 import { expect } from "chai"
 import { beforeEach, describe, it } from "mocha"
 import { act, addRounds, boid_id, chain, getReportId, init, oracles, setupOracle, tkn } from "./util.js"
+import {config} from "./lib/config.js"
+
 
 const report = { protocol_id: 0, round: 10, units: 100 }
 
@@ -14,8 +16,8 @@ beforeEach(async () => {
 describe("oracle", async() => {
   describe("oracldeposit", async() => {
     it("Success", async() => {
-      chain.createAccount("oracle1")
-      await act("oracleset", { account: "oracle1", weight: 0, adding_collateral:0 })
+      setupOracle("oracle1")
+      await act("oracleset", { oracle: "oracle1", weight: 0, adding_collateral:0 })
       await act("oracldeposit", { oracle: "oracle1", depositQuantity: 10 })
     })
     describe("validate oracldeposit checks", async() => {
@@ -63,11 +65,11 @@ describe("oracle", async() => {
         let oracle = ""
         for(let i=0; i < 255; i++) {
           oracle = new Name(UInt64.random()).toString()
-          await setupOracle(oracle, "16000000.0000 BOID", true)
+          await setupOracle(oracle, "16000000.0000 BOID", 1, true)
         }
         oracle = new Name(UInt64.random()).toString()
         await expectToThrow(
-          setupOracle(oracle, "16000000.0000 BOID", true),
+          setupOracle(oracle, "16000000.0000 BOID", 1, true),
           "eosio_assert: max standy_oracles reached")
       }).timeout(8000)
     })
@@ -78,6 +80,7 @@ describe("oracle", async() => {
       await setupOracle("oracle2")
       await setupOracle("oracle3")
       await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
+
       addRounds(16)
       report.round = 15
       await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: report }, "oracle1")
@@ -85,14 +88,14 @@ describe("oracle", async() => {
       await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: report }, "oracle3")
       addRounds(1)
       await act("roundstats")
-      await act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] })
+      await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
       addRounds(3)
-      await act("handleostat", { oracle: "oracle1", round: 15 })
+      await act("payoutround", { oracle: "oracle1", round: 15 })
       const unclaimed = oracles()[0].funds.unclaimed
 
       await act("withdrawinit", { oracle: "oracle1" }, "oracle1")
       expect(oracles()[0].funds.withdrawing).eq(unclaimed)
-      expect(oracles()[0].funds.withdrawable_after_round).eq(40)
+      expect(oracles()[0].funds.withdrawable_after_round).eq(20 + config.waits.withdraw_rounds_wait)
     })
     describe("validate withdrawinit checks", async() => {
       it("Missing required authority", async() => {
@@ -112,14 +115,14 @@ describe("oracle", async() => {
         await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: report }, "oracle3")
         addRounds(1)
         await act("roundstats")
-        await act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] })
+        await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
         addRounds(3)
-        await act("handleostat", { oracle: "oracle1", round: 15 })
+        await act("payoutround", { oracle: "oracle1", round: 15 })
         const unclaimed = oracles()[0].funds.unclaimed
 
         await act("withdrawinit", { oracle: "oracle1" }, "oracle1")
         expect(oracles()[0].funds.withdrawing).eq(unclaimed)
-        expect(oracles()[0].funds.withdrawable_after_round).eq(40)
+        expect(oracles()[0].funds.withdrawable_after_round).eq(config.waits.withdraw_rounds_wait+20)
         addRounds(5)
         await expectToThrow(
           act("withdrawinit", { oracle: "oracle1" }, "oracle1"),
@@ -147,9 +150,9 @@ describe("oracle", async() => {
       await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: report }, "oracle3")
       addRounds(1)
       await act("roundstats")
-      await act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] })
+      await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
       addRounds(3)
-      await act("handleostat", { oracle: "oracle1", round: 15 })
+      await act("payoutround", { oracle: "oracle1", round: 15 })
 
       await act("withdrawinit", { oracle: "oracle1" }, "oracle1")
       await expectToThrow(
@@ -192,9 +195,9 @@ describe("oracle", async() => {
         await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: report }, "oracle3")
         addRounds(1)
         await act("roundstats")
-        await act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] })
+        await act("finishreport", { boid_id_scope: boid_id, pwrreport_id:  getReportId(report) })
         addRounds(3)
-        await act("handleostat", { oracle: "oracle1", round: 15 })
+        await act("payoutround", { oracle: "oracle1", round: 15 })
         await act("withdrawinit", { oracle: "oracle1" }, "oracle1")
         await expectToThrow(
           act("withdraw", { oracle: "oracle1" }, "oracle1"),
@@ -262,7 +265,7 @@ describe("oracle", async() => {
         )
       })
       it("Oracle must be in standby to be unlocked", async() => {
-        await setupOracle("oracle1", "10000000.0000 BOID", false)
+        await setupOracle("oracle1", "10000000.0000 BOID", 1,false)
         addRounds(40)
         await expectToThrow(
           act("unlockinit", { oracle: "oracle1" }, "oracle1"),
@@ -270,7 +273,7 @@ describe("oracle", async() => {
         )
       })
       it("No valid collateral to unlock (locked - slashed)", async() => {
-        await setupOracle("oracle1", "10000000.0000 BOID", false)
+        await setupOracle("oracle1", "10000000.0000 BOID", 1,false)
         addRounds(40)
         await act("setstandby", { oracle: "oracle1", standby: true })
         await act("unlockinit", { oracle: "oracle1" }, "oracle1")

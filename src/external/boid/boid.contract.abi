@@ -62,6 +62,28 @@
       ]
     },
     {
+      "name": "AccountBooster",
+      "base": "",
+      "fields": [
+        {
+          "name": "pwr_multiplier",
+          "type": "uint8"
+        },
+        {
+          "name": "pwr_add_per_round",
+          "type": "uint16"
+        },
+        {
+          "name": "expires_round",
+          "type": "uint16"
+        },
+        {
+          "name": "aggregate_pwr_remaining",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
       "name": "AccountCreate",
       "base": "",
       "fields": [
@@ -88,34 +110,20 @@
           "type": "uint16"
         },
         {
+          "name": "last_added_round",
+          "type": "uint16"
+        },
+        {
           "name": "rating",
           "type": "uint16"
         },
         {
-          "name": "mods",
-          "type": "AccountPowerMod[]"
-        }
-      ]
-    },
-    {
-      "name": "AccountPowerMod",
-      "base": "",
-      "fields": [
-        {
-          "name": "pwr_multiplier",
-          "type": "uint8"
+          "name": "history",
+          "type": "uint16[]"
         },
         {
-          "name": "pwr_add_per_round",
-          "type": "uint16"
-        },
-        {
-          "name": "expires_round",
-          "type": "uint16"
-        },
-        {
-          "name": "aggregate_pwr_remaining",
-          "type": "uint32"
+          "name": "boosters",
+          "type": "AccountBooster[]"
         }
       ]
     },
@@ -143,7 +151,7 @@
       "fields": [
         {
           "name": "team_id",
-          "type": "uint16"
+          "type": "uint8"
         },
         {
           "name": "last_edit_round",
@@ -156,6 +164,20 @@
         {
           "name": "team_cumulative_contribution",
           "type": "uint32"
+        }
+      ]
+    },
+    {
+      "name": "AcctMeta",
+      "base": "",
+      "fields": [
+        {
+          "name": "boid_id",
+          "type": "name"
+        },
+        {
+          "name": "meta",
+          "type": "bytes"
         }
       ]
     },
@@ -220,6 +242,32 @@
       ]
     },
     {
+      "name": "Booster",
+      "base": "",
+      "fields": [
+        {
+          "name": "booster_id",
+          "type": "uint8"
+        },
+        {
+          "name": "pwr_multiplier",
+          "type": "uint8"
+        },
+        {
+          "name": "pwr_add_per_round",
+          "type": "uint16"
+        },
+        {
+          "name": "expire_after_elapsed_rounds",
+          "type": "uint16"
+        },
+        {
+          "name": "aggregate_pwr_capacity",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
       "name": "Config",
       "base": "",
       "fields": [
@@ -254,10 +302,6 @@
         {
           "name": "nft",
           "type": "ConfigNft"
-        },
-        {
-          "name": "auto",
-          "type": "ConfigAutoAdjust"
         },
         {
           "name": "paused",
@@ -298,11 +342,7 @@
           "type": "uint8"
         },
         {
-          "name": "max_sponsors",
-          "type": "uint8"
-        },
-        {
-          "name": "max_pwrmods",
+          "name": "max_boosters",
           "type": "uint8"
         },
         {
@@ -350,32 +390,6 @@
       ]
     },
     {
-      "name": "ConfigAutoAdjust",
-      "base": "",
-      "fields": [
-        {
-          "name": "target_inflation_per_round",
-          "type": "uint32"
-        },
-        {
-          "name": "power_mult_max_adjust",
-          "type": "float32"
-        },
-        {
-          "name": "powered_stake_mult_max_adjust",
-          "type": "float32"
-        },
-        {
-          "name": "adjustment_interval_rounds",
-          "type": "uint16"
-        },
-        {
-          "name": "max_check_rounds",
-          "type": "uint16"
-        }
-      ]
-    },
-    {
       "name": "ConfigMint",
       "base": "",
       "fields": [
@@ -408,23 +422,11 @@
       "base": "",
       "fields": [
         {
-          "name": "round_decay_constant",
-          "type": "uint16"
-        },
-        {
-          "name": "round_decay_mult",
-          "type": "float32"
-        },
-        {
           "name": "sponsor_tax_mult",
           "type": "float32"
         },
         {
           "name": "powered_stake_mult",
-          "type": "float32"
-        },
-        {
-          "name": "powered_stake_pwr",
           "type": "float32"
         },
         {
@@ -436,8 +438,8 @@
           "type": "uint16"
         },
         {
-          "name": "dev_fund_tax_mult",
-          "type": "float32"
+          "name": "history_slots_length",
+          "type": "uint8"
         }
       ]
     },
@@ -490,8 +492,8 @@
       "base": "",
       "fields": [
         {
-          "name": "rounds_start",
-          "type": "time_point"
+          "name": "rounds_start_sec_since_epoch",
+          "type": "uint32"
         },
         {
           "name": "round_length_sec",
@@ -522,19 +524,7 @@
           "type": "name"
         },
         {
-          "name": "total_accounts",
-          "type": "uint64"
-        },
-        {
           "name": "total_power",
-          "type": "uint64"
-        },
-        {
-          "name": "total_liquid_balance",
-          "type": "uint64"
-        },
-        {
-          "name": "total_stake",
           "type": "uint64"
         },
         {
@@ -566,23 +556,27 @@
       "base": "",
       "fields": [
         {
-          "name": "account",
+          "name": "power_mint",
           "type": "uint32"
         },
         {
-          "name": "team",
+          "name": "powered_stake_mint",
           "type": "uint32"
         },
         {
-          "name": "team_owner",
+          "name": "account_earned",
           "type": "uint32"
         },
         {
-          "name": "overstake",
+          "name": "team_cut",
           "type": "uint32"
         },
         {
-          "name": "fundstake",
+          "name": "team_owner_earned",
+          "type": "uint32"
+        },
+        {
+          "name": "overstake_mint",
           "type": "uint32"
         },
         {
@@ -755,7 +749,7 @@
       "fields": [
         {
           "name": "team_id",
-          "type": "uint16[]"
+          "type": "bytes"
         },
         {
           "name": "min_power",
@@ -796,7 +790,7 @@
           "type": "uint16"
         },
         {
-          "name": "activate_powermod_ids",
+          "name": "activate_booster_ids",
           "type": "bytes"
         }
       ]
@@ -821,49 +815,19 @@
       "fields": [
         {
           "name": "before",
-          "type": "uint16"
+          "type": "uint32"
         },
         {
           "name": "after",
-          "type": "uint16"
-        },
-        {
-          "name": "from_mods",
-          "type": "uint16"
-        },
-        {
-          "name": "decayed",
-          "type": "uint16"
-        },
-        {
-          "name": "rounds",
-          "type": "uint16"
-        }
-      ]
-    },
-    {
-      "name": "PwrMod",
-      "base": "",
-      "fields": [
-        {
-          "name": "mod_id",
-          "type": "uint8"
-        },
-        {
-          "name": "pwr_multiplier",
-          "type": "uint8"
-        },
-        {
-          "name": "pwr_add_per_round",
-          "type": "uint16"
-        },
-        {
-          "name": "expire_after_elapsed_rounds",
-          "type": "uint16"
-        },
-        {
-          "name": "aggregate_pwr_capacity",
           "type": "uint32"
+        },
+        {
+          "name": "from_boosters",
+          "type": "uint32"
+        },
+        {
+          "name": "elapsed_rounds",
+          "type": "uint16"
         }
       ]
     },
@@ -924,28 +888,6 @@
       ]
     },
     {
-      "name": "Stats",
-      "base": "",
-      "fields": [
-        {
-          "name": "round",
-          "type": "uint16"
-        },
-        {
-          "name": "power_added",
-          "type": "uint32"
-        },
-        {
-          "name": "boid_generated",
-          "type": "uint32"
-        },
-        {
-          "name": "accounts_created",
-          "type": "uint32"
-        }
-      ]
-    },
-    {
       "name": "Team",
       "base": "",
       "fields": [
@@ -982,10 +924,6 @@
           "type": "string"
         },
         {
-          "name": "info_json_ipfs",
-          "type": "string"
-        },
-        {
           "name": "power",
           "type": "uint64"
         },
@@ -996,6 +934,10 @@
         {
           "name": "last_edit_round",
           "type": "uint16"
+        },
+        {
+          "name": "meta",
+          "type": "bytes"
         }
       ]
     },
@@ -1058,7 +1000,7 @@
           "type": "name"
         },
         {
-          "name": "social_ipfs_json",
+          "name": "meta",
           "type": "bytes"
         }
       ]
@@ -1074,9 +1016,14 @@
       ]
     },
     {
-      "name": "accounts.clr",
+      "name": "account.rm",
       "base": "",
-      "fields": []
+      "fields": [
+        {
+          "name": "boid_id",
+          "type": "name"
+        }
+      ]
     },
     {
       "name": "auth",
@@ -1134,6 +1081,44 @@
         {
           "name": "keyIndex",
           "type": "int32"
+        }
+      ]
+    },
+    {
+      "name": "booster.add",
+      "base": "",
+      "fields": [
+        {
+          "name": "boid_id",
+          "type": "name"
+        },
+        {
+          "name": "booster_id",
+          "type": "uint8"
+        }
+      ]
+    },
+    {
+      "name": "booster.new",
+      "base": "",
+      "fields": [
+        {
+          "name": "booster",
+          "type": "Booster"
+        }
+      ]
+    },
+    {
+      "name": "booster.rm",
+      "base": "",
+      "fields": [
+        {
+          "name": "boid_id",
+          "type": "name"
+        },
+        {
+          "name": "booster_index",
+          "type": "int32[]"
         }
       ]
     },
@@ -1280,7 +1265,7 @@
           "type": "uint16"
         },
         {
-          "name": "from_mult_mods",
+          "name": "from_mult_boosters",
           "type": "uint16"
         },
         {
@@ -1301,6 +1286,10 @@
       "name": "logpwrclaim",
       "base": "",
       "fields": [
+        {
+          "name": "boid_id",
+          "type": "name"
+        },
         {
           "name": "power",
           "type": "PowerClaimLog"
@@ -1434,6 +1423,21 @@
       ]
     },
     {
+      "name": "offer.clean",
+      "base": "",
+      "fields": []
+    },
+    {
+      "name": "offer.rm",
+      "base": "",
+      "fields": [
+        {
+          "name": "offer_id",
+          "type": "uint64"
+        }
+      ]
+    },
+    {
       "name": "owner.add",
       "base": "",
       "fields": [
@@ -1486,40 +1490,22 @@
       ]
     },
     {
-      "name": "pwrmod.add",
+      "name": "sponsor.rm",
       "base": "",
       "fields": [
         {
-          "name": "boid_id",
+          "name": "sponsor_boid_id",
           "type": "name"
-        },
-        {
-          "name": "mod_id",
-          "type": "uint8"
         }
       ]
     },
     {
-      "name": "pwrmod.new",
+      "name": "sponsor.set",
       "base": "",
       "fields": [
         {
-          "name": "mod",
-          "type": "PwrMod"
-        }
-      ]
-    },
-    {
-      "name": "pwrmod.rm",
-      "base": "",
-      "fields": [
-        {
-          "name": "boid_id",
-          "type": "name"
-        },
-        {
-          "name": "pwrmod_index",
-          "type": "int32"
+          "name": "row",
+          "type": "Sponsor"
         }
       ]
     },
@@ -1560,11 +1546,6 @@
       ]
     },
     {
-      "name": "stats.clean",
-      "base": "",
-      "fields": []
-    },
-    {
       "name": "team.change",
       "base": "",
       "fields": [
@@ -1574,7 +1555,7 @@
         },
         {
           "name": "new_team_id",
-          "type": "uint16"
+          "type": "uint8"
         },
         {
           "name": "new_pwr_tax_mult",
@@ -1600,10 +1581,6 @@
         },
         {
           "name": "url_safe_name",
-          "type": "string"
-        },
-        {
-          "name": "info_json_ipfs",
           "type": "string"
         }
       ]
@@ -1635,10 +1612,30 @@
         {
           "name": "url_safe_name",
           "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "team.rm",
+      "base": "",
+      "fields": [
+        {
+          "name": "team_id",
+          "type": "uint8"
+        }
+      ]
+    },
+    {
+      "name": "team.setmeta",
+      "base": "",
+      "fields": [
+        {
+          "name": "team_id",
+          "type": "uint8"
         },
         {
-          "name": "info_json_ipfs",
-          "type": "string"
+          "name": "meta",
+          "type": "bytes"
         }
       ]
     },
@@ -1747,8 +1744,8 @@
       "ricardian_contract": ""
     },
     {
-      "name": "accounts.clr",
-      "type": "accounts.clr",
+      "name": "account.rm",
+      "type": "account.rm",
       "ricardian_contract": ""
     },
     {
@@ -1769,6 +1766,21 @@
     {
       "name": "auth.rmkey",
       "type": "auth.rmkey",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "booster.add",
+      "type": "booster.add",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "booster.new",
+      "type": "booster.new",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "booster.rm",
+      "type": "booster.rm",
       "ricardian_contract": ""
     },
     {
@@ -1867,6 +1879,16 @@
       "ricardian_contract": ""
     },
     {
+      "name": "offer.clean",
+      "type": "offer.clean",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "offer.rm",
+      "type": "offer.rm",
+      "ricardian_contract": ""
+    },
+    {
       "name": "owner.add",
       "type": "owner.add",
       "ricardian_contract": ""
@@ -1887,18 +1909,13 @@
       "ricardian_contract": ""
     },
     {
-      "name": "pwrmod.add",
-      "type": "pwrmod.add",
+      "name": "sponsor.rm",
+      "type": "sponsor.rm",
       "ricardian_contract": ""
     },
     {
-      "name": "pwrmod.new",
-      "type": "pwrmod.new",
-      "ricardian_contract": ""
-    },
-    {
-      "name": "pwrmod.rm",
-      "type": "pwrmod.rm",
+      "name": "sponsor.set",
+      "type": "sponsor.set",
       "ricardian_contract": ""
     },
     {
@@ -1909,11 +1926,6 @@
     {
       "name": "stake.deleg",
       "type": "stake.deleg",
-      "ricardian_contract": ""
-    },
-    {
-      "name": "stats.clean",
-      "type": "stats.clean",
       "ricardian_contract": ""
     },
     {
@@ -1929,6 +1941,16 @@
     {
       "name": "team.edit",
       "type": "team.edit",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "team.rm",
+      "type": "team.rm",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "team.setmeta",
+      "type": "team.setmeta",
       "ricardian_contract": ""
     },
     {
@@ -1976,8 +1998,22 @@
       "key_types": []
     },
     {
+      "name": "acctmeta",
+      "type": "AcctMeta",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+    },
+    {
       "name": "auth",
       "type": "Auth",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+    },
+    {
+      "name": "boosters",
+      "type": "Booster",
       "index_type": "i64",
       "key_names": [],
       "key_types": []
@@ -2025,13 +2061,6 @@
       "key_types": []
     },
     {
-      "name": "pwrmods",
-      "type": "PwrMod",
-      "index_type": "i64",
-      "key_names": [],
-      "key_types": []
-    },
-    {
       "name": "sponsors",
       "type": "Sponsor",
       "index_type": "i64",
@@ -2041,13 +2070,6 @@
     {
       "name": "stakes",
       "type": "Stake",
-      "index_type": "i64",
-      "key_names": [],
-      "key_types": []
-    },
-    {
-      "name": "stats",
-      "type": "Stats",
       "index_type": "i64",
       "key_names": [],
       "key_types": []

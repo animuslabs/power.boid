@@ -28,8 +28,38 @@ export class SlashActions extends TableCleanActions {
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
     check(!oracleRow.standby, "can't slash an oracle in standby")
     const config = this.getConfig()
-    const pctQuantity = oracleRow.trueCollateral * (config.slashLow.slash_quantity_collateral_pct / 100)
+    const pctQuantity = u32(f32(oracleRow.trueCollateral) * (config.slashLow.slash_quantity_collateral_pct / 100))
     const quantity = pctQuantity + config.slashLow.slash_quantity_static
+    oracleRow.collateral.slashed += quantity
+    check(oracleRow.collateral.slashed >= quantity, "max collateral slashed reached")
+    const weightBefore = oracleRow.weight
+    // save oracle row
+    this.oraclesT.update(oracleRow, this.receiver)
+  }
+
+  @action("slashmed")
+  slashOracleMed(oracle:Name):void {
+    requireAuth(this.receiver)
+    const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
+    check(!oracleRow.standby, "can't slash an oracle in standby")
+    const config = this.getConfig()
+    const pctQuantity = u32(f32(oracleRow.trueCollateral) * (config.slashMed.slash_quantity_collateral_pct / 100))
+    const quantity = pctQuantity + config.slashMed.slash_quantity_static
+    oracleRow.collateral.slashed += quantity
+    check(oracleRow.collateral.slashed >= quantity, "max collateral slashed reached")
+    const weightBefore = oracleRow.weight
+    // save oracle row
+    this.oraclesT.update(oracleRow, this.receiver)
+  }
+
+  @action("slashhigh")
+  slashOracleHigh(oracle:Name):void {
+    requireAuth(this.receiver)
+    const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
+    check(!oracleRow.standby, "can't slash an oracle in standby")
+    const config = this.getConfig()
+    const pctQuantity = u32(f32(oracleRow.trueCollateral) * (config.slashHigh.slash_quantity_collateral_pct / 100))
+    const quantity = pctQuantity + config.slashHigh.slash_quantity_static
     oracleRow.collateral.slashed += quantity
     check(oracleRow.collateral.slashed >= quantity, "max collateral slashed reached")
     const weightBefore = oracleRow.weight

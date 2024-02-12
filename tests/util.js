@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import { Authority, Name, PermissionLevel, PermissionLevelWeight, TimePoint, UInt16, UInt32 } from "@wharfkit/antelope"
 import { AccountPermission, Blockchain } from "@proton/vert"
+import { defaultConfig } from "./defaultConfig.js"
+import { config } from "./lib/config.js"
 export const chain = new Blockchain()
 
 export const contract = chain.createContract("power.boid", "../build/boid.contract")
@@ -105,7 +107,6 @@ token.setPermissions([
     })
   })
 ])
-
 boid.setPermissions([
   AccountPermission.from({
     perm_name: Name.from("owner"),
@@ -154,9 +155,8 @@ boid.setPermissions([
     })
   })
 ])
+
 export async function initTokens() {
-  // const tkn = token.actions
-  // chain.createAccount("token.boid")
   const issuer = Name.from("token.boid")
   const maximum_supply = "25000000000.0000 BOID"
   await tkn("create", { issuer, maximum_supply })
@@ -164,8 +164,7 @@ export async function initTokens() {
   await tkn("transfer", { from: issuer, to: "tknmint.boid", quantity: "100000000.0000 BOID", memo: "" })
 }
 
-const roundLengthSec = 90000
-export const roundStartTime = TimePoint.fromMilliseconds(Date.now())
+export const roundStartTime = TimePoint.fromMilliseconds(defaultConfig.time.rounds_start_sec_since_epoch * 1000)
 console.log(roundStartTime.toString())
 
 export async function wait(ms) {
@@ -218,48 +217,25 @@ export const owners = ["boid"]
 export const sponsors = ["sponsoracct"]
 export const boid_id = "testaccount"
 
-export const config = {
-  paused: false,
-  min_consensus_weight: 30,
-  min_consensus_pct: 0.66,
-  collateral_pct_pay_per_round: 0.01,
-  round_bonus_pay_reports: 50000,
-  round_bonus_pay_proposed: 200000,
-  slash_threshold_pct: 0.5,
-  slash_quantity_static: 500000,
-  slash_quantity_collateral_pct: 0.01,
-  withdraw_rounds_wait: 20,
-  keep_finalized_stats_rows: 2000,
-  reports_finalized_after_rounds: 3,
-  unlock_wait_rounds: 40,
-  first_unlock_wait_rounds: 20,
-  standby_toggle_interval_rounds: 20,
-  weight_collateral_pwr: 1.1,
-  oracle_collateral_deposit_increment: 1000000,
-  reports_accumulate_weight_round_pct: 0.20,
-  weight_collateral_divisor:1000000,
-  merge_deviation_pct: 0.25,
-  oracle_expected_active_after_rounds: 2,
-  min_pay_report_share_threshold: 0.01
-}
+
 export function addRounds(numRounds = 0) {
   // @ts-ignore
-  chain.addTime(TimePoint.fromMilliseconds(roundLengthSec * 1000 * numRounds))
+  chain.addTime(TimePoint.fromMilliseconds(defaultConfig.time.round_length_sec * 1000 * numRounds))
 }
 
-export async function setupOracle(name = "oraclename", quantity = "10000000.0000 BOID", standby = false) {
+export async function setupOracle(name = "oraclename", quantity = "10000000.0000 BOID", weight = 1,standby = false) {
   chain.createAccount(name)
   await tkn("transfer", { from: "token.boid", to: name, quantity, memo: "" })
   await tkn("transfer", { from: name, to: "power.boid", quantity, memo: "collateral" }, name)
-  if(!standby)
-    await act("setstandby", { oracle: name, standby: false })
+  await act("setweight", { oracle: name, weight },"power.boid")
+  if(!standby) await act("setstandby", { oracle: name, standby: false },"power.boid")
 }
 
 export async function init() {
   chain.createAccount("recover.boid")
 
   await boid.actions["auth.init"]({ }).send()
-  await boid.actions["config.set"]({ config: { } }).send()
+  await boid.actions["config.set"]({ config: defaultConfig }).send()
   await boid.actions["account.add"]({ boid_id: "boid", owners: ["boid"], sponsors: [], keys: [] }).send()
   await boid.actions["account.add"]({ boid_id, owners: ["boid"], sponsors: [], keys: [] }).send()
   await boid.actions["account.add"]({ boid_id: Name.from("teamownr"), owners: ["recover.boid"], sponsors: [], keys: [] }).send()
@@ -272,4 +248,16 @@ export async function init() {
 
 export function getReportId(report = {protocol_id:0,round:0,units:0}) {
   return Number((BigInt(report.protocol_id) << BigInt(48)) + (BigInt(report.round) << BigInt(32)) + BigInt(report.units))
+}
+export function trueCollateral(oracleRow) {
+  return oracleRow.collateral.locked - oracleRow.collateral.slashed
+}
+export function findRoundPayout(oracleName,roundNum){
+  const oracleRow = oracle(oracleName)
+  const oRoundTable = oracleStats(oracleName)
+  const oRoundData = oRoundTable.filter(el => el.round == roundNum)[0]
+  if(!oRoundData) throw new Error(`Cannot find round ${roundNum} for ${oracleName}`)
+  const basePay = trueCollateral(oracleRow) * config.payment.collateral_pct_pay_per_round_mult
+  const bonusPay = config.payment.round_bonus_pay_reports * oRoundData.reports.reported_or_merged + config.payment.round_bonus_pay_proposed * oRoundData.reports.proposed
+  return parseInt((bonusPay + basePay).toString())
 }

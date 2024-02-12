@@ -5,7 +5,8 @@
     "test:oracle": "mocha -b ./oracle.spec.js",
     "test:ostats": "mocha -b ./ostats.spec.js",
     "test:pwrreport": "mocha -b ./pwrreport.spec.js",
-    "test:slash": "mocha -b ./slash.spec.js"
+    "test:slash": "mocha -b ./slash.spec.js",
+    "test:s": "mocha -b ./scenarios.spec.js"
   },
   "type": "module",
   "devDependencies": {

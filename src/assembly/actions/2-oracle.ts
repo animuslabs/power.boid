@@ -1,4 +1,4 @@
-import { Action, ActionData, check, EMPTY_NAME, hasAuth, isAccount, Name, requireAuth } from "proton-tsc"
+import { Action, ActionData, check, EMPTY_NAME, hasAuth, isAccount, Name, requireAuth, SAME_PAYER } from "proton-tsc"
 import { Oracle, OracleCollateral, OracleFunds } from "../tables/oracles"
 import { GlobalActions } from "./1-global"
 
@@ -62,6 +62,14 @@ export class OracleActions extends GlobalActions {
     const data = new OracleStandbyParams(oracle, standby)
     const action = new Action(this.receiver, Name.fromString("setstandby"), [this.codePerm], data.pack())
     action.send()
+  }
+
+  @action("setweight")
+  setWeight(oracle:Name, weight:u8):void {
+    const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
+    check(oracleRow.standby, "oracle must be in standby to set weight")
+    oracleRow.weight = weight
+    this.oraclesT.update(oracleRow, SAME_PAYER)
   }
 
   /**
