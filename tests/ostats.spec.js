@@ -2,6 +2,7 @@
 import { expectToThrow } from "@proton/vert"
 import { beforeEach, describe, it } from "mocha"
 import { act, addRounds, boid_id, chain, getReportId, init, oracleStats, setupOracle, global, oracle, reports, findRoundPayout } from "./util.js"
+import { expect } from "chai"
 
 const report = { protocol_id: 0, round: 10, units: 100 }
 const report2 = { protocol_id: 0, round: 10, units: 100 }
@@ -12,7 +13,7 @@ beforeEach(async () => {
   await init()
 })
 describe("reports", async() => {
-    describe("handleostat", async() => {
+    describe("payoutround", async() => {
         it("Success", async() => {
           await setupOracle("oracle1")
           await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
@@ -43,16 +44,11 @@ describe("reports", async() => {
           await act("payoutround", {  round: 10 ,oracle:"oracle3" }, "oracle1")
           await act("payoutround", {  round: 10 ,oracle:"oracle4" }, "oracle1")
           await act("payoutround", {  round: 10 ,oracle:"oracle5" }, "oracle1")
-          console.log('oracle1 earned:',oracle("oracle1").funds.unclaimed)
-          console.log('oracle2 earned:',oracle("oracle2").funds.unclaimed)
-          console.log('oracle3 earned:',oracle("oracle3").funds.unclaimed)
-          console.log('oracle4 earned:',oracle("oracle4").funds.unclaimed)
-          console.log('oracle5 earned:',oracle("oracle5").funds.unclaimed)
-          console.log('o1 payout estimate:',findRoundPayout("oracle1", 10))
-          console.log('o2 payout estimate:',findRoundPayout("oracle2", 10))
-          console.log('o3 payout estimate:',findRoundPayout("oracle3", 10))
-          console.log('o4 payout estimate:',findRoundPayout("oracle4", 10))
-          console.log('o5 payout estimate:',findRoundPayout("oracle5", 10))
+          expect(oracle("oracle1").funds.unclaimed).eq(findRoundPayout("oracle1", 10))
+          expect(oracle("oracle2").funds.unclaimed).eq(findRoundPayout("oracle2", 10))
+          expect(oracle("oracle3").funds.unclaimed).eq(findRoundPayout("oracle3", 10))
+          expect(oracle("oracle4").funds.unclaimed).eq(findRoundPayout("oracle4", 10))
+          expect(oracle("oracle5").funds.unclaimed).eq(findRoundPayout("oracle5", 10))
           addRounds(1)
           await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report:report3 }, "oracle1")
           await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report:report3 }, "oracle2")
@@ -63,15 +59,14 @@ describe("reports", async() => {
           await act("payoutround", { protocol_id: 0, round: 13 ,oracle:"oracle1" }, "oracle1")
           await act("payoutround", { protocol_id: 0, round: 13 ,oracle:"oracle2" }, "oracle1")
           await act("payoutround", { protocol_id: 0, round: 13 ,oracle:"oracle3" }, "oracle1")
-          console.log('oracle1 earned:',oracle("oracle1").funds.unclaimed)
-          console.log('oracle2 earned:',oracle("oracle2").funds.unclaimed)
-          console.log('oracle3 earned:',oracle("oracle2").funds.unclaimed)
-          console.log(chain.console)
-
-
-
-
-
+          await act("withdrawinit",["oracle1"],"oracle1")
+          await act("withdrawinit",["oracle2"],"oracle2")
+          await act("withdrawinit",["oracle3"],"oracle3")
+          await act("withdrawinit",["oracle4"],"oracle4")
+          await act("withdrawinit",["oracle5"],"oracle5")
+          addRounds(6)
+          await act("withdraw",["oracle1"],"oracle1")
+          expect(oracle("oracle1").funds.unclaimed).eq(0)
         })
     })
 })

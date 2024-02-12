@@ -258,6 +258,9 @@ export function findRoundPayout(oracleName,roundNum){
   const oRoundData = oRoundTable.filter(el => el.round == roundNum)[0]
   if(!oRoundData) throw new Error(`Cannot find round ${roundNum} for ${oracleName}`)
   const basePay = trueCollateral(oracleRow) * config.payment.collateral_pct_pay_per_round_mult
-  const bonusPay = config.payment.round_bonus_pay_reports * oRoundData.reports.reported_or_merged + config.payment.round_bonus_pay_proposed * oRoundData.reports.proposed
-  return parseInt((bonusPay + basePay).toString())
+  // console.log(basePay)
+  let bonusPay = config.payment.round_bonus_pay_reports * Math.pow(oRoundData.reports.reported_or_merged, config.payment.reports_proposed_adjust_pwr) + config.payment.round_bonus_pay_proposed * Math.pow(oRoundData.reports.proposed, config.payment.reports_proposed_adjust_pwr);
+  bonusPay = bonusPay / Math.pow(config.payment.num_oracles_adjust_base, global().expected_active_oracles.length);
+  // console.log(bonusPay)
+  return parseInt((Math.floor(bonusPay) + Math.floor(basePay)).toString())
 }

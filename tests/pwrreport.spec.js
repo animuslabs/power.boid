@@ -16,16 +16,16 @@ beforeEach(async () => {
 describe("reports", async() => {
     describe("pwrreport", async() => {
         it("Success", async() => {
-            await setupOracle("oracle1")
+            await setupOracle("oracle1","10000000.0000 BOID",1,true)
             addRounds(10)
             await expectToThrow(
               act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1"),
               "eosio_assert: report round must target a past round")
             addRounds(1)
-            // await expectToThrow(
-            //   act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1"),
-            //   "eosio_assert: oracle is in standby mode, disable standby first to start making reports")
-            // await act("setstandby", { oracle: "oracle1", standby: false })
+            await expectToThrow(
+              act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1"),
+              "eosio_assert: oracle is in standby mode, disable standby first to start making reports")
+            await act("setstandby", { oracle: "oracle1", standby: false })
             await expectToThrow(
               act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1"),
               "eosio_assert: invalid protocol_id")
@@ -33,15 +33,15 @@ describe("reports", async() => {
             await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1")
             // console.log(await act("thisround"));
             // return
-            console.log(reports(boid_id))
+            // console.log(reports(boid_id))
             const rRow = reports(boid_id)[0]
-            console.log(chain.console);
-            console.log(rRow);
+            // console.log(chain.console);
+            // console.log(rRow);
             expect(rRow.proposer).eq("oracle1")
             // expect(rRow.report_id).eq(getReportId(report).toString())
             expect(rRow.report.units).eq(100)
             expect(rRow.report.round).eq(10)
-            expect(rRow.approval_weight).eq(12)
+            expect(rRow.approval_weight).eq(1)
             expect(rRow.reported).eq(false)
             expect(rRow.merged).eq(false)
         })
@@ -51,18 +51,18 @@ describe("reports", async() => {
                     act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }),
                     "missing required authority oracle1")
             })
-            it("Chain is too recent to generate reports", async() => {
+            it("report round must target a past round", async() => {
                 await setupOracle("oracle1")
                 await expectToThrow(
                     act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1"),
-                    "eosio_assert: chain is too recent to generate reports")
+                    "eosio_assert: report round must target a past round")
             })
             it("Round is too far in the past", async() => {
                 await setupOracle("oracle1")
                 addRounds(20)
                 await expectToThrow(
                     act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1"),
-                    "eosio_assert: round is too far in the past")
+                    "eosio_assert: report round is too far in the past, must report for round: 19")
             })
             it("Report round must target a past round", async() => {
                 await setupOracle("oracle1")
@@ -118,33 +118,33 @@ describe("reports", async() => {
                     act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report: report2 }, "oracle1"),
                     "eosio_assert: oracle already commited report for this user and round")
             })
-            it("Report already reported", async() => {
-                for(let i=1; i < 6; i++)
-                    await setupOracle(`oracle${i}`)
+            // it("Report already reported", async() => {
+            //     for(let i=1; i < 6; i++)
+            //         await setupOracle(`oracle${i}`)
 
-                await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
-                addRounds(12)
+            //     await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
+            //     addRounds(12)
 
-                for(let i=1; i < 5; i++)
-                    await act("pwrreport", { oracle: `oracle${i}`, boid_id_scope: boid_id, report }, `oracle${i}`)
+            //     for(let i=1; i < 5; i++)
+            //         await act("pwrreport", { oracle: `oracle${i}`, boid_id_scope: boid_id, report }, `oracle${i}`)
 
-                await expectToThrow(
-                    act("pwrreport", { oracle: "oracle5", boid_id_scope: boid_id, report }, "oracle5"),
-                    "eosio_assert: report already reported")
-            })
+            //     await expectToThrow(
+            //         act("pwrreport", { oracle: "oracle5", boid_id_scope: boid_id, report }, "oracle5"),
+            //         "eosio_assert: report already reported")
+            // })
             it("Report already merged", async() => {
                 for(let i=1; i < 6; i++)
                     await setupOracle(`oracle${i}`)
 
-                const r1 = { protocol_id: 0, round: 10, units: 100 }
-                const r2 = { protocol_id: 0, round: 10, units: 105 }
+                const r1 = { protocol_id: 0, round: 11, units: 100 }
+                const r2 = { protocol_id: 0, round: 11, units: 105 }
 
                 await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
                 addRounds(12)
 
                 for(let i=1; i < 5; i++)
                     await act("pwrreport", { oracle: `oracle${i}`, boid_id_scope: boid_id, report: i % 2 ? r1 : r2 }, `oracle${i}`)
-
+                chain.addTime(TimePointSec.fromInteger(10000))
                 await act("mergereports", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2)] })
                 await expectToThrow(
                     act("pwrreport", { oracle: "oracle5", boid_id_scope: boid_id, report: r1 }, "oracle5"),
@@ -186,22 +186,22 @@ describe("reports", async() => {
             addRounds(34)
             // @ts-ignore
             chain.addTime(TimePointSec.fromInteger(111111))
-            await act("oracleset", { account: "oracle1", weight: 10, adding_collateral: 0 })
+            await act("oracleset", { oracle: "oracle1", weight: 10, adding_collateral: 0 })
             await act("setstandby", { oracle: "oracle1", standby: false })
-            await act("oracleset", { account: "oracle2", weight: 10, adding_collateral: 0 })
+            await act("oracleset", { oracle: "oracle2", weight: 10, adding_collateral: 0 })
             await act("setstandby", { oracle: "oracle2", standby: false })
-            await act("oracleset", { account: "oracle3", weight: 10, adding_collateral: 0 })
+            await act("oracleset", { oracle: "oracle3", weight: 10, adding_collateral: 0 })
             await act("setstandby", { oracle: "oracle3", standby: false })
-            await act("oracleset", { account: "oracle4", weight: 10, adding_collateral: 0 })
+            await act("oracleset", { oracle: "oracle4", weight: 10, adding_collateral: 0 })
             await act("setstandby", { oracle: "oracle4", standby: false })
             // console.log(oracles())
             // console.log(global())
             // await act("thisround")
             let reportsArray = [
-              { protocol_id: 0, round: 33, units: 7 },
-              { protocol_id: 0, round: 33, units: 8 },
-              { protocol_id: 0, round: 33, units: 10 },
-              { protocol_id: 0, round: 33, units: 11 }
+              { protocol_id: 0, round: 35, units: 7 },
+              { protocol_id: 0, round: 35, units: 8 },
+              { protocol_id: 0, round: 35, units: 10 },
+              { protocol_id: 0, round: 35, units: 11 }
             ]
 
             await act("protoset", { protocol: { protocol_id: 0, protocol_name: "fah", unitPowerMult: 1,active:true } })
@@ -214,12 +214,12 @@ describe("reports", async() => {
             await act("pwrreport", { oracle: "oracle4", boid_id_scope: "testaccount", report: reportsArray[3] }, "oracle4@active")
             // console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
 
-            console.log(reports("testaccount"))
-            console.log(global())
-            await act("mergereports", { boid_id_scope: "testaccount", pwrreport_ids: reportsArray.map(r => getReportId(r)) })
-            console.log("chain console:", chain.console)
             // console.log(reports("testaccount"))
-            expect(reports("testaccount").length).eq(5)
+            // console.log(global())
+            await act("mergereports", { boid_id_scope: "testaccount", pwrreport_ids: reportsArray.map(r => getReportId(r)) })
+            // console.log("chain console:", chain.console)
+            // console.log(reports("testaccount"))
+            expect(reports("testaccount").length).eq(4)
         })
         it("merge 3", async() => {
         // console.log(JSON.stringify(boid.permissions, null, 2))
@@ -231,19 +231,19 @@ describe("reports", async() => {
         addRounds(34)
         // @ts-ignore
         chain.addTime(TimePointSec.fromInteger(111111))
-        await act("oracleset", { account: "oracle1", weight: 10, adding_collateral: 0 })
+        await act("oracleset", { oracle: "oracle1", weight: 10, adding_collateral: 0 })
         await act("setstandby", { oracle: "oracle1", standby: false })
-        await act("oracleset", { account: "oracle2", weight: 10, adding_collateral: 0 })
+        await act("oracleset", { oracle: "oracle2", weight: 10, adding_collateral: 0 })
         await act("setstandby", { oracle: "oracle2", standby: false })
-        await act("oracleset", { account: "oracle3", weight: 10, adding_collateral: 0 })
+        await act("oracleset", { oracle: "oracle3", weight: 10, adding_collateral: 0 })
         await act("setstandby", { oracle: "oracle3", standby: false })
-        await act("oracleset", { account: "oracle4", weight: 10, adding_collateral: 0 })
+        await act("oracleset", { oracle: "oracle4", weight: 10, adding_collateral: 0 })
         await act("setstandby", { oracle: "oracle4", standby: false })
 
         let reportsArray = [
-            { protocol_id: 0, round: 33, units: 7 },
-            { protocol_id: 0, round: 33, units: 8 },
-            { protocol_id: 0, round: 33, units: 10 }
+            { protocol_id: 0, round: 35, units: 7 },
+            { protocol_id: 0, round: 35, units: 8 },
+            { protocol_id: 0, round: 35, units: 10 }
         ]
 
         await act("protoset", { protocol: { protocol_id: 0, protocol_name: "fah", unitPowerMult: 1 ,active:true} })
@@ -253,7 +253,7 @@ describe("reports", async() => {
         // console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
         // console.log(reports("testaccount"))
         await act("pwrreport", { oracle: "oracle3", boid_id_scope: "testaccount", report: reportsArray[2] }, "oracle3@active")
-        // await act("pwrreport", { oracle: "oracle4", boid_id_scope: "testaccount", report: { protocol_id: 0, round: 33, units: 13 } }, "oracle4@active")
+        // await act("pwrreport", { oracle: "oracle4", boid_id_scope: "testaccount", report: { protocol_id: 0, round: 35, units: 13 } }, "oracle4@active")
         // console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
         await act("mergereports", { boid_id_scope: "testaccount", pwrreport_ids: reportsArray.map(r => getReportId(r)) })
         // console.log(reports("testaccount"))
@@ -273,19 +273,19 @@ describe("reports", async() => {
         addRounds(34)
         // @ts-ignore
         chain.addTime(TimePointSec.fromInteger(111111))
-        await act("oracleset", { account: "oracle1", weight: 10, adding_collateral: 0 })
+        await act("oracleset", { oracle: "oracle1", weight: 10, adding_collateral: 0 })
         await act("setstandby", { oracle: "oracle1", standby: false })
-        await act("oracleset", { account: "oracle2", weight: 10, adding_collateral: 0 })
+        await act("oracleset", { oracle: "oracle2", weight: 10, adding_collateral: 0 })
         await act("setstandby", { oracle: "oracle2", standby: false })
-        await act("oracleset", { account: "oracle3", weight: 10, adding_collateral: 0 })
+        await act("oracleset", { oracle: "oracle3", weight: 10, adding_collateral: 0 })
         await act("setstandby", { oracle: "oracle3", standby: false })
-        await act("oracleset", { account: "oracle4", weight: 10, adding_collateral: 0 })
+        await act("oracleset", { oracle: "oracle4", weight: 10, adding_collateral: 0 })
         await act("setstandby", { oracle: "oracle4", standby: false })
 
         let reportsArray = [
-            { protocol_id: 0, round: 33, units: 7 },
-            { protocol_id: 0, round: 33, units: 8 },
-            { protocol_id: 0, round: 33, units: 20 }
+            { protocol_id: 0, round: 35, units: 7 },
+            { protocol_id: 0, round: 35, units: 8 },
+            { protocol_id: 0, round: 35, units: 20 }
         ]
 
         await act("protoset", { protocol: { protocol_id: 0, protocol_name: "fah", unitPowerMult: 1,active:true } })
@@ -295,11 +295,11 @@ describe("reports", async() => {
         // console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
         // console.log(reports("testaccount"))
         await act("pwrreport", { oracle: "oracle3", boid_id_scope: "testaccount", report: reportsArray[2] }, "oracle3@active")
-        // await act("pwrreport", { oracle: "oracle4", boid_id_scope: "testaccount", report: { protocol_id: 0, round: 33, units: 13 } }, "oracle4@active")
+        // await act("pwrreport", { oracle: "oracle4", boid_id_scope: "testaccount", report: { protocol_id: 0, round: 35, units: 13 } }, "oracle4@active")
         // console.log(chain.actionTraces.map(el => [el.action.toString(), JSON.stringify(el.decodedData, null, 2)]))
         // console.log(reports("testaccount"))
         await expectToThrow(
-            act("finishreport", { boid_id_scope: "testaccount", pwrreport_ids: reportsArray.map(r => getReportId(r)) }),
+            act("mergereports", { boid_id_scope: "testaccount", pwrreport_ids: reportsArray.map(r => getReportId(r)) }),
             "eosio_assert: report units 20 above maximum: 10"
         )
 
@@ -309,10 +309,7 @@ describe("reports", async() => {
         describe("validate finishreport checks", async() => {
             it("Invalid id provided", async() => {
                 await expectToThrow(
-                    act("finishreport", { boid_id_scope: Name.from("noaccount"), pwrreport_ids: [123] }),
-                    "eosio_assert: invalid id provided")
-                await expectToThrow(
-                    act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [123] }),
+                    act("mergereports", { boid_id_scope: boid_id, pwrreport_ids: [123,123] }),
                     "eosio_assert: invalid id provided")
             })
             it("Can't finalize/merge reports this early in a round", async() => {
@@ -320,8 +317,9 @@ describe("reports", async() => {
                 addRounds(11)
                 await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
                 await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1")
+                // console.log(reports(boid_id))
                 await expectToThrow(
-                    act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] }),
+                    act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) }),
                     "eosio_assert: can't finalize/merge reports this early in a round")
             })
             it("Aggregate approval_weight isn't high enough", async() => {
@@ -331,8 +329,8 @@ describe("reports", async() => {
                 await act("pwrreport", { oracle: "oracle1", boid_id_scope: boid_id, report }, "oracle1")
                 addRounds(1)
                 await expectToThrow(
-                    act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(report)] }),
-                    "eosio_assert: aggregate approval_weight isn't high enough 30 12")
+                    act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) }),
+                    "eosio_assert: aggregate approval_weight isn't high enough. Minimum:2 report has:1")
             })
             it("Can't merge reports already reported", async() => {
                 for(let i=1; i < 5; i++)
@@ -342,15 +340,16 @@ describe("reports", async() => {
                 const r2 = { protocol_id: 0, round: 10, units: 105 }
 
                 await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
-                addRounds(12)
+                addRounds(11)
 
                 await act("pwrreport", { oracle: `oracle1`, boid_id_scope: boid_id, report: r2}, `oracle1`)
                 await act("pwrreport", { oracle: `oracle2`, boid_id_scope: boid_id, report: r1}, `oracle2`)
                 await act("pwrreport", { oracle: `oracle3`, boid_id_scope: boid_id, report: r1}, `oracle3`)
-                await act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2)] })
+                chain.addTime(TimePointSec.fromInteger(100000))
+                await act("mergereports", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2)] })
                 await expectToThrow(
-                    act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId({ protocol_id: 0, round: 10, units: 102 })] }),
-                    "eosio_assert: can't merge reports already reported")
+                    act("mergereports", { boid_id_scope: boid_id, pwrreport_ids: [getReportId({ protocol_id: 0, round: 10, units: 102 })] }),
+                    "eosio_assert: must provide at least two reports to merge")
             })
             it("Protocol_ids must match", async() => {
                 await setupOracle("oracle1")
@@ -358,11 +357,11 @@ describe("reports", async() => {
                 const r2 = { protocol_id: 1, round: 10, units: 100 }
                 await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
                 await act("protoset", { protocol: { protocol_id: 1, protocol_name: "testproto", unitPowerMult: 1, active:true } })
-                addRounds(12)
+                addRounds(11)
                 await act("pwrreport", { oracle: `oracle1`, boid_id_scope: boid_id, report: r1}, `oracle1`)
                 await act("pwrreport", { oracle: `oracle1`, boid_id_scope: boid_id, report: r2}, `oracle1`)
                 await expectToThrow(
-                    act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2)]}),
+                    act("mergereports", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2)]}),
                     "eosio_assert: protocol_ids must match")
             })
             it("Rounds must match", async() => {
@@ -370,11 +369,12 @@ describe("reports", async() => {
                 const r1 = { protocol_id: 0, round: 10, units: 100 }
                 const r2 = { protocol_id: 0, round: 11, units: 100 }
                 await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
-                addRounds(13)
+                addRounds(11)
                 await act("pwrreport", { oracle: `oracle1`, boid_id_scope: boid_id, report: r1}, `oracle1`)
+                addRounds(1)
                 await act("pwrreport", { oracle: `oracle1`, boid_id_scope: boid_id, report: r2}, `oracle1`)
                 await expectToThrow(
-                    act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2)]}),
+                    act("mergereports", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2)]}),
                     "eosio_assert: rounds must match")
             })
             it("Can't merge reports already reported", async() => {
@@ -384,14 +384,15 @@ describe("reports", async() => {
                 const r1 = { protocol_id: 0, round: 10, units: 100 }
                 const r2 = { protocol_id: 0, round: 10, units: 105 }
                 await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
-                addRounds(12)
+                addRounds(11)
                 await act("pwrreport", { oracle: `oracle1`, boid_id_scope: boid_id, report: r1}, `oracle1`)
                 await act("pwrreport", { oracle: `oracle2`, boid_id_scope: boid_id, report: r1}, `oracle2`)
                 await act("pwrreport", { oracle: `oracle3`, boid_id_scope: boid_id, report: r2}, `oracle3`)
-                await act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2)]})
+                chain.addTime(TimePointSec.fromInteger(100000))
+                await act("mergereports", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2)]})
                 await expectToThrow(
-                    act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId({ protocol_id: 0, round: 10, units: 102 }), 123]}),
-                    "eosio_assert: can't merge reports already reported")
+                    act("mergereports", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2)]}),
+                    "eosio_assert: can't merge reports already merged")
             })
             it("Can't merge reports already merged", async() => {
                 await setupOracle("oracle1")
@@ -400,13 +401,14 @@ describe("reports", async() => {
                 const r1 = { protocol_id: 0, round: 10, units: 100 }
                 const r2 = { protocol_id: 0, round: 10, units: 105 }
                 await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
-                addRounds(12)
+                addRounds(11)
                 await act("pwrreport", { oracle: `oracle1`, boid_id_scope: boid_id, report: r1}, `oracle1`)
                 await act("pwrreport", { oracle: `oracle2`, boid_id_scope: boid_id, report: r1}, `oracle2`)
                 await act("pwrreport", { oracle: `oracle3`, boid_id_scope: boid_id, report: r2}, `oracle3`)
-                await act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2)]})
+                chain.addTime(TimePointSec.fromInteger(100000))
+                await act("mergereports", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2)]})
                 await expectToThrow(
-                    act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2)]}),
+                    act("mergereports", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2)]}),
                     "eosio_assert: can't merge reports already merged")
             })
             it("Can't finalize/merge reports this early in a round", async() => {
@@ -421,7 +423,7 @@ describe("reports", async() => {
                 await act("pwrreport", { oracle: `oracle2`, boid_id_scope: boid_id, report: r1}, `oracle2`)
                 await act("pwrreport", { oracle: `oracle3`, boid_id_scope: boid_id, report: r2}, `oracle3`)
                 await expectToThrow(
-                    act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2)]}),
+                    act("mergereports", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2)]}),
                     "eosio_assert: can't finalize/merge reports this early in a round")
             })
             it("Report units above maximum", async() => {
@@ -432,33 +434,36 @@ describe("reports", async() => {
                 const r2 = { protocol_id: 0, round: 10, units: 105 }
                 const r3 = { protocol_id: 0, round: 10, units: 220 }
                 await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
-                addRounds(12)
+                addRounds(11)
                 await act("pwrreport", { oracle: `oracle1`, boid_id_scope: boid_id, report: r1}, `oracle1`)
                 await act("pwrreport", { oracle: `oracle2`, boid_id_scope: boid_id, report: r2}, `oracle2`)
                 await act("pwrreport", { oracle: `oracle3`, boid_id_scope: boid_id, report: r3}, `oracle3`)
-                console.log(chain.console)
+                // console.log(chain.console)
+                chain.addTime(TimePointSec.fromInteger(100000))
                 await expectToThrow(
-                    act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2), getReportId(r3)]}),
+                    act("mergereports", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r2), getReportId(r3)]}),
                     "eosio_assert: report units 220 above maximum: 131")
             })
-            it("Aggregate approval_weight isn't high enough", async() => {
-                await setupOracle("oracle1")
-                const r1 = { protocol_id: 0, round: 10, units: 100 }
-                await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
-                addRounds(12)
-                await act("pwrreport", { oracle: `oracle1`, boid_id_scope: boid_id, report: r1}, `oracle1`)
-                await expectToThrow(
-                    act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r1)]}),
-                    "eosio_assert: aggregate approval_weight isn't high enough 30 24")
-            })
+            // it("Aggregate approval_weight isn't high enough", async() => {
+            //     await setupOracle("oracle1")
+            //     const r1 = { protocol_id: 0, round: 10, units: 100 }
+            //     await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
+            //     addRounds(11)
+            //     await act("pwrreport", { oracle: `oracle1`, boid_id_scope: boid_id, report: r1}, `oracle1`)
+            //     chain.addTime(TimePointSec.fromInteger(100000))
+            //     await expectToThrow(
+            //         act("mergereports", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r1)]}),
+            //         "eosio_assert: aggregate approval_weight isn't high enough 30 24")
+            // })
             it("Can't merge multiple reports that share same oracle", async() => {
                 await setupOracle("oracle1")
                 const r1 = { protocol_id: 0, round: 10, units: 100 }
                 await act("protoset", { protocol: { protocol_id: 0, protocol_name: "testproto", unitPowerMult: 1, active:true } })
-                addRounds(12)
+                addRounds(11)
                 await act("pwrreport", { oracle: `oracle1`, boid_id_scope: boid_id, report: r1}, `oracle1`)
+                chain.addTime(TimePointSec.fromInteger(100000))
                 await expectToThrow(
-                    act("finishreport", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r1), getReportId(r1)]}),
+                    act("mergereports", { boid_id_scope: boid_id, pwrreport_ids: [getReportId(r1), getReportId(r1), getReportId(r1)]}),
                     "eosio_assert: can't merge multiple reports that share same oracle: oracle1")
             })
         })

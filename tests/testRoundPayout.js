@@ -1,4 +1,4 @@
-function calculateBonusAndAPR(roundBonusPayReports, roundBonusPayProposed, reportsProposedAdjustPwr,numOraclesAdjustBase,collateralPctPay, reportedOrMerged, proposed, investedAmount, periodsPerYear,activeOracles) {
+export function calculateBonusAndAPR(roundBonusPayReports, roundBonusPayProposed, reportsProposedAdjustPwr,numOraclesAdjustBase,collateralPctPay, reportedOrMerged, proposed, investedAmount, periodsPerYear,activeOracles) {
     // Calculate the bonus payment
     let bonusPay = roundBonusPayReports * Math.pow(reportedOrMerged, reportsProposedAdjustPwr) + roundBonusPayProposed * Math.pow(proposed, reportsProposedAdjustPwr);
     bonusPay = bonusPay / Math.pow(numOraclesAdjustBase, activeOracles);
@@ -19,8 +19,6 @@ const configPayment = {
     reports_proposed_adjust_pwr: .42,
     num_oracles_adjust_base:1.015
   }
-
-
 // Additional Parameters
 const activeOracles = 20
 const oracleCollateral = 5000000

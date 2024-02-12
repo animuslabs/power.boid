@@ -219,30 +219,27 @@ export class PwrReportActions extends OracleActions {
     const global = this.globalT.get()
     this.updateStats(global)
 
-    let mergedRow = targetReports[0]
-    let medianUnits:u32 = targetReports[0].report.units
-    if (targetReports.length > 1) {
-      // find the median
-      targetReports.sort((a:PwrReportRow, b:PwrReportRow) => a.report.units - b.report.units)
-      let half = i32(Math.floor(targetReports.length / 2))
+    let medianUnits:u32 = 0
+    // find the median
+    targetReports.sort((a:PwrReportRow, b:PwrReportRow) => a.report.units - b.report.units)
+    let half = i32(Math.floor(targetReports.length / 2))
 
-      if (targetReports.length % 2) medianUnits = targetReports[half].report.units
-      else medianUnits = u32((targetReports[half - 1].report.units + targetReports[half].report.units) / 2)
+    if (targetReports.length % 2) medianUnits = targetReports[half].report.units
+    else medianUnits = u32((targetReports[half - 1].report.units + targetReports[half].report.units) / 2)
 
-      //find safe min/max values
-      const safeAmount = Math.max(f32(medianUnits) * config.consensus.merge_deviation_pct, 1)
-      const safeMax = u32(medianUnits + safeAmount)
-      check(safeMax >= medianUnits, "safeMax max reached")
-      const safeMin = u32(Math.max(f32(medianUnits) - safeAmount, 1))
+    //find safe min/max values
+    const safeAmount = Math.max(f32(medianUnits) * config.consensus.merge_deviation_pct, 1)
+    const safeMax = u32(medianUnits + safeAmount)
+    check(safeMax >= medianUnits, "safeMax max reached")
+    const safeMin = u32(Math.max(f32(medianUnits) - safeAmount, 1))
 
-      // ensure each report is a safe range from the median
-      for (let i = 0; i < targetReports.length; i++) {
-        const pwrReport = targetReports[i]
-        check(pwrReport.report.units <= safeMax, "report units " + pwrReport.report.units.toString() + " above maximum: " + safeMax.toString())
-        check(pwrReport.report.units >= safeMin, "report units " + pwrReport.report.units.toString() + " below required minimum: " + safeMin.toString())
-      }
-      mergedRow = targetReports[half]
+    // ensure each report is a safe range from the median
+    for (let i = 0; i < targetReports.length; i++) {
+      const pwrReport = targetReports[i]
+      check(pwrReport.report.units <= safeMax, "report units " + pwrReport.report.units.toString() + " above maximum: " + safeMax.toString())
+      check(pwrReport.report.units >= safeMin, "report units " + pwrReport.report.units.toString() + " below required minimum: " + safeMin.toString())
     }
+    const mergedRow = targetReports[half]
 
     // aggregate weights and see if it's above the minimum
     aggregateWeight = targetReports.reduce((a:u16, b:PwrReportRow) => a + b.approval_weight, u16(0))
@@ -250,17 +247,10 @@ export class PwrReportActions extends OracleActions {
     print("\n aggregate: " + aggregateWeight.toString())
     check(aggregateWeight >= this.minWeightThreshold(config, global), "aggregate approval_weight isn't high enough " + this.minWeightThreshold(config, global).toString() + " " + aggregateWeight.toString())
 
-    // create or update merged report
-    if (targetReports.length % 2) {
-      mergedRow.reported = true
-      if (targetReports.length > 1) {
-        mergedRow.approvals.push(Name.fromString("merged.boid"))
-      }
-    } else {
-      const newReport:PwrReport = { protocol_id: u8(targetProtocol), round: u16(targetRound), units: medianUnits }
-      mergedRow = new PwrReportRow(Name.fromString("merged.boid"), newReport, [Name.fromString("merged.boid")], aggregateWeight, true, false)
-      this.pwrReportsT(boid_id_scope).store(mergedRow, this.receiver)
-    }
+    mergedRow.reported = true
+    mergedRow.merged = true
+    mergedRow.approvals.push(Name.fromString("merged.boid"))
+
     this.sendReport(boid_id_scope, mergedRow.report)
 
     let allOracles:Name[] = []
