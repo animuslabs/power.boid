@@ -1,6 +1,6 @@
 import { RoundCommit } from "../tables/roundCommit"
 import { check, Name, requireAuth, Table, TableStore } from "proton-tsc"
-import { Config } from "../tables/config"
+import { PwrConfig } from "../tables/config"
 import { OStatsActions } from "./6-ostats"
 import { OracleStat } from "../tables/oracleStats"
 
@@ -146,7 +146,7 @@ export class TableCleanActions extends OStatsActions {
     this.statsClean()
   }
 
-  statsClean(config:Config = this.getConfig()):void {
+  statsClean(config:PwrConfig = this.getConfig()):void {
     const cleanupOlder = u32(Math.max(i32(this.currentRound()) - config.keep_finalized_stats_rows, 0))
     this.loopStatsCleanup(cleanupOlder)
   }
@@ -162,7 +162,7 @@ export class TableCleanActions extends OStatsActions {
 
   @action("commitsclean")
   roundCommitsCleanup(scope:Name):void {
-    const config:Config = this.getConfig()
+    const config:PwrConfig = this.getConfig()
     this.statsClean(config)
     const cleanupOlder = u32(Math.max(i32(this.currentRound()) - config.keep_finalized_stats_rows, 0))
     check(cleanupOlder != 0, "can't cleanup commits yet")
@@ -176,5 +176,22 @@ export class TableCleanActions extends OStatsActions {
     const cleanupOlder = u32(Math.max(i32(this.currentRound()) - config.keep_finalized_stats_rows, 0))
     check(cleanupOlder != 0, "can't cleanup oStats yet")
     this.loopOstatsCleanup(scope, cleanupOlder)
+  }
+
+  // delete reports for rounds other than the current one
+  @action("cpidrepclean")
+  cpidReportsClean(boid_id_scope:Name):void {
+    const round = this.currentRound()
+    const reportsT = this.cpidReportsT(boid_id_scope)
+    let next = reportsT.first()
+    for (let i = 0; i < 50; i++) {
+      const row = next
+      if (!row) break
+      if (row.round == round) break
+      else {
+        next = reportsT.next(row)
+        reportsT.remove(row)
+      }
+    }
   }
 }

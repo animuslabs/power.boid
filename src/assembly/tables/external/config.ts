@@ -38,7 +38,7 @@ export class ConfigMint {
 @packer
 export class ConfigTeam {
   change_min_rounds:u16 = 0 // minimum rounds an account must wait before changing teams
-  edit_team_min_rounds:u16 = 0 //minimum rounds a team owner must wait before chaning teams
+  edit_team_min_rounds:u16 = 0 //minimum rounds a team owner must wait before editing team meta or inflation
   team_edit_max_pct_change:u16 = 0 // maximum that team tax and owner cut can be adjusted (up or down) with each edit
   buy_team_cost:u32 = 0 // BOID required to create a team
   owner_stake_required:u32 = 0 // BOID stake required to create a team

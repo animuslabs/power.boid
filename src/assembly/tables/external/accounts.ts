@@ -40,9 +40,9 @@ export class AccountBooster {
 export class AccountPower {
   last_claimed_round:u16 = 0
   last_added_round:u16 = 0
-  rating:u32 = 0
+  rating:u16 = 0
   history:u16[] = []
-  mods:AccountBooster[] = []
+  boosters:AccountBooster[] = []
 }
 
 @packer

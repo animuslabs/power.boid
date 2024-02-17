@@ -1,17 +1,17 @@
 import { Asset, Table, Name, EMPTY_NAME } from "proton-tsc"
-import { Global } from "./global"
+import { PwrGlobal } from "./global"
 
 /**
  * This table is updated each round by comparing the global table with the previous stats round
  * @extends Table
  */
 @table("stats")
-export class Stat extends Table {
+export class PwrStat extends Table {
   constructor(
     // the round when this row was created
     public round:u16 = 0,
     // a copy of the global table when this row was created
-    public starting_global:Global = new Global(),
+    public starting_global:PwrGlobal = new PwrGlobal(),
     // the difference between the current global and the previous round stats row
     public reported_since_previous:u32 = 0,
     // the difference between the current global and the previous round stats row

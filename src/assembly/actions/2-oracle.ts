@@ -66,6 +66,7 @@ export class OracleActions extends GlobalActions {
 
   @action("setweight")
   setWeight(oracle:Name, weight:u8):void {
+    requireAuth(this.receiver)
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
     check(oracleRow.standby, "oracle must be in standby to set weight")
     oracleRow.weight = weight

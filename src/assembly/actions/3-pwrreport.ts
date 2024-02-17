@@ -5,11 +5,23 @@ import { Oracle } from "../tables/oracles"
 import { OracleStat } from "../tables/oracleStats"
 import { PwrReport, PwrReportRow } from "../tables/pwrreports"
 import { OracleActions } from "./2-oracle"
+import { CPIDReport } from "../tables/cpidReport"
 @packer
 export class PowerAddParams extends ActionData {
   constructor(
     public boid_id:Name = EMPTY_NAME,
     public power:u16 = 0
+  ) {
+    super()
+  }
+}
+
+@packer
+export class CPIDSetParams extends ActionData {
+  constructor(
+    public protocol_id:u64 = 0,
+    public boid_id:Name = EMPTY_NAME,
+    public cpid_bytes:u8[] = []
   ) {
     super()
   }
@@ -27,6 +39,38 @@ export class PwrReportActions extends OracleActions {
     const data = new PowerAddParams(boid_id, power)
     const action = new Action(Name.fromString("boid"), Name.fromString("power.add"), [new PermissionLevel(Name.fromString("boid"), Name.fromString("active"))], data.pack())
     action.send()
+  }
+
+  sendCPIDSet(boid_id:Name, protocol_id:u64, cpid_bytes:u8[]):void {
+    const data = new CPIDSetParams(protocol_id, boid_id, cpid_bytes)
+    const action = new Action(Name.fromString("power.boid"), Name.fromString("cpidset"), [new PermissionLevel(Name.fromString("power.boid"), Name.fromString("active"))], data.pack())
+    action.send()
+  }
+
+  @action("cpidreport")
+  cpidReport(oracle:Name, protocol_id:u8, boid_id_scope:Name, cpid_bytes:u8[]):void {
+    requireAuth(oracle)
+    const config = this.getConfig()
+    const round = this.currentRound()
+    const rowId = u64(protocol_id + round)
+    const cpidReports = this.cpidReportsT(boid_id_scope)
+    check(this.boincMetaT.exists(u64(protocol_id)), "boinc protocol meta doesn't exist")
+    let thisReport = cpidReports.get(rowId)
+    const oracleRow = this.oraclesT.requireGet(oracle.value, "invalid oracle")
+    check(!oracleRow.standby, "oracle is in standby mode, disable standby first to start making reports")
+    if (thisReport) {
+      check(!thisReport.approvals.includes(oracle), "oracle already reported cpid for current round+protocol")
+      check(thisReport.cpid_bytes.toString() == cpid_bytes.toString(), "cpid of existing report doesn't match")
+      thisReport.approvals.push(oracle)
+      thisReport.approval_weight += oracleRow.weight
+    } else {
+      thisReport = new CPIDReport(protocol_id, cpid_bytes, round, [oracle], oracleRow.weight)
+      cpidReports.store(thisReport, this.receiver)
+    }
+    if (thisReport.approval_weight >= this.minWeightThreshold(config)) {
+      this.sendCPIDSet(boid_id_scope, u64(protocol_id), cpid_bytes)
+      cpidReports.remove(thisReport)
+    }
   }
 
   /**

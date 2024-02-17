@@ -39,7 +39,6 @@ export class PwrReportRow extends Table {
 
   /**
   * calculates a unique report ID based on the report metadata
-  * @todo move to the pwreports primary index function
   * @param {PwrReport} report
   * @return {*}  {u64}
   * @memberof PwrReportActions

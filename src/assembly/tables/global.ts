@@ -12,7 +12,7 @@ export class GlobalReports {
   proposed:u64 = 0
 }
 @table("global", singleton)
-export class Global extends Table {
+export class PwrGlobal extends Table {
   constructor(
     /** this vector is cleared at the start of each round and the first time an oracle makes a report during the round they are added */
     public active_oracles:Name[] = [],

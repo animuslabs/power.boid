@@ -6,6 +6,7 @@
     "test:ostats": "mocha -b ./ostats.spec.js",
     "test:pwrreport": "mocha -b ./pwrreport.spec.js",
     "test:slash": "mocha -b ./slash.spec.js",
+    "test:cpid": "mocha -b ./cpid.spec.js",
     "test:s": "mocha -b ./scenarios.spec.js"
   },
   "type": "module",

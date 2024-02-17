@@ -96,7 +96,8 @@ export class OStatsActions extends DepositActions {
     this.oraclesT.update(oracleRow, this.receiver)
     const global = this.globalT.get()
     global.rewards_paid += payQuantity
-    this.sendWholeBoid(Name.fromString("tknmint.boid"), this.receiver, payQuantity, "payoracle:" + oracle.toString() + " round:" + round.toString())
+    // this.sendWholeBoid(Name.fromString("tknmint.boid"), this.receiver, payQuantity, "payoracle:" + oracle.toString() + " round:" + round.toString())
+    this.sendWholeBoid(Name.fromString("mint.boid"), this.receiver, payQuantity, "payoracle:" + oracle.toString() + " round:" + round.toString())
     this.globalT.set(global, this.receiver)
   }
 
@@ -104,7 +105,7 @@ export class OStatsActions extends DepositActions {
   payoutRound(oracle:Name, round:u16):void {
     const config = this.getConfig()
     const global = this.globalT.get()
-    check(round < this.currentRound() - 2, "can't process this round yet, not yet finalized")
+    check(round < this.currentRound() - 1, "can't process this round yet, not yet finalized")
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
     // get config, global and oracle stats
     const oStatsT = this.oracleStatsT(oracle)

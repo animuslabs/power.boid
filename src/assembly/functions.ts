@@ -1,6 +1,6 @@
 import { EMPTY_NAME, Name } from "proton-tsc"
 import { PwrReport, PwrReportRow } from "./tables/pwrreports"
-import { Global } from "./tables/global"
+import { PwrGlobal } from "./tables/global"
 
 @packer
 class TryFinalizeReportParams {
@@ -9,7 +9,7 @@ class TryFinalizeReportParams {
   shouldFinalizeReport:boolean = false
   sendReport:(boid_id:Name, report:PwrReport) =>void = () => {}
   boid_id:Name = EMPTY_NAME
-  global:Global = new Global()
+  global:PwrGlobal = new PwrGlobal()
 }
 export function tryFinalizeReport(params:TryFinalizeReportParams):boolean {
   const { report, minWeightThreashold, shouldFinalizeReport, sendReport, boid_id, global } = params

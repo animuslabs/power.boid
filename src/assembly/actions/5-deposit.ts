@@ -26,6 +26,7 @@ export class DepositActions extends ProtoActions {
       if (params.from == this.receiver) return
       if (params.from == Name.fromString("stake.boid")) return
       if (params.from == Name.fromString("tknmint.boid")) return
+      if (params.from == Name.fromString("mint.boid")) return
       check(params.to == this.receiver, "Invalid Deposit")
       check(params.quantity.symbol.value == boidSym, "invalid token symbol")
       check(params.quantity.isValid(), "invalid quantity")

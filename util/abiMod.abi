@@ -2,6 +2,52 @@
   "version": "eosio::abi/1.2",
   "structs": [
     {
+      "name": "Account",
+      "base": "",
+      "fields": [
+        {
+          "name": "boid_id",
+          "type": "name"
+        },
+        {
+          "name": "owners",
+          "type": "name[]"
+        },
+        {
+          "name": "auth",
+          "type": "AccountAuth"
+        },
+        {
+          "name": "sponsors",
+          "type": "name[]"
+        },
+        {
+          "name": "stake",
+          "type": "AccountStake"
+        },
+        {
+          "name": "power",
+          "type": "AccountPower"
+        },
+        {
+          "name": "team",
+          "type": "AccountTeam"
+        },
+        {
+          "name": "balance",
+          "type": "uint32"
+        },
+        {
+          "name": "nft_balance",
+          "type": "uint16"
+        },
+        {
+          "name": "recoverable",
+          "type": "bool"
+        }
+      ]
+    },
+    {
       "name": "AccountAuth",
       "base": "",
       "fields": [
@@ -16,25 +62,7 @@
       ]
     },
     {
-      "name": "AccountPower",
-      "base": "",
-      "fields": [
-        {
-          "name": "last_claimed_round",
-          "type": "uint16"
-        },
-        {
-          "name": "rating",
-          "type": "uint16"
-        },
-        {
-          "name": "mods",
-          "type": "AccountPowerMod[]"
-        }
-      ]
-    },
-    {
-      "name": "AccountPowerMod",
+      "name": "AccountBooster",
       "base": "",
       "fields": [
         {
@@ -52,6 +80,32 @@
         {
           "name": "aggregate_pwr_remaining",
           "type": "uint32"
+        }
+      ]
+    },
+    {
+      "name": "AccountPower",
+      "base": "",
+      "fields": [
+        {
+          "name": "last_claimed_round",
+          "type": "uint16"
+        },
+        {
+          "name": "last_added_round",
+          "type": "uint16"
+        },
+        {
+          "name": "rating",
+          "type": "uint16"
+        },
+        {
+          "name": "history",
+          "type": "uint16[]"
+        },
+        {
+          "name": "boosters",
+          "type": "AccountBooster[]"
         }
       ]
     },
@@ -79,7 +133,7 @@
       "fields": [
         {
           "name": "team_id",
-          "type": "uint16"
+          "type": "uint8"
         },
         {
           "name": "last_edit_round",
@@ -96,16 +150,78 @@
       ]
     },
     {
-      "name": "AtomicFormat",
+      "name": "BoincCPID",
       "base": "",
       "fields": [
         {
-          "name": "name",
+          "name": "boid_id",
+          "type": "name"
+        },
+        {
+          "name": "cpid_bytes",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "BoincMeta",
+      "base": "",
+      "fields": [
+        {
+          "name": "protocol_id",
+          "type": "uint64"
+        },
+        {
+          "name": "url",
           "type": "string"
         },
         {
-          "name": "type",
-          "type": "string"
+          "name": "teamId",
+          "type": "uint64"
+        },
+        {
+          "name": "meta",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "CPIDReport",
+      "base": "",
+      "fields": [
+        {
+          "name": "protocol_id",
+          "type": "uint8"
+        },
+        {
+          "name": "cpid_bytes",
+          "type": "bytes"
+        },
+        {
+          "name": "round",
+          "type": "uint16"
+        },
+        {
+          "name": "approvals",
+          "type": "name[]"
+        },
+        {
+          "name": "approval_weight",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "name": "CollateralConfig",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle_collateral_deposit_increment",
+          "type": "uint32"
+        },
+        {
+          "name": "oracle_collateral_minimum",
+          "type": "uint32"
         }
       ]
     },
@@ -114,92 +230,52 @@
       "base": "",
       "fields": [
         {
+          "name": "account",
+          "type": "ConfigAccount"
+        },
+        {
+          "name": "power",
+          "type": "ConfigPower"
+        },
+        {
+          "name": "mint",
+          "type": "ConfigMint"
+        },
+        {
+          "name": "team",
+          "type": "ConfigTeam"
+        },
+        {
+          "name": "stake",
+          "type": "ConfigStake"
+        },
+        {
+          "name": "time",
+          "type": "ConfigTime"
+        },
+        {
+          "name": "auth",
+          "type": "ConfigAuth"
+        },
+        {
+          "name": "nft",
+          "type": "ConfigNft"
+        },
+        {
           "name": "paused",
           "type": "bool"
         },
         {
-          "name": "min_consensus_weight",
-          "type": "uint32"
+          "name": "allow_deposits",
+          "type": "bool"
         },
         {
-          "name": "min_consensus_pct",
-          "type": "float32"
+          "name": "allow_withdrawals",
+          "type": "bool"
         },
         {
-          "name": "collateral_pct_pay_per_round",
-          "type": "float32"
-        },
-        {
-          "name": "round_bonus_pay_reports",
-          "type": "uint32"
-        },
-        {
-          "name": "round_bonus_pay_proposed",
-          "type": "uint32"
-        },
-        {
-          "name": "slash_threshold_pct",
-          "type": "float32"
-        },
-        {
-          "name": "slash_quantity_static",
-          "type": "uint32"
-        },
-        {
-          "name": "slash_quantity_collateral_pct",
-          "type": "float32"
-        },
-        {
-          "name": "withdraw_rounds_wait",
-          "type": "uint16"
-        },
-        {
-          "name": "keep_finalized_stats_rows",
-          "type": "uint32"
-        },
-        {
-          "name": "reports_finalized_after_rounds",
-          "type": "uint8"
-        },
-        {
-          "name": "unlock_wait_rounds",
-          "type": "uint16"
-        },
-        {
-          "name": "first_unlock_wait_rounds",
-          "type": "uint16"
-        },
-        {
-          "name": "standby_toggle_interval_rounds",
-          "type": "uint16"
-        },
-        {
-          "name": "weight_collateral_pwr",
-          "type": "float32"
-        },
-        {
-          "name": "oracle_collateral_deposit_increment",
-          "type": "uint32"
-        },
-        {
-          "name": "reports_accumulate_weight_round_pct",
-          "type": "float32"
-        },
-        {
-          "name": "weight_collateral_divisor",
-          "type": "float32"
-        },
-        {
-          "name": "merge_deviation_pct",
-          "type": "float32"
-        },
-        {
-          "name": "oracle_expected_active_after_rounds",
-          "type": "uint16"
-        },
-        {
-          "name": "min_pay_report_share_threshold",
-          "type": "float32"
+          "name": "recoveryAccount",
+          "type": "name"
         }
       ]
     },
@@ -224,11 +300,7 @@
           "type": "uint8"
         },
         {
-          "name": "max_sponsors",
-          "type": "uint8"
-        },
-        {
-          "name": "max_pwrmods",
+          "name": "max_boosters",
           "type": "uint8"
         },
         {
@@ -276,32 +348,6 @@
       ]
     },
     {
-      "name": "ConfigAutoAdjust",
-      "base": "",
-      "fields": [
-        {
-          "name": "target_inflation_per_round",
-          "type": "uint32"
-        },
-        {
-          "name": "power_mult_max_adjust",
-          "type": "float32"
-        },
-        {
-          "name": "powered_stake_mult_max_adjust",
-          "type": "float32"
-        },
-        {
-          "name": "adjustment_interval_rounds",
-          "type": "uint16"
-        },
-        {
-          "name": "max_check_rounds",
-          "type": "uint16"
-        }
-      ]
-    },
-    {
       "name": "ConfigMint",
       "base": "",
       "fields": [
@@ -334,23 +380,11 @@
       "base": "",
       "fields": [
         {
-          "name": "round_decay_constant",
-          "type": "uint16"
-        },
-        {
-          "name": "round_decay_mult",
-          "type": "float32"
-        },
-        {
           "name": "sponsor_tax_mult",
           "type": "float32"
         },
         {
           "name": "powered_stake_mult",
-          "type": "float32"
-        },
-        {
-          "name": "powered_stake_pwr",
           "type": "float32"
         },
         {
@@ -362,8 +396,8 @@
           "type": "uint16"
         },
         {
-          "name": "dev_fund_tax_mult",
-          "type": "float32"
+          "name": "history_slots_length",
+          "type": "uint8"
         }
       ]
     },
@@ -416,8 +450,8 @@
       "base": "",
       "fields": [
         {
-          "name": "rounds_start",
-          "type": "time_point"
+          "name": "rounds_start_sec_since_epoch",
+          "type": "uint32"
         },
         {
           "name": "round_length_sec",
@@ -426,50 +460,20 @@
       ]
     },
     {
-      "name": "ExtendedSymbol",
+      "name": "ConsensusConfig",
       "base": "",
       "fields": [
         {
-          "name": "sym",
-          "type": "symbol"
+          "name": "min_weight",
+          "type": "uint32"
         },
         {
-          "name": "contract",
-          "type": "name"
-        }
-      ]
-    },
-    {
-      "name": "Global",
-      "base": "",
-      "fields": [
-        {
-          "name": "active_oracles",
-          "type": "name[]"
+          "name": "min_weight_pct",
+          "type": "float32"
         },
         {
-          "name": "expected_active_oracles",
-          "type": "name[]"
-        },
-        {
-          "name": "standby_oracles",
-          "type": "uint8"
-        },
-        {
-          "name": "expected_active_weight",
-          "type": "uint16"
-        },
-        {
-          "name": "reports",
-          "type": "GlobalReports"
-        },
-        {
-          "name": "rewards_paid",
-          "type": "uint64"
-        },
-        {
-          "name": "active_weight",
-          "type": "uint16"
+          "name": "merge_deviation_pct",
+          "type": "float32"
         }
       ]
     },
@@ -521,10 +525,6 @@
         },
         {
           "name": "last_standby_toggle_round",
-          "type": "uint16"
-        },
-        {
-          "name": "expected_active_after_round",
           "type": "uint16"
         }
       ]
@@ -600,6 +600,32 @@
       ]
     },
     {
+      "name": "PaymentConfig",
+      "base": "",
+      "fields": [
+        {
+          "name": "collateral_pct_pay_per_round_mult",
+          "type": "float32"
+        },
+        {
+          "name": "round_bonus_pay_reports",
+          "type": "uint32"
+        },
+        {
+          "name": "round_bonus_pay_proposed",
+          "type": "uint32"
+        },
+        {
+          "name": "reports_proposed_adjust_pwr",
+          "type": "float32"
+        },
+        {
+          "name": "num_oracles_adjust_base",
+          "type": "float32"
+        }
+      ]
+    },
+    {
       "name": "Protocol",
       "base": "",
       "fields": [
@@ -618,6 +644,94 @@
         {
           "name": "active",
           "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "PwrConfig",
+      "base": "",
+      "fields": [
+        {
+          "name": "paused",
+          "type": "bool"
+        },
+        {
+          "name": "consensus",
+          "type": "ConsensusConfig"
+        },
+        {
+          "name": "payment",
+          "type": "PaymentConfig"
+        },
+        {
+          "name": "slashLow",
+          "type": "SlashConfig"
+        },
+        {
+          "name": "slashMed",
+          "type": "SlashConfig"
+        },
+        {
+          "name": "slashHigh",
+          "type": "SlashConfig"
+        },
+        {
+          "name": "waits",
+          "type": "WaitConfig"
+        },
+        {
+          "name": "collateral",
+          "type": "CollateralConfig"
+        },
+        {
+          "name": "keep_finalized_stats_rows",
+          "type": "uint32"
+        },
+        {
+          "name": "standby_toggle_interval_rounds",
+          "type": "uint16"
+        },
+        {
+          "name": "min_pay_report_share_threshold",
+          "type": "float32"
+        },
+        {
+          "name": "reports_accumulate_weight_round_pct",
+          "type": "float32"
+        }
+      ]
+    },
+    {
+      "name": "PwrGlobal",
+      "base": "",
+      "fields": [
+        {
+          "name": "active_oracles",
+          "type": "name[]"
+        },
+        {
+          "name": "expected_active_oracles",
+          "type": "name[]"
+        },
+        {
+          "name": "standby_oracles",
+          "type": "uint8"
+        },
+        {
+          "name": "expected_active_weight",
+          "type": "uint16"
+        },
+        {
+          "name": "reports",
+          "type": "GlobalReports"
+        },
+        {
+          "name": "rewards_paid",
+          "type": "uint64"
+        },
+        {
+          "name": "active_weight",
+          "type": "uint16"
         }
       ]
     },
@@ -670,6 +784,40 @@
       ]
     },
     {
+      "name": "PwrStat",
+      "base": "",
+      "fields": [
+        {
+          "name": "round",
+          "type": "uint16"
+        },
+        {
+          "name": "starting_global",
+          "type": "PwrGlobal"
+        },
+        {
+          "name": "reported_since_previous",
+          "type": "uint32"
+        },
+        {
+          "name": "unreported_unmerged_since_previous",
+          "type": "uint32"
+        },
+        {
+          "name": "proposed_since_previous",
+          "type": "uint32"
+        },
+        {
+          "name": "rewarded_since_previous",
+          "type": "uint32"
+        },
+        {
+          "name": "valid_proposed_since_previous",
+          "type": "uint32"
+        }
+      ]
+    },
+    {
       "name": "Reports",
       "base": "",
       "fields": [
@@ -678,7 +826,7 @@
           "type": "uint32"
         },
         {
-          "name": "reported_merged",
+          "name": "reported_or_merged",
           "type": "uint32"
         },
         {
@@ -710,36 +858,16 @@
       ]
     },
     {
-      "name": "Stat",
+      "name": "SlashConfig",
       "base": "",
       "fields": [
         {
-          "name": "round",
-          "type": "uint16"
-        },
-        {
-          "name": "starting_global",
-          "type": "Global"
-        },
-        {
-          "name": "reported_since_previous",
+          "name": "slash_quantity_static",
           "type": "uint32"
         },
         {
-          "name": "unreported_unmerged_since_previous",
-          "type": "uint32"
-        },
-        {
-          "name": "proposed_since_previous",
-          "type": "uint32"
-        },
-        {
-          "name": "rewarded_since_previous",
-          "type": "uint32"
-        },
-        {
-          "name": "valid_proposed_since_previous",
-          "type": "uint32"
+          "name": "slash_quantity_collateral_pct",
+          "type": "float32"
         }
       ]
     },
@@ -754,6 +882,30 @@
         {
           "name": "quantity",
           "type": "uint32"
+        }
+      ]
+    },
+    {
+      "name": "WaitConfig",
+      "base": "",
+      "fields": [
+        {
+          "name": "withdraw_rounds_wait",
+          "type": "uint16"
+        },
+        {
+          "name": "collateral_unlock_wait_rounds",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "name": "boincset",
+      "base": "",
+      "fields": [
+        {
+          "name": "boincMeta",
+          "type": "BoincMeta"
         }
       ]
     },
@@ -778,7 +930,57 @@
       "fields": [
         {
           "name": "config",
-          "type": "Config"
+          "type": "PwrConfig"
+        }
+      ]
+    },
+    {
+      "name": "cpidrepclean",
+      "base": "",
+      "fields": [
+        {
+          "name": "boid_id_scope",
+          "type": "name"
+        }
+      ]
+    },
+    {
+      "name": "cpidreport",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        },
+        {
+          "name": "protocol_id",
+          "type": "uint8"
+        },
+        {
+          "name": "boid_id_scope",
+          "type": "name"
+        },
+        {
+          "name": "cpid_bytes",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "cpidset",
+      "base": "",
+      "fields": [
+        {
+          "name": "protocol_id",
+          "type": "uint64"
+        },
+        {
+          "name": "boid_id",
+          "type": "name"
+        },
+        {
+          "name": "cpid_bytes",
+          "type": "bytes"
         }
       ]
     },
@@ -796,8 +998,8 @@
           "type": "name"
         },
         {
-          "name": "pwrreport_ids",
-          "type": "uint64[]"
+          "name": "pwrreport_id",
+          "type": "uint64"
         }
       ]
     },
@@ -807,16 +1009,16 @@
       "fields": []
     },
     {
-      "name": "handleostat",
+      "name": "mergereports",
       "base": "",
       "fields": [
         {
-          "name": "oracle",
+          "name": "boid_id_scope",
           "type": "name"
         },
         {
-          "name": "round",
-          "type": "uint16"
+          "name": "pwrreport_ids",
+          "type": "uint64[]"
         }
       ]
     },
@@ -844,7 +1046,7 @@
       "base": "",
       "fields": [
         {
-          "name": "account",
+          "name": "oracle",
           "type": "name"
         },
         {
@@ -882,6 +1084,24 @@
         {
           "name": "bonusPay",
           "type": "uint32"
+        },
+        {
+          "name": "round",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
+      "name": "payoutround",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        },
+        {
+          "name": "round",
+          "type": "uint16"
         }
       ]
     },
@@ -958,7 +1178,7 @@
       ]
     },
     {
-      "name": "slashabsent",
+      "name": "setweight",
       "base": "",
       "fields": [
         {
@@ -966,8 +1186,38 @@
           "type": "name"
         },
         {
-          "name": "round",
-          "type": "uint16"
+          "name": "weight",
+          "type": "uint8"
+        }
+      ]
+    },
+    {
+      "name": "slashhigh",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        }
+      ]
+    },
+    {
+      "name": "slashlow",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        }
+      ]
+    },
+    {
+      "name": "slashmed",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
         }
       ]
     },
@@ -1044,6 +1294,11 @@
   "types": [],
   "actions": [
     {
+      "name": "boincset",
+      "type": "boincset",
+      "ricardian_contract": ""
+    },
+    {
       "name": "commitsclean",
       "type": "commitsclean",
       "ricardian_contract": ""
@@ -1056,6 +1311,21 @@
     {
       "name": "configset",
       "type": "configset",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "cpidrepclean",
+      "type": "cpidrepclean",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "cpidreport",
+      "type": "cpidreport",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "cpidset",
+      "type": "cpidset",
       "ricardian_contract": ""
     },
     {
@@ -1074,8 +1344,8 @@
       "ricardian_contract": ""
     },
     {
-      "name": "handleostat",
-      "type": "handleostat",
+      "name": "mergereports",
+      "type": "mergereports",
       "ricardian_contract": ""
     },
     {
@@ -1101,6 +1371,11 @@
     {
       "name": "payoracle",
       "type": "payoracle",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "payoutround",
+      "type": "payoutround",
       "ricardian_contract": ""
     },
     {
@@ -1139,8 +1414,23 @@
       "ricardian_contract": ""
     },
     {
-      "name": "slashabsent",
-      "type": "slashabsent",
+      "name": "setweight",
+      "type": "setweight",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "slashhigh",
+      "type": "slashhigh",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "slashlow",
+      "type": "slashlow",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "slashmed",
+      "type": "slashmed",
       "ricardian_contract": ""
     },
     {
@@ -1186,6 +1476,27 @@
   ],
   "tables": [
     {
+      "name": "accounts",
+      "type": "Account",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+    },
+    {
+      "name": "boinccpids",
+      "type": "BoincCPID",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+    },
+    {
+      "name": "boincmeta",
+      "type": "BoincMeta",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+    },
+    {
       "name": "config",
       "type": "Config",
       "index_type": "i64",
@@ -1193,8 +1504,15 @@
       "key_types": []
     },
     {
+      "name": "cpidreports",
+      "type": "CPIDReport",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+    },
+    {
       "name": "global",
-      "type": "Global",
+      "type": "PwrGlobal",
       "index_type": "i64",
       "key_names": [],
       "key_types": []
@@ -1221,6 +1539,13 @@
       "key_types": []
     },
     {
+      "name": "pwrconfig",
+      "type": "PwrConfig",
+      "index_type": "i64",
+      "key_names": [],
+      "key_types": []
+    },
+    {
       "name": "pwrreports",
       "type": "PwrReportRow",
       "index_type": "i64",
@@ -1236,42 +1561,14 @@
     },
     {
       "name": "stats",
-      "type": "Stat",
+      "type": "PwrStat",
       "index_type": "i64",
       "key_names": [],
       "key_types": []
     }
   ],
   "ricardian_clauses": [],
-  "variants": [
-    {
-      "name": "AtomicValue",
-      "types": [
-        "int8",
-        "int16",
-        "int32",
-        "int64",
-        "uint8",
-        "uint16",
-        "uint32",
-        "uint64",
-        "float32",
-        "float64",
-        "string",
-        "int8[]",
-        "int16[]",
-        "int32[]",
-        "int64[]",
-        "bytes",
-        "uint16[]",
-        "uint32[]",
-        "uint64[]",
-        "float32[]",
-        "float64[]",
-        "string[]"
-      ]
-    }
-  ],
+  "variants": [],
   "action_results": [],
   "abi_extensions": [],
   "error_messages": []

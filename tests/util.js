@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
-import { Authority, Name, PermissionLevel, PermissionLevelWeight, TimePoint, UInt16, UInt32 } from "@wharfkit/antelope"
+import { Authority, Name, PermissionLevel, PermissionLevelWeight, TimePoint, UInt16, UInt32,UInt64 } from "@wharfkit/antelope"
 import { AccountPermission, Blockchain } from "@proton/vert"
 import { defaultConfig } from "./defaultConfig.js"
 import { config } from "./lib/config.js"
@@ -184,12 +184,23 @@ export function oracles() {
 export function oracle(name) {
   return contract.tables.oracles().getTableRows().filter(el=> el.account == name)[0]
 }
+export function cpids(scope) {
+  scope = new Name(UInt64.from(parseInt(scope)))
+  return contract.tables.boinccpids(scope).getTableRows()
+}
+export function cpid(boid_id) {
+  return contract.tables.boinccpids().getTableRows().filter(el=> el.boid_id == boid_id)[0]
+}
 export function stats() {
   return contract.tables.stats().getTableRows()
 }
 export function reports(scope) {
   scope = Name.from(scope).value.toString()
   return contract.tables.pwrreports(scope).getTableRows()
+}
+export function cpidReports(scope) {
+  scope = Name.from(scope).value.toString()
+  return contract.tables.cpidreports(scope).getTableRows()
 }
 export function oracleStats(scope) {
   scope = Name.from(scope).value.toString()
@@ -229,6 +240,27 @@ export async function setupOracle(name = "oraclename", quantity = "10000000.0000
   await tkn("transfer", { from: name, to: "power.boid", quantity, memo: "collateral" }, name)
   await act("setweight", { oracle: name, weight },"power.boid")
   if(!standby) await act("setstandby", { oracle: name, standby: false },"power.boid")
+}
+
+  export function stringToBytes(input) {
+    const encoder = new TextEncoder(); // Use UTF-8 encoding by default
+    return encoder.encode(input);
+  }
+
+  // Converts a Uint8Array (bytes) back to a string
+  export function bytesToString(bytes) {
+    const decoder = new TextDecoder('utf-8'); // Use UTF-8 decoding by default
+    return decoder.decode(bytes);
+  }
+export function uint8ArrayToString(uint8Array) {
+  return new TextDecoder().decode(uint8Array);
+}
+export function hexToString(hex) {
+  let str = '';
+  for (let i = 0; i < hex.length; i += 2) {
+    str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+  }
+  return str;
 }
 
 export async function init() {

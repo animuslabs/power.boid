@@ -1,14 +1,17 @@
 import { ActionData, Symbol, Asset, check, Contract, currentTimeSec, InlineAction, Name, PermissionLevel, requireAuth, Singleton, TableStore, print, Table, EMPTY_NAME, Action } from "proton-tsc"
 import { Oracle } from "../tables/oracles"
-import { Global } from "../tables/global"
+import { PwrGlobal } from "../tables/global"
 import { Protocol } from "../tables/protocols"
 import { PwrReportRow } from "../tables/pwrreports"
 import * as boid from "../tables/external/config"
-import { Stat } from "../tables/stats"
+import { PwrStat } from "../tables/stats"
 import { OracleStat } from "../tables/oracleStats"
-import { Config } from "../tables/config"
+import { PwrConfig } from "../tables/config"
 import { TokenTransfer } from "./5-deposit"
 import { RoundCommit } from "../tables/roundCommit"
+import { BoincMeta } from "../tables/boincMeta"
+import { BoincCPID } from "../tables/boincCpid"
+import { CPIDReport } from "../tables/cpidReport"
 export const boidSym:u64 = 293287707140
 
 @contract
@@ -16,9 +19,10 @@ export class GlobalActions extends Contract {
   // references to commonly used tables
   oraclesT:TableStore<Oracle> = new TableStore<Oracle>(this.receiver, this.receiver)
   protocolsT:TableStore<Protocol> = new TableStore<Protocol>(this.receiver, this.receiver)
-  statsT:TableStore<Stat> = new TableStore<Stat>(this.receiver, this.receiver)
-  globalT:Singleton<Global> = new Singleton<Global>(this.receiver)
-  configT:Singleton<Config> = new Singleton<Config>(this.receiver)
+  boincMetaT:TableStore<BoincMeta> = new TableStore<BoincMeta>(this.receiver, this.receiver)
+  statsT:TableStore<PwrStat> = new TableStore<PwrStat>(this.receiver, this.receiver)
+  globalT:Singleton<PwrGlobal> = new Singleton<PwrGlobal>(this.receiver)
+  configT:Singleton<PwrConfig> = new Singleton<PwrConfig>(this.receiver)
 
   round:u16 = 0
   roundFloat:f32 = 0
@@ -46,6 +50,14 @@ export class GlobalActions extends Contract {
     return new TableStore<PwrReportRow>(this.receiver, boid_id)
   }
 
+  cpidReportsT(boid_id:Name):TableStore<CPIDReport> {
+    return new TableStore<CPIDReport>(this.receiver, boid_id)
+  }
+
+  boincCPIDT(protocol_id:u64):TableStore<BoincCPID> {
+    return new TableStore<BoincCPID>(this.receiver, Name.fromU64(protocol_id))
+  }
+
   oracleStatsT(oracle_scope:Name):TableStore<OracleStat> {
     return new TableStore<OracleStat>(this.receiver, oracle_scope)
   }
@@ -57,12 +69,12 @@ export class GlobalActions extends Contract {
   codePerm:PermissionLevel = new PermissionLevel(this.receiver, Name.fromString("active"))
 
   /** Determine the minimum weight required for consensus */
-  minWeightThreshold(config:Config = this.getConfig(), global:Global = this.globalT.get()):u16 {
+  minWeightThreshold(config:PwrConfig = this.getConfig(), global:PwrGlobal = this.globalT.get()):u16 {
     return u16(Math.min(u32(Math.max(global.expected_active_weight * config.consensus.min_weight_pct, config.consensus.min_weight)), u16.MAX_VALUE))
   }
 
   /** Adds active oracle to global row, does not update table */
-  markOracleActive(oracleRow:Oracle, global:Global = this.globalT.get()):void {
+  markOracleActive(oracleRow:Oracle, global:PwrGlobal = this.globalT.get()):void {
     if (!global.active_oracles.includes(oracleRow.account)) {
       global.active_oracles.push(oracleRow.account)
       global.active_weight += oracleRow.weight
@@ -75,12 +87,12 @@ export class GlobalActions extends Contract {
    * Reads data from the previous round and calculates differences.
    * The data is used when calculating rewards and slash actions.
    */
-  updateStats(currentGlobal:Global = this.globalT.get(), config:Config = this.getConfig()):boolean {
+  updateStats(currentGlobal:PwrGlobal = this.globalT.get(), config:PwrConfig = this.getConfig()):boolean {
     const existing = this.statsT.exists(u64(this.currentRound()))
     if (existing) return false
     const statsBefore = this.statsT.get(this.currentRound() - 1)
     // generates blank stats row for first round or if a round was missed
-    if (!statsBefore) this.statsT.store(new Stat(this.currentRound(), this.globalT.get(), u32(currentGlobal.reports.reported), u32(currentGlobal.reports.unreported_and_unmerged), u32(currentGlobal.reports.proposed), u32(currentGlobal.rewards_paid), u32(currentGlobal.reports.proposed)), this.receiver)
+    if (!statsBefore) this.statsT.store(new PwrStat(this.currentRound(), this.globalT.get(), u32(currentGlobal.reports.reported), u32(currentGlobal.reports.unreported_and_unmerged), u32(currentGlobal.reports.proposed), u32(currentGlobal.rewards_paid), u32(currentGlobal.reports.proposed)), this.receiver)
     else {
       const unreported = currentGlobal.reports.unreported_and_unmerged
       const beforeUnreported = statsBefore.starting_global.reports.unreported_and_unmerged
@@ -89,7 +101,7 @@ export class GlobalActions extends Contract {
       const roundProposed = currentGlobal.reports.proposed - statsBefore.starting_global.reports.proposed
       const mintedSince = currentGlobal.rewards_paid - statsBefore.starting_global.rewards_paid
       const validProposed = currentGlobal.reports.proposed - statsBefore.starting_global.reports.unreported_and_unmerged
-      this.statsT.store(new Stat(this.currentRound(), this.globalT.get(), u32(roundReported), u32(roundUnreported), u32(roundProposed), u32(mintedSince), u32(validProposed)), this.receiver)
+      this.statsT.store(new PwrStat(this.currentRound(), this.globalT.get(), u32(roundReported), u32(roundUnreported), u32(roundProposed), u32(mintedSince), u32(validProposed)), this.receiver)
     }
     currentGlobal.active_oracles = []
     currentGlobal.active_weight = 0
@@ -109,7 +121,7 @@ export class GlobalActions extends Contract {
 
   /** Does basic checks and sets the config row  */
   @action("configset")
-  configSet(config:Config):void {
+  configSet(config:PwrConfig):void {
     requireAuth(this.receiver)
     check(config.slashLow.slash_quantity_collateral_pct >= 0, "slash_quantity_collateral_pct must be greater than or equal zero")
     check(config.slashLow.slash_quantity_collateral_pct <= f32(100), "slash_quantity_collateral_pct must be less or equal to 100%")
@@ -151,7 +163,7 @@ export class GlobalActions extends Contract {
     // check(false, (this.currentRoundFloat() % f32(this.currentRound())).toString())
   }
 
-  shouldFinalizeReports(round:u16, config:Config = this.getConfig()):boolean {
+  shouldFinalizeReports(round:u16, config:PwrConfig = this.getConfig()):boolean {
     if (round < this.currentRound() - 1) return true
     const roundProgress = (this.currentRoundFloat() % f32(this.currentRound()))
     print("\n currentRoundFloat: " + this.currentRoundFloat().toString())
@@ -160,7 +172,7 @@ export class GlobalActions extends Contract {
     return roundProgress > config.reports_accumulate_weight_round_pct
   }
 
-  getConfig():Config {
+  getConfig():PwrConfig {
     const config = this.configT.get()
     check(!config.paused, "contract paused or not initialized")
     return config

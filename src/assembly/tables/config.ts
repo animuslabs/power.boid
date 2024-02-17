@@ -48,8 +48,8 @@ export class CollateralConfig {
   public oracle_collateral_minimum:u32 = 0
 }
 
-@table("config", singleton)
-export class Config extends Table {
+@table("pwrconfig", singleton)
+export class PwrConfig extends Table {
   constructor(
     /**  pauses most contract actions, for use during contract upgrades */
     public paused:boolean = true,

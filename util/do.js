@@ -3,77 +3,61 @@ const env = require('./.env.js')
 const { api, tapos, doAction } = require('./lib/eosjs')()
 const activeChain = process.env.CHAIN || env.defaultChain
 const contractAccount = conf.accountName[activeChain]
-// const config = {
-//   paused: true,
-//   min_consensus_weight: 1,
-//   min_consensus_pct: 0.1,
-//   collateral_pct_pay_per_round: 0.01,
-//   round_bonus_pay_reports: 500,
-//   round_bonus_pay_proposed: 1000,
-//   slash_threshold_pct: 0.9,
-//   slash_quantity_static: 0,
-//   slash_quantity_collateral_pct: 0,
-//   withdraw_rounds_wait: 20,
-//   keep_finalized_stats_rows: 3,
-//   reports_finalized_after_rounds: 3,
-//   unlock_wait_rounds: 40,
-//   standby_toggle_interval_rounds: 3,
-//   weight_collateral_pwr: 1.1,
-//   oracle_collateral_deposit_increment: 1000,
-//   reports_accumulate_weight_round_pct: 1,
-//   weight_collateral_divisor: 1000,
-//   first_unlock_wait_rounds: 1,
-//   merge_deviation_pct: 0.25,
-//   oracle_expected_active_after_rounds: 2,
-//   min_pay_report_share_threshold:0.10
-// }
-
-const config = {
-  paused: true,
+let config = {
+  paused: false,
   consensus: {
-    min_weight: 0,
-    min_pct: 0
+    min_weight: 2,
+    min_weight_pct: 0.66,
+    merge_deviation_pct: 0.25
   },
   payment: {
-    collateral_pct_pay_per_round: 0,
-    round_bonus_pay_reports: 0,
-    round_bonus_pay_proposed: 0
+    collateral_pct_pay_per_round_mult: 0.00007415,
+    round_bonus_pay_reports: 10,
+    round_bonus_pay_proposed: 2,
+    reports_proposed_adjust_pwr: .42,
+    num_oracles_adjust_base:1.015
   },
-  slash: {
-    slash_threshold_pct: 0,
-    slash_quantity_static: 0,
-    slash_quantity_collateral_pct: 0
+  slashLow: {
+    slash_quantity_static: 500000,
+    slash_quantity_collateral_pct: 5,
+  },
+  slashMed: {
+    slash_quantity_static: 1000000,
+    slash_quantity_collateral_pct: 10,
+  },
+  slashHigh: {
+    slash_quantity_static: 1500000,
+    slash_quantity_collateral_pct: 25,
   },
   waits: {
-    withdraw_rounds_wait: 0,
-    unlock_wait_rounds: 0,
-    first_unlock_wait_rounds: 0
+    withdraw_rounds_wait: 5,
+    collateral_unlock_wait_rounds: 10
   },
   collateral: {
-    weight_collateral_pwr: 0,
-    oracle_collateral_deposit_increment: 0,
-    reports_accumulate_weight_round_pct: 0,
-    weight_collateral_divisor: 0
+    oracle_collateral_deposit_increment: 1_000_000,
+    oracle_collateral_minimum: 1_000_000
   },
-  keep_finalized_stats_rows: 0,
-  reports_finalized_after_rounds: 0,
-  merge_deviation_pct: 0,
-  standby_toggle_interval_rounds: 0,
-  oracle_expected_active_after_rounds: 0,
-  min_pay_report_share_threshold: 0,
+  keep_finalized_stats_rows: 10,
+  standby_toggle_interval_rounds: 5,
+  min_pay_report_share_threshold: 0.10,
+  reports_accumulate_weight_round_pct: 0.20
 }
-
-
 
 const methods = {
   async configset() {
     await doAction('configset',{config})
   },
-  async configClear() {
+  async configclear() {
     await doAction('configclear')
   },
   async thisround() {
     await doAction("thisround")
+  },
+  async setweight(oracle,weight) {
+    await doAction("setweight",{oracle,weight})
+  },
+  async payoutround(oracle,round) {
+    await doAction("payoutround",{oracle,round})
   },
   async finalround() {
     await doAction("finalround")
@@ -84,7 +68,7 @@ const methods = {
     await doAction("setstandby",{oracle,standby})
   },
   async protoset() {
-    await doAction("protoset",{protocol:{protocol_id:0,protocol_name:"fah",unitPowerMult:0.00025,active:true}})
+    await doAction("protoset",{protocol:{protocol_id:2,protocol_name:"denis",unitPowerMult:0.01,active:true}})
   },
   async protoclear() {
     await doAction("protoclear")
@@ -96,8 +80,11 @@ const methods = {
   async oraclesclear() {
     await doAction("oraclesclear")
   },
-  async finishreport(boid_id_scope, pwrreport_ids) {
-    await doAction("finishreport",{boid_id_scope, pwrreport_ids})
+  async mergereports(boid_id_scope, pwrreport_ids) {
+    await doAction("mergereports",{boid_id_scope, pwrreport_ids})
+  },
+  async finishreport(boid_id_scope, pwrreport_id) {
+    await doAction("finishreport",{boid_id_scope, pwrreport_id})
   },
   async reportsclean(scope) {
     await doAction("reportsclean",{scope})
@@ -147,11 +134,11 @@ const methods = {
   },
   async cleanRoundCommits(scope) {
     await doAction("commitsclean",{scope})
+  },
+  async boincset(protocol_id,url,teamId) {
+    await doAction("boincset",{boincMeta:{protocol_id,url,teamId,meta:[]}})
   }
 }
-
-//   if (acct.power.last_claimed_round.toNumber() < round) await doAction("power.claim", PowerClaim.from({ boid_id: acct.boid_id }), "boid", [PermissionLevel.from("boid@active")]).catch(console.error)
-//   const result = await doAction("team.change", TeamChange.from({ boid_id: acct.boid_id, new_team_id: 1, new_pwr_tax_mult: 10 }), "boid", [PermissionLevel.from("boid@active")])
 
 if (require.main == module) {
   if (Object.keys(methods).find(el => el === process.argv[2])) {
