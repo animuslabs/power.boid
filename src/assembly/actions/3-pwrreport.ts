@@ -1,27 +1,15 @@
 import { RoundCommit } from "../tables/roundCommit"
-import { Action, ActionData, check, EMPTY_NAME, Encoder, Name, PermissionLevel, print, requireAuth, SAME_PAYER, TableStore, U128 } from "proton-tsc"
+import { Action, ActionData, check, EMPTY_NAME, Name, PermissionLevel, print, requireAuth, SAME_PAYER, TableStore, U128 } from "proton-tsc"
 import { Account } from "../tables/external/accounts"
 import { Oracle } from "../tables/oracles"
 import { OracleStat } from "../tables/oracleStats"
 import { PwrReport, PwrReportRow } from "../tables/pwrreports"
 import { OracleActions } from "./2-oracle"
-import { CPIDReport } from "../tables/cpidReport"
 @packer
 export class PowerAddParams extends ActionData {
   constructor(
     public boid_id:Name = EMPTY_NAME,
     public power:u16 = 0
-  ) {
-    super()
-  }
-}
-
-@packer
-export class CPIDSetParams extends ActionData {
-  constructor(
-    public protocol_id:u64 = 0,
-    public boid_id:Name = EMPTY_NAME,
-    public cpid_bytes:u8[] = []
   ) {
     super()
   }
@@ -41,38 +29,6 @@ export class PwrReportActions extends OracleActions {
     action.send()
   }
 
-  sendCPIDSet(boid_id:Name, protocol_id:u64, cpid_bytes:u8[]):void {
-    const data = new CPIDSetParams(protocol_id, boid_id, cpid_bytes)
-    const action = new Action(Name.fromString("power.boid"), Name.fromString("cpidset"), [new PermissionLevel(Name.fromString("power.boid"), Name.fromString("active"))], data.pack())
-    action.send()
-  }
-
-  @action("cpidreport")
-  cpidReport(oracle:Name, protocol_id:u8, boid_id_scope:Name, cpid_bytes:u8[]):void {
-    requireAuth(oracle)
-    const config = this.getConfig()
-    const round = this.currentRound()
-    const rowId = u64(protocol_id + round)
-    const cpidReports = this.cpidReportsT(boid_id_scope)
-    check(this.boincMetaT.exists(u64(protocol_id)), "boinc protocol meta doesn't exist")
-    let thisReport = cpidReports.get(rowId)
-    const oracleRow = this.oraclesT.requireGet(oracle.value, "invalid oracle")
-    check(!oracleRow.standby, "oracle is in standby mode, disable standby first to start making reports")
-    if (thisReport) {
-      check(!thisReport.approvals.includes(oracle), "oracle already reported cpid for current round+protocol")
-      check(thisReport.cpid_bytes.toString() == cpid_bytes.toString(), "cpid of existing report doesn't match")
-      thisReport.approvals.push(oracle)
-      thisReport.approval_weight += oracleRow.weight
-    } else {
-      thisReport = new CPIDReport(protocol_id, cpid_bytes, round, [oracle], oracleRow.weight)
-      cpidReports.store(thisReport, this.receiver)
-    }
-    if (thisReport.approval_weight >= this.minWeightThreshold(config)) {
-      this.sendCPIDSet(boid_id_scope, u64(protocol_id), cpid_bytes)
-      cpidReports.remove(thisReport)
-    }
-  }
-
   /**
    * oracles call this action to add reports into the pwrreports table
    *
@@ -85,10 +41,10 @@ export class PwrReportActions extends OracleActions {
     requireAuth(oracle)
     const reportId = PwrReportRow.getReportId(report)
     const config = this.getConfig()
-
+    this.updateGlobal()
     let oRoundCommit = this.roundCommitT(oracle)
     let commitExists = oRoundCommit.getBySecondaryU128(RoundCommit.getByRoundProtocolBoidId(boid_id_scope, report.protocol_id, report.round), 1)
-    check(commitExists == null, "oracle already commited report for this user and round")
+    check(commitExists == null, "oracle already commited report for this user + round + and protocol")
     const activeRound = this.currentRound() - 1
     // ensure the report is for a round that is valid
     check(report.round < this.currentRound(), "report round must target a past round")
@@ -114,13 +70,8 @@ export class PwrReportActions extends OracleActions {
     const existing = pwrReportsT.get(reportId)
     const global = this.globalT.get()
 
-    // make sure the stats table is updated for this round
-    this.updateStats(global)
-
     // if the report already exists, aggregate our weight with the existing weight and possibly finalize it
     if (existing) {
-      check(!existing.reported, "report already reported")
-      check(!existing.merged, "report already merged")
       existing.approval_weight += oracleRow.weight
       existing.approvals.push(oracle)
 
@@ -128,7 +79,6 @@ export class PwrReportActions extends OracleActions {
       if (existing.approval_weight >= this.minWeightThreshold(config, global) && this.shouldFinalizeReports(existing.report.round, config)) {
         this.sendReport(boid_id_scope, report)
         reportSent = true
-        existing.reported = true
         global.reports.reported++
         global.reports.unreported_and_unmerged--
       }
@@ -140,12 +90,13 @@ export class PwrReportActions extends OracleActions {
       print("\n weightEnough? " + (oracleRow.weight >= u16(this.minWeightThreshold())).toString())
       const reported = oracleRow.weight >= u16(this.minWeightThreshold()) && this.shouldFinalizeReports(report.round, config)
       print("\n reported: " + reported.toString())
-      const row = new PwrReportRow(oracle, report, [oracle], oracleRow.weight, reported)
+      const row = new PwrReportRow(oracle, report, [oracle], oracleRow.weight)
       global.reports.proposed++
       pwrReportsT.store(row, this.receiver)
       if (reported) {
         reportSent = true
         this.sendReport(boid_id_scope, report)
+        this.pwrReportsT(boid_id_scope).remove(row)
         global.reports.reported++
       } else global.reports.unreported_and_unmerged++
     }
@@ -168,6 +119,7 @@ export class PwrReportActions extends OracleActions {
       // otherwise we just need to update our own oracle stats
       this.updateOracleStats(oracleRow, reportSent, reportCreated, report.round)
     }
+    this.loopRoundCommitsCleanup(activeRound, oRoundCommit)
     oRoundCommit.store(new RoundCommit(oRoundCommit.availablePrimaryKey, report.protocol_id, report.round, boid_id_scope), this.receiver)
   }
 
@@ -186,7 +138,7 @@ export class PwrReportActions extends OracleActions {
     if (existingOStats) {
       if (reportSent) {
         existingOStats.reports.reported_or_merged++
-        existingOStats.reports.unreported_unmerged--
+        if (existingOStats.reports.unreported_unmerged > 0)existingOStats.reports.unreported_unmerged--
       } else existingOStats.reports.unreported_unmerged++
       if (proposed) existingOStats.reports.proposed++
       oStatsT.update(existingOStats, this.receiver)
@@ -199,40 +151,32 @@ export class PwrReportActions extends OracleActions {
   /**
    * Finish report
    * Since reports can't always be finalized when receiving reports, sometimes we need to finalize the report seperately.
-   * Sometimes oracles may make slightly different reports based on fuzzy data.
-   * In this case, multiple reports that are within a range can be combined and finalized as one report.
    * does not require any authentication
    *
    * @param {Name} boid_id_scope the scope of pwrreports table where the reports can be find
-   * @param {u64[]} pwrreport_ids a vector of reports that could be combined
+   * @param {u64} pwrreport_id the report to finalize
    */
   @action("finishreport")
   finishReport(boid_id_scope:Name, pwrreport_id:u64):void {
     const config = this.getConfig()
     const pwrReport = this.pwrReportsT(boid_id_scope).requireGet(pwrreport_id, "invalid id provided")
-    check(!pwrReport.reported, "can't merge reports already reported")
-    check(!pwrReport.merged, "can't merge reports already merged")
-    check(this.shouldFinalizeReports(u16(pwrReport.report.round), config), "can't finalize/merge reports this early in a round")
+    check(this.shouldFinalizeReports(u16(pwrReport.report.round), config), "can't finish reports this early in a round")
     const global = this.globalT.get()
     const minThreshold = this.minWeightThreshold(config, global)
     check(pwrReport.approval_weight >= minThreshold, "aggregate approval_weight isn't high enough. Minimum:" + minThreshold.toString() + " report has:" + pwrReport.approval_weight.toString())
     this.sendReport(boid_id_scope, pwrReport.report)
-    pwrReport.reported = true
-    this.pwrReportsT(boid_id_scope).update(pwrReport, SAME_PAYER)
 
-    const oStatsT = this.oracleStatsT(pwrReport.proposer)
     for (let i = 0; i < pwrReport.approvals.length; i++) {
       const oracleName = pwrReport.approvals[i]
-      let row:Oracle|null = null
-      row = this.oraclesT.get(oracleName.value)
+      let row = this.oraclesT.get(oracleName.value)
       if (!row) continue
       else this.updateOracleStats(row, true, false, pwrReport.report.round)
     }
+
     global.reports.reported++
     global.reports.unreported_and_unmerged--
-    // this saves the modified global if stats needs updating, otherwise we save global directly
-    const saved = this.updateStats(global, config)
-    if (!saved) this.globalT.set(global, SAME_PAYER)
+    this.globalT.set(global, SAME_PAYER)
+    this.pwrReportsT(boid_id_scope).remove(pwrReport)
   }
 
   @action("mergereports")
@@ -253,15 +197,12 @@ export class PwrReportActions extends OracleActions {
       else check(pwrReport.report.protocol_id == targetProtocol, "protocol_ids must match")
       if (targetRound < 0) targetRound = i32(pwrReport.report.round)
       else check(pwrReport.report.round == targetRound, "rounds must match")
-      check(!pwrReport.reported, "can't merge reports already reported")
-      check(!pwrReport.merged, "can't merge reports already merged")
       targetReports.push(pwrReport)
     }
 
-    check(this.shouldFinalizeReports(u16(targetRound), config), "can't finalize/merge reports this early in a round")
+    check(this.shouldFinalizeReports(u16(targetRound), config), "can't merge reports this early in a round")
 
     const global = this.globalT.get()
-    this.updateStats(global)
 
     let medianUnits:u32 = 0
     // find the median
@@ -291,10 +232,7 @@ export class PwrReportActions extends OracleActions {
     print("\n aggregate: " + aggregateWeight.toString())
     check(aggregateWeight >= this.minWeightThreshold(config, global), "aggregate approval_weight isn't high enough " + this.minWeightThreshold(config, global).toString() + " " + aggregateWeight.toString())
 
-    mergedRow.reported = true
-    mergedRow.merged = true
     mergedRow.approvals.push(Name.fromString("merged.boid"))
-
     this.sendReport(boid_id_scope, mergedRow.report)
 
     let allOracles:Name[] = []
@@ -302,8 +240,7 @@ export class PwrReportActions extends OracleActions {
     // update all the report rows and store all oracles
     for (let i = 0; i < targetReports.length; i++) {
       const pwrReport = targetReports[i]
-      pwrReport.merged = true
-      pwrReportsT.update(pwrReport, this.receiver)
+
       for (let i = 0; i < pwrReport.approvals.length; i++) {
         const oracle = pwrReport.approvals[i]
         const exists = allOracles.indexOf(oracle)
@@ -312,6 +249,7 @@ export class PwrReportActions extends OracleActions {
           check(false, "can't merge multiple reports that share same oracle: " + oracle.toString())
         }
       }
+      pwrReportsT.remove(pwrReport)
     }
 
     // update oracle stats for each oracle
@@ -321,7 +259,7 @@ export class PwrReportActions extends OracleActions {
       const existing = oStatsT.get(u64(targetRound))
       if (existing) {
         existing.reports.reported_or_merged++
-        existing.reports.unreported_unmerged--
+        if (existing.reports.unreported_unmerged > 0) existing.reports.unreported_unmerged--
         oStatsT.update(existing, this.receiver)
       } else {
         const oracleData = this.oraclesT.get(oracle.value)

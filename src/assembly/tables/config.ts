@@ -64,8 +64,6 @@ export class PwrConfig extends Table {
     public keep_finalized_stats_rows:u32 = 0,
     // /** when an oracle is toggling standby, they must wait this many rounds before they can do it again */
     public standby_toggle_interval_rounds:u16 = 0,
-    // /** min report share threshold to receive pay */
-    public min_pay_report_share_threshold:f32 = 0,
     // /** percentage of the round (starting from beginning of the round) when reports accumulate weight but don't finalize, the purpose is to give all oracles a chance to make a report */
     public reports_accumulate_weight_round_pct:f32 = 0
   ) {

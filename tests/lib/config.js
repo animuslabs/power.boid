@@ -34,6 +34,5 @@ export let config = {
   },
   keep_finalized_stats_rows: 10,
   standby_toggle_interval_rounds: 5,
-  min_pay_report_share_threshold: 0.10,
   reports_accumulate_weight_round_pct: 0.20
 }

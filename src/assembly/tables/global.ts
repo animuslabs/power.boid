@@ -14,6 +14,7 @@ export class GlobalReports {
 @table("global", singleton)
 export class PwrGlobal extends Table {
   constructor(
+    public round:u16 = 0,
     /** this vector is cleared at the start of each round and the first time an oracle makes a report during the round they are added */
     public active_oracles:Name[] = [],
     /** this list is only modified when oracles go in/out of standby, if oracles are not in standby they are expected to be active each round. */

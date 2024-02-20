@@ -1,8 +1,8 @@
-import { ActionData, EMPTY_NAME, Name, check, requireAuth } from "proton-tsc"
-import { Protocol } from "../tables/protocols"
-import { PwrReportActions } from "./3-pwrreport"
+import { Name, check, requireAuth } from "proton-tsc"
 import { BoincMeta } from "../tables/boincMeta"
-import { BoincCPID } from "../tables/boincCpid"
+import { Protocol } from "../tables/protocols"
+import { RoundCommit } from "../tables/roundCommit"
+import { PwrReportActions } from "./3-pwrreport"
 
 export class ProtoActions extends PwrReportActions {
   /**
@@ -29,11 +29,11 @@ export class ProtoActions extends PwrReportActions {
     this.boincMetaT.set(boincMeta, this.receiver)
   }
 
-  @action("cpidset")
-  cpidSet(protocol_id:u64, boid_id:Name, cpid_bytes:u8[]):void {
-    requireAuth(this.receiver)
-    const boincCPIDT = this.boincCPIDT(protocol_id)
-    // check(!boincCPIDT.exists(boid_id.value),"boid_id already has a cpid registered for this protocol")
-    boincCPIDT.set(new BoincCPID(boid_id, cpid_bytes), this.receiver)
+  @action("roundcommit")
+  roundCommit(oracle:Name, boid_id:Name, protocol_id:u8, round:u16):void {
+    // check(false, RoundCommit.getByRoundProtocolBoidId(boid_id, protocol_id, round).toString())
+    let oRoundCommit = this.roundCommitT(oracle)
+    let commitExists = oRoundCommit.getBySecondaryU128(RoundCommit.getByRoundProtocolBoidId(boid_id, protocol_id, round), 1)
+    check(commitExists !== null, "commit doesn't exist")
   }
 }

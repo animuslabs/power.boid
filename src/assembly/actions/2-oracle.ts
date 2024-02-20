@@ -45,7 +45,6 @@ export class OracleActions extends GlobalActions {
     requireAuth(this.receiver)
     check(depositQuantity > 0, "deposit must be greater than zero")
     const config = this.getConfig()
-    this.updateStats()
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
     check(oracleRow.collateral.unlocking == 0, "can't deposit funds into an oracle that is unlocking")
 

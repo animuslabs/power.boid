@@ -150,20 +150,6 @@
       ]
     },
     {
-      "name": "BoincCPID",
-      "base": "",
-      "fields": [
-        {
-          "name": "boid_id",
-          "type": "name"
-        },
-        {
-          "name": "cpid_bytes",
-          "type": "bytes"
-        }
-      ]
-    },
-    {
       "name": "BoincMeta",
       "base": "",
       "fields": [
@@ -182,32 +168,6 @@
         {
           "name": "meta",
           "type": "bytes"
-        }
-      ]
-    },
-    {
-      "name": "CPIDReport",
-      "base": "",
-      "fields": [
-        {
-          "name": "protocol_id",
-          "type": "uint8"
-        },
-        {
-          "name": "cpid_bytes",
-          "type": "bytes"
-        },
-        {
-          "name": "round",
-          "type": "uint16"
-        },
-        {
-          "name": "approvals",
-          "type": "name[]"
-        },
-        {
-          "name": "approval_weight",
-          "type": "uint16"
         }
       ]
     },
@@ -692,10 +652,6 @@
           "type": "uint16"
         },
         {
-          "name": "min_pay_report_share_threshold",
-          "type": "float32"
-        },
-        {
           "name": "reports_accumulate_weight_round_pct",
           "type": "float32"
         }
@@ -705,6 +661,10 @@
       "name": "PwrGlobal",
       "base": "",
       "fields": [
+        {
+          "name": "round",
+          "type": "uint16"
+        },
         {
           "name": "active_oracles",
           "type": "name[]"
@@ -772,48 +732,6 @@
         {
           "name": "approval_weight",
           "type": "uint16"
-        },
-        {
-          "name": "reported",
-          "type": "bool"
-        },
-        {
-          "name": "merged",
-          "type": "bool"
-        }
-      ]
-    },
-    {
-      "name": "PwrStat",
-      "base": "",
-      "fields": [
-        {
-          "name": "round",
-          "type": "uint16"
-        },
-        {
-          "name": "starting_global",
-          "type": "PwrGlobal"
-        },
-        {
-          "name": "reported_since_previous",
-          "type": "uint32"
-        },
-        {
-          "name": "unreported_unmerged_since_previous",
-          "type": "uint32"
-        },
-        {
-          "name": "proposed_since_previous",
-          "type": "uint32"
-        },
-        {
-          "name": "rewarded_since_previous",
-          "type": "uint32"
-        },
-        {
-          "name": "valid_proposed_since_previous",
-          "type": "uint32"
         }
       ]
     },
@@ -900,6 +818,11 @@
       ]
     },
     {
+      "name": "boincclear",
+      "base": "",
+      "fields": []
+    },
+    {
       "name": "boincset",
       "base": "",
       "fields": [
@@ -920,6 +843,16 @@
       ]
     },
     {
+      "name": "commitsclear",
+      "base": "",
+      "fields": [
+        {
+          "name": "scope",
+          "type": "name"
+        }
+      ]
+    },
+    {
       "name": "configclear",
       "base": "",
       "fields": []
@@ -931,56 +864,6 @@
         {
           "name": "config",
           "type": "PwrConfig"
-        }
-      ]
-    },
-    {
-      "name": "cpidrepclean",
-      "base": "",
-      "fields": [
-        {
-          "name": "boid_id_scope",
-          "type": "name"
-        }
-      ]
-    },
-    {
-      "name": "cpidreport",
-      "base": "",
-      "fields": [
-        {
-          "name": "oracle",
-          "type": "name"
-        },
-        {
-          "name": "protocol_id",
-          "type": "uint8"
-        },
-        {
-          "name": "boid_id_scope",
-          "type": "name"
-        },
-        {
-          "name": "cpid_bytes",
-          "type": "bytes"
-        }
-      ]
-    },
-    {
-      "name": "cpidset",
-      "base": "",
-      "fields": [
-        {
-          "name": "protocol_id",
-          "type": "uint64"
-        },
-        {
-          "name": "boid_id",
-          "type": "name"
-        },
-        {
-          "name": "cpid_bytes",
-          "type": "bytes"
         }
       ]
     },
@@ -1061,6 +944,16 @@
     },
     {
       "name": "ostatsclean",
+      "base": "",
+      "fields": [
+        {
+          "name": "scope",
+          "type": "name"
+        }
+      ]
+    },
+    {
+      "name": "ostatsclear",
       "base": "",
       "fields": [
         {
@@ -1159,9 +1052,26 @@
       ]
     },
     {
-      "name": "roundstats",
+      "name": "roundcommit",
       "base": "",
-      "fields": []
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        },
+        {
+          "name": "boid_id",
+          "type": "name"
+        },
+        {
+          "name": "protocol_id",
+          "type": "uint8"
+        },
+        {
+          "name": "round",
+          "type": "uint16"
+        }
+      ]
     },
     {
       "name": "setstandby",
@@ -1236,16 +1146,6 @@
       ]
     },
     {
-      "name": "statsclean",
-      "base": "",
-      "fields": []
-    },
-    {
-      "name": "statsclear",
-      "base": "",
-      "fields": []
-    },
-    {
       "name": "thisround",
       "base": "",
       "fields": []
@@ -1294,6 +1194,11 @@
   "types": [],
   "actions": [
     {
+      "name": "boincclear",
+      "type": "boincclear",
+      "ricardian_contract": ""
+    },
+    {
       "name": "boincset",
       "type": "boincset",
       "ricardian_contract": ""
@@ -1304,6 +1209,11 @@
       "ricardian_contract": ""
     },
     {
+      "name": "commitsclear",
+      "type": "commitsclear",
+      "ricardian_contract": ""
+    },
+    {
       "name": "configclear",
       "type": "configclear",
       "ricardian_contract": ""
@@ -1311,21 +1221,6 @@
     {
       "name": "configset",
       "type": "configset",
-      "ricardian_contract": ""
-    },
-    {
-      "name": "cpidrepclean",
-      "type": "cpidrepclean",
-      "ricardian_contract": ""
-    },
-    {
-      "name": "cpidreport",
-      "type": "cpidreport",
-      "ricardian_contract": ""
-    },
-    {
-      "name": "cpidset",
-      "type": "cpidset",
       "ricardian_contract": ""
     },
     {
@@ -1369,6 +1264,11 @@
       "ricardian_contract": ""
     },
     {
+      "name": "ostatsclear",
+      "type": "ostatsclear",
+      "ricardian_contract": ""
+    },
+    {
       "name": "payoracle",
       "type": "payoracle",
       "ricardian_contract": ""
@@ -1404,8 +1304,8 @@
       "ricardian_contract": ""
     },
     {
-      "name": "roundstats",
-      "type": "roundstats",
+      "name": "roundcommit",
+      "type": "roundcommit",
       "ricardian_contract": ""
     },
     {
@@ -1436,16 +1336,6 @@
     {
       "name": "slashoracle",
       "type": "slashoracle",
-      "ricardian_contract": ""
-    },
-    {
-      "name": "statsclean",
-      "type": "statsclean",
-      "ricardian_contract": ""
-    },
-    {
-      "name": "statsclear",
-      "type": "statsclear",
       "ricardian_contract": ""
     },
     {
@@ -1483,13 +1373,6 @@
       "key_types": []
     },
     {
-      "name": "boinccpids",
-      "type": "BoincCPID",
-      "index_type": "i64",
-      "key_names": [],
-      "key_types": []
-    },
-    {
       "name": "boincmeta",
       "type": "BoincMeta",
       "index_type": "i64",
@@ -1499,13 +1382,6 @@
     {
       "name": "config",
       "type": "Config",
-      "index_type": "i64",
-      "key_names": [],
-      "key_types": []
-    },
-    {
-      "name": "cpidreports",
-      "type": "CPIDReport",
       "index_type": "i64",
       "key_names": [],
       "key_types": []
@@ -1555,13 +1431,6 @@
     {
       "name": "roundcommit",
       "type": "RoundCommit",
-      "index_type": "i64",
-      "key_names": [],
-      "key_types": []
-    },
-    {
-      "name": "stats",
-      "type": "PwrStat",
       "index_type": "i64",
       "key_names": [],
       "key_types": []

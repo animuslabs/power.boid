@@ -37,9 +37,8 @@ let config = {
     oracle_collateral_deposit_increment: 1_000_000,
     oracle_collateral_minimum: 1_000_000
   },
-  keep_finalized_stats_rows: 10,
+  keep_finalized_stats_rows: 2,
   standby_toggle_interval_rounds: 5,
-  min_pay_report_share_threshold: 0.10,
   reports_accumulate_weight_round_pct: 0.20
 }
 
@@ -68,12 +67,11 @@ const methods = {
     await doAction("setstandby",{oracle,standby})
   },
   async protoset() {
-    await doAction("protoset",{protocol:{protocol_id:2,protocol_name:"denis",unitPowerMult:0.01,active:true}})
+    await doAction("protoset",{protocol:{protocol_id:5,protocol_name:"wcg",unitPowerMult:0.001,active:true}})
   },
   async protoclear() {
     await doAction("protoclear")
   },
-
   async globalclear() {
     await doAction("globalclear")
   },
@@ -97,6 +95,12 @@ const methods = {
   },
   async ostatsclean(scope) {
     await doAction("ostatsclean",{scope})
+  },
+  async ostatsclear(scope) {
+    await doAction("ostatsclear",{scope})
+  },
+  async roundcommit(oracle,boid_id, protocol_id, round){
+    await doAction("roundcommit",{oracle, boid_id, protocol_id, round})
   },
   async clearAllReports() {
     const scopes = (await api.rpc.get_table_by_scope({ code: contractAccount, table: "pwrreports", limit: 1000 })).rows.map(el => el.scope)
@@ -132,11 +136,25 @@ const methods = {
     console.log(stats.map(el => ({round:el.round,starting_global:el.starting_global})))
 
   },
-  async cleanRoundCommits(scope) {
+  async commitsclean(scope) {
     await doAction("commitsclean",{scope})
+  },
+  async commitsclear(scope) {
+    await doAction("commitsclear",{scope})
   },
   async boincset(protocol_id,url,teamId) {
     await doAction("boincset",{boincMeta:{protocol_id,url,teamId,meta:[]}})
+  },
+  async boincsetAll(){
+    const boinc = [
+      {protocol_id:1,url:" https://boinc.bakerlab.org/rosetta/",teamId:36190},
+      {protocol_id:2,url:"https://denis.usj.es/denisathome/",teamId:11420},
+      {protocol_id:3,url:"https://www.sidock.si/sidock/",teamId:312},
+      {protocol_id:4,url:"https://www.rnaworld.de/rnaworld/",teamId:6401},
+    ]
+    for (let item of boinc){
+      await this.boincset(...Object.values(item))
+    }
   }
 }
 

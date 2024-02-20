@@ -4,14 +4,12 @@ import { PwrGlobal } from "../tables/global"
 import { Protocol } from "../tables/protocols"
 import { PwrReportRow } from "../tables/pwrreports"
 import * as boid from "../tables/external/config"
-import { PwrStat } from "../tables/stats"
 import { OracleStat } from "../tables/oracleStats"
 import { PwrConfig } from "../tables/config"
 import { TokenTransfer } from "./5-deposit"
 import { RoundCommit } from "../tables/roundCommit"
 import { BoincMeta } from "../tables/boincMeta"
-import { BoincCPID } from "../tables/boincCpid"
-import { CPIDReport } from "../tables/cpidReport"
+
 export const boidSym:u64 = 293287707140
 
 @contract
@@ -20,7 +18,6 @@ export class GlobalActions extends Contract {
   oraclesT:TableStore<Oracle> = new TableStore<Oracle>(this.receiver, this.receiver)
   protocolsT:TableStore<Protocol> = new TableStore<Protocol>(this.receiver, this.receiver)
   boincMetaT:TableStore<BoincMeta> = new TableStore<BoincMeta>(this.receiver, this.receiver)
-  statsT:TableStore<PwrStat> = new TableStore<PwrStat>(this.receiver, this.receiver)
   globalT:Singleton<PwrGlobal> = new Singleton<PwrGlobal>(this.receiver)
   configT:Singleton<PwrConfig> = new Singleton<PwrConfig>(this.receiver)
 
@@ -50,20 +47,28 @@ export class GlobalActions extends Contract {
     return new TableStore<PwrReportRow>(this.receiver, boid_id)
   }
 
-  cpidReportsT(boid_id:Name):TableStore<CPIDReport> {
-    return new TableStore<CPIDReport>(this.receiver, boid_id)
-  }
-
-  boincCPIDT(protocol_id:u64):TableStore<BoincCPID> {
-    return new TableStore<BoincCPID>(this.receiver, Name.fromU64(protocol_id))
-  }
-
   oracleStatsT(oracle_scope:Name):TableStore<OracleStat> {
     return new TableStore<OracleStat>(this.receiver, oracle_scope)
   }
 
   roundCommitT(oracle_scope:Name):TableStore<RoundCommit> {
     return new TableStore<RoundCommit>(this.receiver, oracle_scope)
+  }
+
+  loopRoundCommitsCleanup(olderThan:u32, tbl:TableStore<RoundCommit>):void {
+    let next = tbl.first()
+    if (!next) {
+      // check(false, "no rows to clean")
+      return
+    }
+    // check(next && next.round < olderThan, "no rows to clean")
+    for (let i = 0; i < 50; i++) {
+      let row = next
+      if (row && row.round < olderThan) {
+        next = tbl.next(row)
+        tbl.remove(row)
+      } else break
+    }
   }
 
   codePerm:PermissionLevel = new PermissionLevel(this.receiver, Name.fromString("active"))
@@ -74,49 +79,12 @@ export class GlobalActions extends Contract {
   }
 
   /** Adds active oracle to global row, does not update table */
-  markOracleActive(oracleRow:Oracle, global:PwrGlobal = this.globalT.get()):void {
+  markOracleActive(oracleRow:Oracle, global:PwrGlobal):void {
     if (!global.active_oracles.includes(oracleRow.account)) {
       global.active_oracles.push(oracleRow.account)
       global.active_weight += oracleRow.weight
       check(global.active_weight >= oracleRow.weight, "global active_weight max reached")
     }
-  }
-
-  /**
-   * Update the stats table if an entry has not been written for the current round.
-   * Reads data from the previous round and calculates differences.
-   * The data is used when calculating rewards and slash actions.
-   */
-  updateStats(currentGlobal:PwrGlobal = this.globalT.get(), config:PwrConfig = this.getConfig()):boolean {
-    const existing = this.statsT.exists(u64(this.currentRound()))
-    if (existing) return false
-    const statsBefore = this.statsT.get(this.currentRound() - 1)
-    // generates blank stats row for first round or if a round was missed
-    if (!statsBefore) this.statsT.store(new PwrStat(this.currentRound(), this.globalT.get(), u32(currentGlobal.reports.reported), u32(currentGlobal.reports.unreported_and_unmerged), u32(currentGlobal.reports.proposed), u32(currentGlobal.rewards_paid), u32(currentGlobal.reports.proposed)), this.receiver)
-    else {
-      const unreported = currentGlobal.reports.unreported_and_unmerged
-      const beforeUnreported = statsBefore.starting_global.reports.unreported_and_unmerged
-      const roundUnreported = unreported > beforeUnreported ? unreported - beforeUnreported : 0
-      const roundReported = currentGlobal.reports.reported - statsBefore.starting_global.reports.reported
-      const roundProposed = currentGlobal.reports.proposed - statsBefore.starting_global.reports.proposed
-      const mintedSince = currentGlobal.rewards_paid - statsBefore.starting_global.rewards_paid
-      const validProposed = currentGlobal.reports.proposed - statsBefore.starting_global.reports.unreported_and_unmerged
-      this.statsT.store(new PwrStat(this.currentRound(), this.globalT.get(), u32(roundReported), u32(roundUnreported), u32(roundProposed), u32(mintedSince), u32(validProposed)), this.receiver)
-    }
-    currentGlobal.active_oracles = []
-    currentGlobal.active_weight = 0
-    this.globalT.set(currentGlobal, this.receiver)
-
-    // delete old rows
-    const firstRow = this.statsT.first()
-    if (!firstRow) return true
-    const deleteBeforeRound = u16(Math.max(i32(this.currentRound()) - i32(1) - config.keep_finalized_stats_rows, 0))
-    print("\n DeleteBeforeRound: " + deleteBeforeRound.toString())
-    if (firstRow.round < deleteBeforeRound) this.statsT.remove(firstRow)
-    const nextRow = this.statsT.first()
-    if (!nextRow) return true
-    if (nextRow.round < deleteBeforeRound) this.statsT.remove(nextRow)
-    return true
   }
 
   /** Does basic checks and sets the config row  */
@@ -137,8 +105,6 @@ export class GlobalActions extends Contract {
     check(config.consensus.min_weight_pct <= f32(1), "min_consensus_pct must be less or equal to 100%")
     check(config.consensus.merge_deviation_pct >= 0, "merge_deviation_pct must be higher or equal zero")
     check(config.consensus.merge_deviation_pct <= f32(1), "merge_deviation_pct must be less or equal to 100%")
-    check(config.min_pay_report_share_threshold >= 0, "min_pay_report_share_threshold must be higher or equal zero")
-    check(config.min_pay_report_share_threshold <= f32(1), "min_pay_report_share_threshold must be less or equal to 100%")
     this.configT.set(config, this.receiver)
   }
 
@@ -163,6 +129,20 @@ export class GlobalActions extends Contract {
     // check(false, (this.currentRoundFloat() % f32(this.currentRound())).toString())
   }
 
+  /**
+   * Update the stats table if an entry has not been written for the current round.
+   * Reads data from the previous round and calculates differences.
+   * The data is used when calculating rewards and slash actions.
+   */
+  updateGlobal(currentGlobal:PwrGlobal = this.globalT.get(), config:PwrConfig = this.getConfig()):boolean {
+    if (currentGlobal.round == this.currentRound()) return false
+    currentGlobal.active_oracles = []
+    currentGlobal.active_weight = 0
+    currentGlobal.round = this.currentRound()
+    this.globalT.set(currentGlobal, this.receiver)
+    return true
+  }
+
   shouldFinalizeReports(round:u16, config:PwrConfig = this.getConfig()):boolean {
     if (round < this.currentRound() - 1) return true
     const roundProgress = (this.currentRoundFloat() % f32(this.currentRound()))
@@ -176,11 +156,6 @@ export class GlobalActions extends Contract {
     const config = this.configT.get()
     check(!config.paused, "contract paused or not initialized")
     return config
-  }
-
-  @action("roundstats")
-  roundStats():void {
-    check(this.updateStats(), "action already performed this round")
   }
 
   sendSlashOracle(oracle:Name, quantity:u32):void {

@@ -87,7 +87,6 @@ describe("oracle", async() => {
       await act("pwrreport", { oracle: "oracle2", boid_id_scope: boid_id, report: report }, "oracle2")
       await act("pwrreport", { oracle: "oracle3", boid_id_scope: boid_id, report: report }, "oracle3")
       addRounds(1)
-      await act("roundstats")
       await act("finishreport", { boid_id_scope: boid_id, pwrreport_id: getReportId(report) })
       addRounds(3)
       await act("payoutround", { oracle: "oracle1", round: 15 })

@@ -28,6 +28,7 @@ const methods = {
       ],
       "waits": []
     }
+    await doAction('updateauth', { account: "tknmint.boid", auth, parent: 'owner', permission: 'active' }, 'eosio', "tknmint.boid")
     await doAction('updateauth', { account: "mint.boid", auth, parent: 'owner', permission: 'active' }, 'eosio', "mint.boid")
     // await doAction('linkauth', { account: contractAccount, code:'avatar.boid',type:"finalize",requirement:'avataroracle' }, 'eosio', contractAccount)
   },

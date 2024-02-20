@@ -17,9 +17,6 @@ export class PwrReport {
 @table("pwrreports")
 export class PwrReportRow extends Table {
   constructor(
-    // unique report_id, generated from metadata
-    // // TODO: remove this field after clearing PwrReportRow table
-    // public report_id:u64 = 0,
     // the oracle that originally proposed this report
     public proposer:Name = EMPTY_NAME,
     // report details
@@ -28,11 +25,7 @@ export class PwrReportRow extends Table {
     // TODO might be good to also include the oracle weight in this vector because of some edge cases when slashing
     public approvals:Name[] = [],
     // cumulative approval weight from oracles
-    public approval_weight:u16 = 0,
-    // report was finalized and boid power was generated
-    public reported:boolean = false,
-    // report was merged with other similar reports and boid power generated
-    public merged:boolean = false
+    public approval_weight:u16 = 0
   ) {
     super()
   }
@@ -50,14 +43,5 @@ export class PwrReportRow extends Table {
   @primary
   get primary():u64 {
     return PwrReportRow.getReportId(this.report)
-  }
-
-  @secondary
-  get byRound():u64 {
-    return u64(this.report.round)
-  }
-
-  set byRound(value:u64) {
-    this.report.round = value
   }
 }
