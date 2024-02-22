@@ -74,13 +74,12 @@ export class PwrReportActions extends OracleActions {
     if (existing) {
       existing.approval_weight += oracleRow.weight
       existing.approvals.push(oracle)
-
       // if we can finalize, go ahead and do it now
       if (existing.approval_weight >= this.minWeightThreshold(config, global) && this.shouldFinalizeReports(existing.report.round, config)) {
         this.sendReport(boid_id_scope, report)
         reportSent = true
-      }
-      pwrReportsT.update(existing, oracle)
+        this.pwrReportsT(boid_id_scope).remove(existing)
+      } else pwrReportsT.update(existing, oracle)
     } else {
       // we are the first to make this report so this oracle is the proposer
       reportCreated = true
