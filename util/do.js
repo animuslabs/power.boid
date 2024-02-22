@@ -39,7 +39,7 @@ let config = {
   },
   keep_finalized_stats_rows: 2,
   standby_toggle_interval_rounds: 5,
-  reports_accumulate_weight_round_pct: 0.20
+  reports_accumulate_weight_round_pct: 0
 }
 
 const methods = {
