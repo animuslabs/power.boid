@@ -438,28 +438,6 @@
       ]
     },
     {
-      "name": "GlobalReports",
-      "base": "",
-      "fields": [
-        {
-          "name": "merged",
-          "type": "uint64"
-        },
-        {
-          "name": "unreported_and_unmerged",
-          "type": "uint64"
-        },
-        {
-          "name": "reported",
-          "type": "uint64"
-        },
-        {
-          "name": "proposed",
-          "type": "uint64"
-        }
-      ]
-    },
-    {
       "name": "Oracle",
       "base": "",
       "fields": [
@@ -662,7 +640,7 @@
       "base": "",
       "fields": [
         {
-          "name": "round",
+          "name": "reporting_round",
           "type": "uint16"
         },
         {
@@ -674,20 +652,8 @@
           "type": "name[]"
         },
         {
-          "name": "standby_oracles",
-          "type": "uint8"
-        },
-        {
           "name": "expected_active_weight",
           "type": "uint16"
-        },
-        {
-          "name": "reports",
-          "type": "GlobalReports"
-        },
-        {
-          "name": "rewards_paid",
-          "type": "uint64"
         },
         {
           "name": "active_weight",
@@ -818,6 +784,34 @@
       ]
     },
     {
+      "name": "addcommit",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        },
+        {
+          "name": "commit",
+          "type": "RoundCommit"
+        }
+      ]
+    },
+    {
+      "name": "addreport",
+      "base": "",
+      "fields": [
+        {
+          "name": "oracle",
+          "type": "name"
+        },
+        {
+          "name": "report",
+          "type": "PwrReportRow"
+        }
+      ]
+    },
+    {
       "name": "boincclear",
       "base": "",
       "fields": []
@@ -839,6 +833,10 @@
         {
           "name": "scope",
           "type": "name"
+        },
+        {
+          "name": "round",
+          "type": "uint16"
         }
       ]
     },
@@ -890,6 +888,16 @@
       "name": "globalclear",
       "base": "",
       "fields": []
+    },
+    {
+      "name": "globalset",
+      "base": "",
+      "fields": [
+        {
+          "name": "global",
+          "type": "PwrGlobal"
+        }
+      ]
     },
     {
       "name": "mergereports",
@@ -1194,6 +1202,16 @@
   "types": [],
   "actions": [
     {
+      "name": "addcommit",
+      "type": "addcommit",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "addreport",
+      "type": "addreport",
+      "ricardian_contract": ""
+    },
+    {
       "name": "boincclear",
       "type": "boincclear",
       "ricardian_contract": ""
@@ -1236,6 +1254,11 @@
     {
       "name": "globalclear",
       "type": "globalclear",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "globalset",
+      "type": "globalset",
       "ricardian_contract": ""
     },
     {

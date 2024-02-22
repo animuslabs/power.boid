@@ -92,8 +92,6 @@ export class OracleActions extends GlobalActions {
     if (standby) {
       oracleRow.last_standby_toggle_round = this.currentRound()
       global.expected_active_weight -= oracleRow.weight
-      global.standby_oracles++
-      check(global.standby_oracles >= 1, "max standby_oracles reached")
       const oracleIndex = global.expected_active_oracles.indexOf(oracle)
       check(oracleIndex > -1, "problem setting oracle standby")
       global.expected_active_oracles.splice(oracleIndex, 1)
@@ -102,7 +100,6 @@ export class OracleActions extends GlobalActions {
       global.expected_active_weight += oracleRow.weight
       check(global.expected_active_weight >= oracleRow.weight, "global expected_active_weight max reached")
       global.expected_active_oracles.push(oracle)
-      global.standby_oracles--
     }
     this.globalT.set(global, this.receiver)
     this.oraclesT.update(oracleRow, this.receiver)
@@ -165,8 +162,6 @@ export class OracleActions extends GlobalActions {
       }
       const row = new Oracle(oracle, weight, collateralData, fundsData, true)
       this.oraclesT.store(row, this.receiver)
-      global.standby_oracles++
-      check(global.standby_oracles >= 1, "max standy_oracles reached")
     }
     this.globalT.set(global, this.receiver)
   }

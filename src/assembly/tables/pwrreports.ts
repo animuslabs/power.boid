@@ -1,4 +1,4 @@
-import { Asset, Table, Name, EMPTY_NAME, ActionData } from "proton-tsc"
+import { Table, Name, EMPTY_NAME } from "proton-tsc"
 
 @packer
 export class PwrReport {
@@ -37,7 +37,7 @@ export class PwrReportRow extends Table {
   * @memberof PwrReportActions
   */
   static getReportId(report:PwrReport):u64 {
-    return (u64(report.protocol_id) << 48) + (u64(report.round) << 32) + u64(report.units)
+    return (u64(report.round) << 32) + (u64(report.protocol_id) << 48) + u64(report.units)
   }
 
   @primary

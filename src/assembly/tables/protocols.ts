@@ -1,4 +1,4 @@
-import { Asset, Table, Name, EMPTY_NAME } from "proton-tsc"
+import { EMPTY_NAME, Name, Table } from "proton-tsc"
 
 /**
  * Protocols represent different data sources that oracles may need to make reports for.

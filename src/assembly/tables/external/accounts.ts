@@ -1,5 +1,5 @@
 
-import { Asset, Table, Name, PublicKey, check, ActionData, EMPTY_NAME } from "proton-tsc"
+import { ActionData, EMPTY_NAME, Name, PublicKey, Table } from "proton-tsc"
 
 @packer
 export class AccountCreate extends ActionData {

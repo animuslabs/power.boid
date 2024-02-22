@@ -850,6 +850,13 @@ as-chain@^0.0.96:
   dependencies:
     "@assemblyscript/loader" "^0.19.22"
 
+as-chain@^0.0.97:
+  version "0.0.97"
+  resolved "https://registry.yarnpkg.com/as-chain/-/as-chain-0.0.97.tgz#c06e4f2654f5d73cdbf6a529d1107daa8a8b7a25"
+  integrity sha512-YPv3nIIlMyiZ7NbuloVdqa9Vx6fuzTVifL/P940Jt+Q8jpu3AaYmlU+iuaeXD1glbIdlmHjKrmekPKQ9hYREZQ==
+  dependencies:
+    "@assemblyscript/loader" "^0.19.22"
+
 asn1js@^3.0.1, asn1js@^3.0.5:
   version "3.0.5"
   resolved "https://registry.yarnpkg.com/asn1js/-/asn1js-3.0.5.tgz#5ea36820443dbefb51cc7f88a2ebb5b462114f38"

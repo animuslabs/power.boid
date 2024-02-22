@@ -1,5 +1,4 @@
 import { check, Name, requireAuth } from "proton-tsc"
-import { OracleStat } from "../tables/oracleStats"
 import { TableCleanActions } from "./7-tableclean"
 
 export class SlashActions extends TableCleanActions {

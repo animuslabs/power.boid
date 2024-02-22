@@ -1,5 +1,4 @@
-import { Asset, Table, Name, EMPTY_NAME } from "proton-tsc"
-import { PwrGlobal, GlobalReports } from "./global"
+import { Table } from "proton-tsc"
 
 @packer
 export class Reports {

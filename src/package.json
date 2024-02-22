@@ -11,6 +11,7 @@
     "types": "abi2core -i ../build/boid.contract.abi -o ./types.power.boid.ts"
   },
   "dependencies": {
+    "as-chain": "^0.0.97",
     "atomicassets": "^1.4.2",
     "dotenv": "^16.0.1",
     "eosjs": "^22.1.0",

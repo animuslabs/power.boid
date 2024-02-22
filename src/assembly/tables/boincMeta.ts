@@ -1,5 +1,4 @@
-import { Asset, Table, Name, EMPTY_NAME } from "proton-tsc"
-
+import { Table } from "proton-tsc"
 
 /**
  * BoincMeta represents data which configures the behavior of protocols which use BOINC .

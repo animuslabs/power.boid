@@ -9,6 +9,7 @@ import { PwrConfig } from "../tables/config"
 import { TokenTransfer } from "./5-deposit"
 import { RoundCommit } from "../tables/roundCommit"
 import { BoincMeta } from "../tables/boincMeta"
+import { setActionReturnValue } from "as-chain"
 
 export const boidSym:u64 = 293287707140
 
@@ -55,17 +56,16 @@ export class GlobalActions extends Contract {
     return new TableStore<RoundCommit>(this.receiver, oracle_scope)
   }
 
-  loopRoundCommitsCleanup(olderThan:u32, tbl:TableStore<RoundCommit>):void {
-    let next = tbl.first()
+  loopRoundCommitsCleanup(targetRound:u16, tbl:TableStore<RoundCommit>, failOnEmpty:boolean = false):void {
+    let next = tbl.getBySecondaryU64(u64(targetRound), 0)
     if (!next) {
-      // check(false, "no rows to clean")
-      return
+      if (failOnEmpty) check(false, "no rows to clean")
+      else return
     }
-    // check(next && next.round < olderThan, "no rows to clean")
     for (let i = 0; i < 50; i++) {
       let row = next
-      if (row && row.round < olderThan) {
-        next = tbl.next(row)
+      if (row && row.round <= targetRound) {
+        next = tbl.nextBySecondaryU64(row, 0)
         tbl.remove(row)
       } else break
     }
@@ -134,11 +134,12 @@ export class GlobalActions extends Contract {
    * Reads data from the previous round and calculates differences.
    * The data is used when calculating rewards and slash actions.
    */
-  updateGlobal(currentGlobal:PwrGlobal = this.globalT.get(), config:PwrConfig = this.getConfig()):boolean {
-    if (currentGlobal.round == this.currentRound()) return false
+  updateGlobal(currentGlobal:PwrGlobal = this.globalT.get()):boolean {
+    const reportingRound = this.currentRound() - 1
+    if (currentGlobal.reporting_round == reportingRound) return false
     currentGlobal.active_oracles = []
     currentGlobal.active_weight = 0
-    currentGlobal.round = this.currentRound()
+    currentGlobal.reporting_round = reportingRound
     this.globalT.set(currentGlobal, this.receiver)
     return true
   }
@@ -162,6 +163,12 @@ export class GlobalActions extends Contract {
     const data = new SlashOracleParams(oracle, quantity)
     const action = new Action(this.receiver, Name.fromString("slashoracle"), [this.codePerm], data.pack())
     action.send()
+  }
+
+  @action("globalset")
+  globalSet(global:PwrGlobal):void {
+    requireAuth(this.receiver)
+    this.globalT.set(global, this.receiver)
   }
 }
 

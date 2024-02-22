@@ -61,6 +61,9 @@ const methods = {
   async finalround() {
     await doAction("finalround")
   },
+  async globalset(){
+    await doAction("globalset",{global:{reporting_round:0,active_oracles:[],expected_active_oracles:["boidworker11","boidworker12"],expected_active_weight:2,active_weight:0}})
+  },
   async setstandby(oracle, standby) {
     if (standby == "false") standby = false
     else standby = true
@@ -113,7 +116,7 @@ const methods = {
     const scopes = (await api.rpc.get_table_by_scope({ code: contractAccount, table: "roundcommit", limit: 1000 })).rows.map(el => el.scope)
     console.log(scopes)
     for (const scope of scopes) {
-      await doAction('commitsclean',{scope})
+      await doAction('commitsclear',{scope})
     }
   },
   async clearAllOstats() {
@@ -136,8 +139,8 @@ const methods = {
     console.log(stats.map(el => ({round:el.round,starting_global:el.starting_global})))
 
   },
-  async commitsclean(scope) {
-    await doAction("commitsclean",{scope})
+  async commitsclean(scope,round) {
+    await doAction("commitsclean",{scope,round})
   },
   async commitsclear(scope) {
     await doAction("commitsclear",{scope})
@@ -155,6 +158,12 @@ const methods = {
     for (let item of boinc){
       await this.boincset(...Object.values(item))
     }
+  },
+  async addcommit(){
+    await doAction("addcommit",{oracle:"boidworker11",commit:{round_commit_id:6,protocol_id:1,round:3,boid_id:"test"}})
+  },
+  async addreport(){
+    await doAction("addreport",{oracle:"boidworker11",report:{proposer:"boidworker11",report:{protocol_id:0,round:22,units:0},approvals:[],approval_weight:0}})
   }
 }
 

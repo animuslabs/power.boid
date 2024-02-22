@@ -85,11 +85,12 @@ export class TableCleanActions extends OStatsActions {
       return
     }
     for (let i = 0; i < 100; i++) {
-      let row = tbl.first()
+      let row = next
       if (!row) break
       if (row && row.report.round < olderThan) {
+        next = tbl.next(row)
         tbl.remove(row)
-      }
+      } else break
     }
   }
 
@@ -146,11 +147,12 @@ export class TableCleanActions extends OStatsActions {
   // CLEAN Actions, removes based on round
 
   @action("commitsclean")
-  roundCommitsCleanup(scope:Name):void {
+  roundCommitsCleanup(scope:Name, round:u16):void {
     const config:PwrConfig = this.getConfig()
-    const cleanupOlder = u32(Math.max(i32(this.currentRound() - 1) - config.keep_finalized_stats_rows, 0))
-    check(cleanupOlder != 0, "can't cleanup commits yet")
-    this.loopRoundCommitsCleanup(cleanupOlder, this.roundCommitT(scope))
+    const minRound = Math.max(i32(this.currentRound() - 1) - config.keep_finalized_stats_rows, 0)
+    check(minRound != 0, "can't cleanup commits yet")
+    check(round < minRound, "specified round isn't elligible to be deleted, must be older than: " + minRound.toString())
+    this.loopRoundCommitsCleanup(round, this.roundCommitT(scope), true)
   }
 
   @action("ostatsclean")

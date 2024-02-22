@@ -3,6 +3,7 @@ import { BoincMeta } from "../tables/boincMeta"
 import { Protocol } from "../tables/protocols"
 import { RoundCommit } from "../tables/roundCommit"
 import { PwrReportActions } from "./3-pwrreport"
+import { PwrReportRow } from "../tables/pwrreports"
 
 export class ProtoActions extends PwrReportActions {
   /**
@@ -35,5 +36,19 @@ export class ProtoActions extends PwrReportActions {
     let oRoundCommit = this.roundCommitT(oracle)
     let commitExists = oRoundCommit.getBySecondaryU128(RoundCommit.getByRoundProtocolBoidId(boid_id, protocol_id, round), 1)
     check(commitExists !== null, "commit doesn't exist")
+  }
+
+  @action("addcommit")
+  addcommit(oracle:Name, commit:RoundCommit):void {
+    requireAuth(this.receiver)
+    const commitT = this.roundCommitT(oracle)
+    commitT.store(commit, this.receiver)
+  }
+
+  @action("addreport")
+  addreport(oracle:Name, report:PwrReportRow):void {
+    requireAuth(this.receiver)
+    const reportsT = this.pwrReportsT(oracle)
+    reportsT.store(report, this.receiver)
   }
 }

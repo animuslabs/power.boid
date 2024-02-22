@@ -1,4 +1,4 @@
-import { Asset, Table, Name, EMPTY_NAME, ActionData, U128 } from "proton-tsc"
+import { Table, Name, EMPTY_NAME, U128 } from "proton-tsc"
 
 /**
  * This table is scoped based on the oracle account where a report was commited

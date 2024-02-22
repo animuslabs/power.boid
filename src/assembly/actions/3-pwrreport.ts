@@ -1,5 +1,5 @@
 import { RoundCommit } from "../tables/roundCommit"
-import { Action, ActionData, check, EMPTY_NAME, Name, PermissionLevel, print, requireAuth, SAME_PAYER, TableStore, U128 } from "proton-tsc"
+import { Action, ActionData, check, EMPTY_NAME, Name, PermissionLevel, print, requireAuth, SAME_PAYER, TableStore } from "proton-tsc"
 import { Account } from "../tables/external/accounts"
 import { Oracle } from "../tables/oracles"
 import { OracleStat } from "../tables/oracleStats"
@@ -79,10 +79,8 @@ export class PwrReportActions extends OracleActions {
       if (existing.approval_weight >= this.minWeightThreshold(config, global) && this.shouldFinalizeReports(existing.report.round, config)) {
         this.sendReport(boid_id_scope, report)
         reportSent = true
-        global.reports.reported++
-        global.reports.unreported_and_unmerged--
       }
-      pwrReportsT.update(existing, this.receiver)
+      pwrReportsT.update(existing, oracle)
     } else {
       // we are the first to make this report so this oracle is the proposer
       reportCreated = true
@@ -91,14 +89,12 @@ export class PwrReportActions extends OracleActions {
       const reported = oracleRow.weight >= u16(this.minWeightThreshold()) && this.shouldFinalizeReports(report.round, config)
       print("\n reported: " + reported.toString())
       const row = new PwrReportRow(oracle, report, [oracle], oracleRow.weight)
-      global.reports.proposed++
-      pwrReportsT.store(row, this.receiver)
+      pwrReportsT.store(row, oracle)
       if (reported) {
         reportSent = true
         this.sendReport(boid_id_scope, report)
         this.pwrReportsT(boid_id_scope).remove(row)
-        global.reports.reported++
-      } else global.reports.unreported_and_unmerged++
+      }
     }
     this.markOracleActive(oracleRow, global)
     this.globalT.set(global, this.receiver)
@@ -119,8 +115,8 @@ export class PwrReportActions extends OracleActions {
       // otherwise we just need to update our own oracle stats
       this.updateOracleStats(oracleRow, reportSent, reportCreated, report.round)
     }
-    this.loopRoundCommitsCleanup(activeRound, oRoundCommit)
-    oRoundCommit.store(new RoundCommit(oRoundCommit.availablePrimaryKey, report.protocol_id, report.round, boid_id_scope), this.receiver)
+    this.loopRoundCommitsCleanup(activeRound - 1, oRoundCommit, false)
+    oRoundCommit.store(new RoundCommit(oRoundCommit.availablePrimaryKey, report.protocol_id, report.round, boid_id_scope), oracle)
   }
 
   /**
@@ -172,9 +168,6 @@ export class PwrReportActions extends OracleActions {
       if (!row) continue
       else this.updateOracleStats(row, true, false, pwrReport.report.round)
     }
-
-    global.reports.reported++
-    global.reports.unreported_and_unmerged--
     this.globalT.set(global, SAME_PAYER)
     this.pwrReportsT(boid_id_scope).remove(pwrReport)
   }
@@ -268,11 +261,5 @@ export class PwrReportActions extends OracleActions {
         oStatsT.store(oracleStatsRow, this.receiver)
       }
     }
-
-    // update global data
-    global.reports.reported++
-    global.reports.merged += u64(targetReports.length)
-    global.reports.unreported_and_unmerged -= u64(targetReports.length)
-    this.globalT.set(global, this.receiver)
   }
 }
