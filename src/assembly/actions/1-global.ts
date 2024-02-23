@@ -118,7 +118,8 @@ export class GlobalActions extends Contract {
   //DEBUG
   @action("thisround")
   thisRound():void {
-    check(false, this.currentRoundFloat().toString())
+    // check(false, this.currentRoundFloat().toString())
+    // setActionReturnValue()
     // check(false, (this.currentRoundFloat() % f32(this.currentRound())).toString())
   }
 

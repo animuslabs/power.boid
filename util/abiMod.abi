@@ -1060,6 +1060,20 @@
       ]
     },
     {
+      "name": "reportsent",
+      "base": "",
+      "fields": [
+        {
+          "name": "report",
+          "type": "PwrReportRow"
+        },
+        {
+          "name": "adding_power",
+          "type": "uint16"
+        }
+      ]
+    },
+    {
       "name": "roundcommit",
       "base": "",
       "fields": [
@@ -1324,6 +1338,11 @@
     {
       "name": "reportsclear",
       "type": "reportsclear",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "reportsent",
+      "type": "reportsent",
       "ricardian_contract": ""
     },
     {

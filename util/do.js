@@ -81,6 +81,9 @@ const methods = {
   async oraclesclear() {
     await doAction("oraclesclear")
   },
+  async pwrreport() {
+    await doAction("pwrreport",{oracle:"boidworker11",boid_id_scope:"trovi.oid",report:{protocol_id:3,round:56,units:1000}},contractAccount,"boidworker11")
+  },
   async mergereports(boid_id_scope, pwrreport_ids) {
     await doAction("mergereports",{boid_id_scope, pwrreport_ids})
   },
@@ -163,7 +166,7 @@ const methods = {
     await doAction("addcommit",{oracle:"boidworker11",commit:{round_commit_id:6,protocol_id:1,round:3,boid_id:"test"}})
   },
   async addreport(){
-    await doAction("addreport",{oracle:"boidworker11",report:{proposer:"boidworker11",report:{protocol_id:0,round:22,units:0},approvals:[],approval_weight:0}})
+    await doAction("addreport",{oracle:"boidworker12",report:{proposer:"boidworker12",report:{protocol_id:0,round:22,units:0},approvals:[],approval_weight:0}})
   }
 }
 

@@ -38,14 +38,15 @@ export class OStatsActions extends DepositActions {
     const config = this.getConfig()
     check(round < this.currentRound() - 1, "can't process this round yet, not yet finalized")
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle doesn't exist")
-    // get config, global and oracle stats
     const oStatsT = this.oracleStatsT(oracle)
     const oRoundData = oStatsT.requireGet(round, "oStats round doesn't exist")
     check(!oRoundData.processed, "round stats is already processed")
+    const validProposed = u32(Math.max(i32(oRoundData.reports.proposed) - i32(oRoundData.reports.unreported_unmerged), 0))
     const basePay = u32(f32(oracleRow.trueCollateral) * config.payment.collateral_pct_pay_per_round_mult)
-    let bonusPay = f64(config.payment.round_bonus_pay_reports) * Math.pow(oRoundData.reports.reported_or_merged, config.payment.reports_proposed_adjust_pwr) + f64(config.payment.round_bonus_pay_proposed) * Math.pow(oRoundData.reports.proposed, config.payment.reports_proposed_adjust_pwr)
+    let bonusPay:u32 = 0
+    if (oRoundData.reports.reported_or_merged > 0 || validProposed > 0) bonusPay = u32(f64(config.payment.round_bonus_pay_reports) * Math.pow(oRoundData.reports.reported_or_merged, config.payment.reports_proposed_adjust_pwr) + f64(config.payment.round_bonus_pay_proposed) * Math.pow(validProposed, config.payment.reports_proposed_adjust_pwr))
     oStatsT.update(oRoundData, SAME_PAYER)
-    this.sendPayOracle(oracle, basePay, u32(bonusPay), round)
+    this.sendPayOracle(oracle, basePay, bonusPay, round)
   }
 }
 @packer

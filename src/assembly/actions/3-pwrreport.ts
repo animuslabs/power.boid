@@ -14,19 +14,36 @@ export class PowerAddParams extends ActionData {
     super()
   }
 }
+@packer
+export class ReportSentParams extends ActionData {
+  constructor(
+    public report:PwrReportRow,
+    public adding_power:u16 = 0
+  ) {
+    super()
+  }
+}
 
 @contract
 export class PwrReportActions extends OracleActions {
-  sendReport(boid_id:Name, report:PwrReport):void {
+  sendReport(boid_id:Name, report:PwrReportRow):void {
     // check(false, "finalize report here: " + this.minWeightThreshold().toString())
-    const proto = this.protocolsT.requireGet(u64(report.protocol_id), "invalid protocol_id")
-    const power:u16 = u16(proto.unitPowerMult * f32(report.units))
+    const proto = this.protocolsT.requireGet(u64(report.report.protocol_id), "invalid protocol_id")
+    const power:u16 = u16(proto.unitPowerMult * f32(report.report.units))
     // check(false, proto.unitPowerMult.toString() + " " + report.units.toString() + " " + power.toString())
+    const logData = new ReportSentParams(report, power)
+    const logAct = new Action(this.receiver, Name.fromString("reportsent"), [this.codePerm], logData.pack())
+    logAct.send()
     // silently fail if no power was generated
     if (power == 0) return
     const data = new PowerAddParams(boid_id, power)
     const action = new Action(Name.fromString("boid"), Name.fromString("power.add"), [new PermissionLevel(Name.fromString("boid"), Name.fromString("active"))], data.pack())
     action.send()
+  }
+
+  @action("reportsent")
+  reportSent(report:PwrReportRow, adding_power:u16):void {
+    requireAuth(this.receiver)
   }
 
   /**
@@ -49,7 +66,7 @@ export class PwrReportActions extends OracleActions {
     // ensure the report is for a round that is valid
     check(report.round < this.currentRound(), "report round must target a past round")
     check(report.round == activeRound, "report round is too far in the past, must report for round: " + activeRound.toString())
-
+    check(report.units > 0, "report units must be > 0")
     // ensure the oracle can make reports
     const oracleRow = this.oraclesT.requireGet(oracle.value, "oracle not registered")
     check(!oracleRow.standby, "oracle is in standby mode, disable standby first to start making reports")
@@ -66,6 +83,7 @@ export class PwrReportActions extends OracleActions {
 
     let reportSent = false
     let reportCreated = false
+
     const pwrReportsT = this.pwrReportsT(boid_id_scope)
     const existing = pwrReportsT.get(reportId)
     const global = this.globalT.get()
@@ -76,7 +94,7 @@ export class PwrReportActions extends OracleActions {
       existing.approvals.push(oracle)
       // if we can finalize, go ahead and do it now
       if (existing.approval_weight >= this.minWeightThreshold(config, global) && this.shouldFinalizeReports(existing.report.round, config)) {
-        this.sendReport(boid_id_scope, report)
+        this.sendReport(boid_id_scope, existing)
         reportSent = true
         this.pwrReportsT(boid_id_scope).remove(existing)
       } else pwrReportsT.update(existing, oracle)
@@ -91,7 +109,7 @@ export class PwrReportActions extends OracleActions {
       pwrReportsT.store(row, oracle)
       if (reported) {
         reportSent = true
-        this.sendReport(boid_id_scope, report)
+        this.sendReport(boid_id_scope, row)
         this.pwrReportsT(boid_id_scope).remove(row)
       }
     }
@@ -159,7 +177,7 @@ export class PwrReportActions extends OracleActions {
     const global = this.globalT.get()
     const minThreshold = this.minWeightThreshold(config, global)
     check(pwrReport.approval_weight >= minThreshold, "aggregate approval_weight isn't high enough. Minimum:" + minThreshold.toString() + " report has:" + pwrReport.approval_weight.toString())
-    this.sendReport(boid_id_scope, pwrReport.report)
+    this.sendReport(boid_id_scope, pwrReport)
 
     for (let i = 0; i < pwrReport.approvals.length; i++) {
       const oracleName = pwrReport.approvals[i]
@@ -225,7 +243,7 @@ export class PwrReportActions extends OracleActions {
     check(aggregateWeight >= this.minWeightThreshold(config, global), "aggregate approval_weight isn't high enough " + this.minWeightThreshold(config, global).toString() + " " + aggregateWeight.toString())
 
     mergedRow.approvals.push(Name.fromString("merged.boid"))
-    this.sendReport(boid_id_scope, mergedRow.report)
+    this.sendReport(boid_id_scope, mergedRow)
 
     let allOracles:Name[] = []
 
