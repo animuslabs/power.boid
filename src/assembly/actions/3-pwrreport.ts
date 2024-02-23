@@ -242,12 +242,9 @@ export class PwrReportActions extends OracleActions {
     print("\n aggregate: " + aggregateWeight.toString())
     check(aggregateWeight >= this.minWeightThreshold(config, global), "aggregate approval_weight isn't high enough " + this.minWeightThreshold(config, global).toString() + " " + aggregateWeight.toString())
 
-    mergedRow.approvals.push(Name.fromString("merged.boid"))
-    this.sendReport(boid_id_scope, mergedRow)
-
     let allOracles:Name[] = []
 
-    // update all the report rows and store all oracles
+    // delete all the report rows and update all oracles
     for (let i = 0; i < targetReports.length; i++) {
       const pwrReport = targetReports[i]
 
@@ -261,6 +258,11 @@ export class PwrReportActions extends OracleActions {
       }
       pwrReportsT.remove(pwrReport)
     }
+
+    mergedRow.approvals = allOracles
+    mergedRow.approvals.push(Name.fromString("merged.boid"))
+    mergedRow.approval_weight = aggregateWeight
+    this.sendReport(boid_id_scope, mergedRow)
 
     // update oracle stats for each oracle
     for (let i = 0; i < allOracles.length; i++) {

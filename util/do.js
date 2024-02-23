@@ -41,7 +41,11 @@ let config = {
   standby_toggle_interval_rounds: 5,
   reports_accumulate_weight_round_pct: 0
 }
-
+function getReportId(report = {protocol_id:0,round:0,units:0}) {
+  return Number((BigInt(report.protocol_id) << BigInt(48)) + (BigInt(report.round) << BigInt(32)) + BigInt(report.units))
+}
+console.log(getReportId({protocol_id:4,round:56,units:990}))
+console.log(getReportId({protocol_id:4,round:56,units:1000}))
 const methods = {
   async configset() {
     await doAction('configset',{config})
@@ -82,10 +86,10 @@ const methods = {
     await doAction("oraclesclear")
   },
   async pwrreport() {
-    await doAction("pwrreport",{oracle:"boidworker11",boid_id_scope:"trovi.oid",report:{protocol_id:3,round:56,units:1000}},contractAccount,"boidworker11")
+    await doAction("pwrreport",{oracle:"boidworker11",boid_id_scope:"seth.voice",report:{protocol_id:4,round:56,units:1000}},contractAccount,"boidworker11")
   },
   async mergereports(boid_id_scope, pwrreport_ids) {
-    await doAction("mergereports",{boid_id_scope, pwrreport_ids})
+    await doAction("mergereports",{boid_id_scope, pwrreport_ids:[1126140425012190,1126140425012200]})
   },
   async finishreport(boid_id_scope, pwrreport_id) {
     await doAction("finishreport",{boid_id_scope, pwrreport_id})
