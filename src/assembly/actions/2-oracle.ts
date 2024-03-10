@@ -147,6 +147,7 @@ export class OracleActions extends GlobalActions {
       this.oraclesT.update(existing, this.receiver)
     } else {
       check(isAccount(oracle), "oracle must be existing chain account")
+      check(adding_collateral >= config.collateral.oracle_collateral_minimum, "collateral must be >= the oracle collateral minimum for first deposit")
       const collateralData:OracleCollateral = {
         locked: adding_collateral,
         min_unlock_start_round: this.currentRound() + config.waits.collateral_unlock_wait_rounds,
@@ -186,7 +187,6 @@ export class OracleActions extends GlobalActions {
 
   /**
    * After the withdraw waiting period has passed anyone can call this action to push the funds to the oracle
-   *
    * @param {Name} oracle
    */
   @action("withdraw")
@@ -204,8 +204,6 @@ export class OracleActions extends GlobalActions {
     funds.claimed += funds.withdrawing
     funds.unclaimed -= funds.withdrawing
 
-    // mint tokens and then send to the oracle acct
-    // this.sendWholeBoid(Name.fromString("tknmint.boid"), this.receiver, funds.withdrawing, "power.boid oracle reward mint for " + oracle.toString())
     this.sendWholeBoid(this.receiver, oracle, funds.withdrawing, "power.boid oracle reward")
 
     // update oracle row

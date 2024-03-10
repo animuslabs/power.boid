@@ -35,17 +35,17 @@ let config = {
   },
   collateral: {
     oracle_collateral_deposit_increment: 1_000_000,
-    oracle_collateral_minimum: 1_000_000
+    oracle_collateral_minimum: 5_000_000
   },
   keep_finalized_stats_rows: 2,
   standby_toggle_interval_rounds: 5,
-  reports_accumulate_weight_round_pct: 0
+  reports_accumulate_weight_round_pct: 0.1,
 }
-function getReportId(report = {protocol_id:0,round:0,units:0}) {
-  return Number((BigInt(report.protocol_id) << BigInt(48)) + (BigInt(report.round) << BigInt(32)) + BigInt(report.units))
-}
-console.log(getReportId({protocol_id:4,round:56,units:990}))
-console.log(getReportId({protocol_id:4,round:56,units:1000}))
+// function getReportId(report = {protocol_id:0,round:0,units:0}) {
+//   return Number((BigInt(report.protocol_id) << BigInt(48)) + (BigInt(report.round) << BigInt(32)) + BigInt(report.units))
+// }
+// console.log(getReportId({protocol_id:4,round:56,units:990}))
+// console.log(getReportId({protocol_id:4,round:56,units:1000}))
 const methods = {
   async configset() {
     await doAction('configset',{config})
@@ -102,6 +102,12 @@ const methods = {
   },
   async statsclear() {
     await doAction("statsclear")
+  },
+  async withdraw(oracle) {
+    await doAction("withdraw",{oracle})
+  },
+  async withdrawinit(oracle) {
+    await doAction("withdrawinit",{oracle},null,oracle)
   },
   async ostatsclean(scope) {
     await doAction("ostatsclean",{scope})
@@ -164,6 +170,19 @@ const methods = {
     ]
     for (let item of boinc){
       await this.boincset(...Object.values(item))
+    }
+  },
+  async protoSetAll(){
+    const proto = [
+      {protocol:{protocol_id:0,protocol_name:"fah",unitPowerMult:0.0002,active:true}},
+      {protocol:{protocol_id:1,protocol_name:"rosetta",unitPowerMult:0.001,active:true}},
+      {protocol:{protocol_id:2,protocol_name:"denisathome",unitPowerMult:0.001,active:true}},
+      {protocol:{protocol_id:3,protocol_name:"sidock",unitPowerMult:0.001,active:true}},
+      {protocol:{protocol_id:4,protocol_name:"rnaworld",unitPowerMult:0.001,active:true}},
+      {protocol:{protocol_id:5,protocol_name:"wcg",unitPowerMult:0.001,active:true}},
+    ]
+    for (let item of proto){
+      await doAction("protoset",item)
     }
   },
   async addcommit(){

@@ -18,7 +18,8 @@ export class PowerAddParams extends ActionData {
 export class ReportSentParams extends ActionData {
   constructor(
     public report:PwrReportRow,
-    public adding_power:u16 = 0
+    public adding_power:u16 = 0,
+    public target_boid_id:Name = EMPTY_NAME
   ) {
     super()
   }
@@ -31,18 +32,18 @@ export class PwrReportActions extends OracleActions {
     const proto = this.protocolsT.requireGet(u64(report.report.protocol_id), "invalid protocol_id")
     const power:u16 = u16(proto.unitPowerMult * f32(report.report.units))
     // check(false, proto.unitPowerMult.toString() + " " + report.units.toString() + " " + power.toString())
-    const logData = new ReportSentParams(report, power)
+    const logData = new ReportSentParams(report, power, boid_id)
     const logAct = new Action(this.receiver, Name.fromString("reportsent"), [this.codePerm], logData.pack())
     logAct.send()
     // silently fail if no power was generated
     if (power == 0) return
     const data = new PowerAddParams(boid_id, power)
-    const action = new Action(Name.fromString("boid"), Name.fromString("power.add"), [new PermissionLevel(Name.fromString("boid"), Name.fromString("active"))], data.pack())
+    const action = new Action(Name.fromString("boid"), Name.fromString("power.add"), [new PermissionLevel(Name.fromString("boid"), Name.fromString("worker.boid"))], data.pack())
     action.send()
   }
 
   @action("reportsent")
-  reportSent(report:PwrReportRow, adding_power:u16):void {
+  reportSent(report:PwrReportRow, adding_power:u16, target_boid_id:Name):void {
     requireAuth(this.receiver)
   }
 

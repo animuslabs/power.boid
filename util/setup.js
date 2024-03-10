@@ -7,11 +7,21 @@ const contract = require('./do.js')
 
 
 const methods = {
-  async updateAuth(pubkey) {
-    if (!pubkey) pubkey = "EOS6FoTSwiKk27SJ1kANdJFmso3KbECASAMDpEka4dG9p1ub6GqiH"
+  async updateOwner() {
+
     const auth = {
       "threshold": 1,
-      "keys": [{ key: pubkey, weight: 1 }],
+      "keys": [],
+      "accounts": [{ permission: { actor: "dac.boid", permission: "active" }, "weight": 1 }],
+      "waits": []
+    }
+    await doAction('updateauth', { account: contractAccount, auth, parent: '', permission: 'owner' }, 'eosio', contractAccount)
+  },
+  async updateAuth(pubkey) {
+    // if (!pubkey) pubkey = "EOS6FoTSwiKk27SJ1kANdJFmso3KbECASAMDpEka4dG9p1ub6GqiH"
+    const auth = {
+      "threshold": 1,
+      "keys": [],
       "accounts": [{ "permission": { "actor": contractAccount, "permission": "eosio.code" }, "weight": 1 }],
       "waits": []
     }
@@ -21,15 +31,15 @@ const methods = {
     if (!pubkey) pubkey = "EOS6FoTSwiKk27SJ1kANdJFmso3KbECASAMDpEka4dG9p1ub6GqiH"
     const auth = {
       "threshold": 1,
-      "keys": [{ key: pubkey, weight: 1 }],
+      "keys": [],
       "accounts": [
-        { "permission": { "actor": "boid", permission: "eosio.code" }, "weight": 1 },
-        { "permission": { "actor": "power.boid", permission: "eosio.code" }, "weight": 1 }
+        { "permission": { "actor": "boid", "permission": "eosio.code" }, "weight": 1 },
+        { "permission": { "actor": "power.boid", "permission": "eosio.code" }, "weight": 1 }
       ],
       "waits": []
     }
     await doAction('updateauth', { account: "tknmint.boid", auth, parent: 'owner', permission: 'active' }, 'eosio', "tknmint.boid")
-    await doAction('updateauth', { account: "mint.boid", auth, parent: 'owner', permission: 'active' }, 'eosio', "mint.boid")
+    // await doAction('updateauth', { account: "mint.boid", auth, parent: 'owner', permission: 'active' }, 'eosio', "mint.boid")
     // await doAction('linkauth', { account: contractAccount, code:'avatar.boid',type:"finalize",requirement:'avataroracle' }, 'eosio', contractAccount)
   },
   async pwrAdd(pubkey) {

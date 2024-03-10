@@ -60,7 +60,7 @@ async function doAction(name, data, account, auth) {
     if (!account) account = contractAccount
     if (!auth) auth = account
     console.log("Do Action:", account,name, data)
-    const authorization = [{ actor: auth, permission: 'active' }]
+    const authorization = [{ actor: auth, permission: 'owner' }]
     const result = await api.transact({
       // "delay_sec": 0,
       actions: [{ account, name, data, authorization }]

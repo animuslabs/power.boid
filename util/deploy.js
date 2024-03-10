@@ -21,7 +21,7 @@ async function pushWasm(chain, eosjs, data) {
 const methods = {
   async default(chain, target) {
     const eosjs = require('./lib/eosjs')(env.keys[chain], conf.endpoints[chain][0])
-    const authorization = [{ actor: conf.accountName[chain], permission: 'active' }]
+    const authorization = [{ actor: conf.accountName[chain], permission: 'owner' }]
     console.log('Deploying to:', chain)
     let abiData = { actions: [setAbiAction(`../build/${conf.contractName}.abi`, authorization)] }
     let wasmData = { actions: [setCodeAction(`../build/${conf.contractName}.wasm`, authorization)] }
